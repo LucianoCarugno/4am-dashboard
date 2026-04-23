@@ -352,35 +352,14 @@ function showError(msg) {
   el.textContent = '⚠ ' + msg;
 }
 
-// ── FETCH WITH PAGINATION ──
+// ── FETCH ──
 async function fetchAll(endpoint, key) {
-  let results = [];
-  let url = `${WORKER}/${STORE}/${endpoint}?limit=250&status=any`;
-  let page = 0;
-
-  while (url) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const items = data[key] || [];
-    results = results.concat(items);
-    page++;
-    setProgress(Math.min(80, page * 15));
-
-    // Shopify pagination via Link header — worker needs to forward it
-    // Fallback: if we got less than 250, we're done
-    if (items.length < 250) break;
-
-    // Try next page using page_info if available
-    const linkHeader = data._link;
-    if (linkHeader) {
-      const match = linkHeader.match(/page_info=([^&>]+).*rel="next"/);
-      url = match ? `${WORKER}/${STORE}/${endpoint}?limit=250&page_info=${match[1]}` : null;
-    } else {
-      break;
-    }
-  }
-  return results;
+  const url = `${WORKER}/${STORE}/${endpoint}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  setProgress(60);
+  return data[key] || [];
 }
 
 // ── LOAD ALL ──
