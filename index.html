@@ -427,19 +427,34 @@ tbody tr:hover td { background: rgba(255,255,255,0.018); }
     <!-- PRODUCTS SECTION -->
     <div class="tab-section" id="section-products">
       <div class="page-header">
-        <div class="page-title">Product <span>Catalog</span></div>
-        <div class="page-meta" id="products-meta">—</div>
+        <div class="page-title">Product <span>Performance</span></div>
+        <div class="page-meta" id="products-meta">Based on orders in selected period</div>
       </div>
-      <div class="kpi-grid" id="kpi-products" style="grid-template-columns:repeat(2,1fr);max-width:500px">
-        <div class="kpi-card"><div class="kpi-label">Products</div><div class="skeleton" style="height:36px;width:60%;margin:8px 0"></div><div class="kpi-accent-line" style="background:var(--accent)"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Variants</div><div class="skeleton" style="height:36px;width:50%;margin:8px 0"></div><div class="kpi-accent-line" style="background:var(--blue)"></div></div>
+      <div class="kpi-grid" id="kpi-products" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-card"><div class="kpi-label">Products Sold</div><div class="skeleton" style="height:36px;width:60%;margin:8px 0"></div><div class="kpi-accent-line" style="background:var(--accent)"></div></div>
+        <div class="kpi-card"><div class="kpi-label">Units Sold</div><div class="skeleton" style="height:36px;width:50%;margin:8px 0"></div><div class="kpi-accent-line" style="background:var(--blue)"></div></div>
+        <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="skeleton" style="height:36px;width:70%;margin:8px 0"></div><div class="kpi-accent-line" style="background:var(--purple)"></div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Units/Order</div><div class="skeleton" style="height:36px;width:55%;margin:8px 0"></div><div class="kpi-accent-line" style="background:var(--orange)"></div></div>
       </div>
-      <div class="table-card">
-        <div class="table-top">
-          <div class="table-title">All Products</div>
-          <div class="count-badge" id="products-badge">—</div>
+      <div class="two-col" style="margin-bottom:24px">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div><div class="chart-title">Revenue by Product</div><div class="chart-subtitle">Top products by revenue in period</div></div>
+          </div>
+          <div class="chart-wrap" style="height:260px"><canvas id="products-revenue-chart"></canvas></div>
         </div>
-        <div id="products-wrap"><div class="empty-state">Loading...</div></div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div><div class="chart-title">Units Sold</div><div class="chart-subtitle">Top products by quantity</div></div>
+          </div>
+          <div class="chart-wrap" style="height:260px"><canvas id="products-units-chart"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Product Share</div><div class="chart-subtitle">% of total revenue per product</div></div>
+        </div>
+        <div id="products-share-list" style="padding-top:8px"></div>
       </div>
     </div>
 
@@ -485,8 +500,13 @@ function setPeriod(days, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const to = new Date(), from = new Date();
-  if (days > 0) from.setDate(from.getDate() - days);
-  else from.setFullYear(2000);
+  if (days === 1) {
+    // Today: from y to son el mismo dia de hoy, no restamos nada
+  } else if (days > 1) {
+    from.setDate(from.getDate() - days);
+  } else {
+    from.setFullYear(2000);
+  }
   document.getElementById('date-to').value = to.toISOString().split('T')[0];
   document.getElementById('date-from').value = from.toISOString().split('T')[0];
   loadAll();
@@ -852,28 +872,104 @@ function sortBy(col) { if (sortCol===col) sortDir*=-1; else { sortCol=col; sortD
 function goPage(p) { currentPage=p; renderOrdersTable(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth',block:'start'}); }
 
 // ── PRODUCTS ──
+let prodRevChart = null, prodUnitsChart = null;
+
 function renderProductsCatalog() {
-  const products = allProducts;
-  const active = products.filter(p => p.status === 'active').length;
-  const variants = products.reduce((s, p) => s + (p.variants?.length || 0), 0);
+  // Build product stats from orders (not from allProducts)
+  const productRev = {}, productUnits = {};
+  filteredOrders.forEach(o => {
+    (o.line_items || []).forEach(item => {
+      const title = item.title || 'Unknown';
+      productRev[title] = (productRev[title] || 0) + parseFloat(item.price || 0) * (item.quantity || 1);
+      productUnits[title] = (productUnits[title] || 0) + (item.quantity || 1);
+    });
+  });
+
+  const byRev = Object.entries(productRev).sort((a,b) => b[1]-a[1]);
+  const byUnits = Object.entries(productUnits).sort((a,b) => b[1]-a[1]);
+  const totalRev = byRev.reduce((s,[,v]) => s+v, 0);
+  const totalUnits = byUnits.reduce((s,[,v]) => s+v, 0);
+  const uniqueProducts = byRev.length;
+  const avgUnits = filteredOrders.length ? (totalUnits / filteredOrders.length).toFixed(1) : 0;
+  const topProduct = byRev[0]?.[0] || '—';
+  const topShort = topProduct.length > 16 ? topProduct.substring(0,14)+'…' : topProduct;
+
+  // KPIs
   document.getElementById('kpi-products').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Total Products</div><div class="kpi-value">${products.length}</div><div class="kpi-sub">${active} active</div><div class="kpi-accent-line" style="background:var(--accent)"></div></div>
-    <div class="kpi-card"><div class="kpi-label">Variants</div><div class="kpi-value">${variants}</div><div class="kpi-sub">in catalog</div><div class="kpi-accent-line" style="background:var(--blue)"></div></div>`;
-  document.getElementById('products-meta').textContent = `${products.length} products · ${active} active`;
-  document.getElementById('products-badge').textContent = products.length + ' products';
-  document.getElementById('products-wrap').innerHTML = products.length
-    ? `<div class="product-grid">${products.map(p => {
-        const minPrice = Math.min(...(p.variants||[]).map(v => parseFloat(v.price||0)));
-        return `<div class="product-catalog-card">
-          <div class="pc-name">${p.title}</div>
-          <div class="pc-type">${p.product_type||'No type'}</div>
-          <div class="pc-meta">
-            <span class="pc-price">$${fmt(minPrice)}</span>
-            <span class="pc-vars">${p.variants?.length||0} variants</span>
-            <span class="status-pill ${p.status==='active'?'s-paid':'s-pending'}">${p.status}</span>
-          </div></div>`;
-      }).join('')}</div>`
-    : '<div class="empty-state">No products found.</div>';
+    <div class="kpi-card"><div class="kpi-label">Products Sold</div><div class="kpi-value">${uniqueProducts}</div><div class="kpi-sub">unique SKUs</div><div class="kpi-accent-line" style="background:var(--accent)"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Units Sold</div><div class="kpi-value">${totalUnits}</div><div class="kpi-sub">in period</div><div class="kpi-accent-line" style="background:var(--blue)"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="kpi-value" style="font-size:18px;letter-spacing:0">${topShort}</div><div class="kpi-sub">$${fmt(byRev[0]?.[1] || 0)} revenue</div><div class="kpi-accent-line" style="background:var(--purple)"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Units/Order</div><div class="kpi-value">${avgUnits}</div><div class="kpi-sub">per order</div><div class="kpi-accent-line" style="background:var(--orange)"></div></div>`;
+  document.getElementById('products-meta').textContent = `${uniqueProducts} products · ${totalUnits} units sold in period`;
+
+  const top10Rev = byRev.slice(0, 10);
+  const top10Units = byUnits.slice(0, 10);
+  const COLORS = ['#b8f94a','#4d9fff','#a78bfa','#fb923c','#ff4d6a','#34d399','#f472b6','#facc15','#60a5fa','#c084fc'];
+
+  // Revenue bar chart
+  const ctxR = document.getElementById('products-revenue-chart').getContext('2d');
+  if (prodRevChart) prodRevChart.destroy();
+  prodRevChart = new Chart(ctxR, {
+    type: 'bar',
+    data: {
+      labels: top10Rev.map(([t]) => t.length > 20 ? t.substring(0,18)+'…' : t),
+      datasets: [{ data: top10Rev.map(([,v]) => v), backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#16161a', borderColor: '#2a2a32', borderWidth: 1,
+        titleColor: '#9898a8', bodyColor: '#f2f2f5',
+        titleFont: { family: 'JetBrains Mono', size: 10 },
+        bodyFont: { family: 'JetBrains Mono', size: 12 },
+        callbacks: { label: ctx => ' $' + fmt(ctx.raw) }
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(42,42,50,0.5)' }, ticks: { color: '#555560', font: { family: 'JetBrains Mono', size: 9 }, callback: v => '$'+fmt(v) } },
+        y: { grid: { display: false }, ticks: { color: '#9898a8', font: { family: 'JetBrains Mono', size: 10 } } }
+      }
+    }
+  });
+
+  // Units bar chart
+  const ctxU = document.getElementById('products-units-chart').getContext('2d');
+  if (prodUnitsChart) prodUnitsChart.destroy();
+  prodUnitsChart = new Chart(ctxU, {
+    type: 'bar',
+    data: {
+      labels: top10Units.map(([t]) => t.length > 20 ? t.substring(0,18)+'…' : t),
+      datasets: [{ data: top10Units.map(([,v]) => v), backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#16161a', borderColor: '#2a2a32', borderWidth: 1,
+        titleColor: '#9898a8', bodyColor: '#f2f2f5',
+        titleFont: { family: 'JetBrains Mono', size: 10 },
+        bodyFont: { family: 'JetBrains Mono', size: 12 },
+        callbacks: { label: ctx => ' ' + ctx.raw + ' units' }
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(42,42,50,0.5)' }, ticks: { color: '#555560', font: { family: 'JetBrains Mono', size: 9 } } },
+        y: { grid: { display: false }, ticks: { color: '#9898a8', font: { family: 'JetBrains Mono', size: 10 } } }
+      }
+    }
+  });
+
+  // Share bars
+  document.getElementById('products-share-list').innerHTML = byRev.slice(0,8).map(([title, rev], i) => {
+    const pct = totalRev ? (rev/totalRev*100).toFixed(1) : 0;
+    const units = productUnits[title] || 0;
+    return `<div class="breakdown-item" style="margin-bottom:10px">
+      <div class="breakdown-top">
+        <span class="breakdown-label" style="font-size:12px">${title}</span>
+        <span class="breakdown-val">$${fmt(rev)} · ${units} units · ${pct}%</span>
+      </div>
+      <div class="breakdown-bar-bg">
+        <div class="breakdown-bar" style="width:${pct}%;background:${COLORS[i % COLORS.length]}"></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── CUSTOMERS ──
