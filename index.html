@@ -670,7 +670,7 @@ function renderChannelBreakdown() {
   // Filtrar solo canales con nombre legible (no IDs numéricos ni slugs internos)
   const meaningful = sorted.filter(([src]) => {
     if (/^\d+$/.test(src)) return false; // IDs numéricos
-    if (src.includes('_checkout_') || src === 'shopify_draft_order') return false;
+    if (src.includes('_checkout_') || src === 'shopify_draft_order' || src.includes('subscription_')) return false;
     return true;
   });
   document.getElementById('channel-breakdown').innerHTML = meaningful.slice(0,5).map(([src,count]) => {
