@@ -461,6 +461,7 @@ const STORE = '4am';
 const PAGE_SIZE = 25;
 
 let allOrders = [], filteredOrders = [], allProducts = [], allCustomers = [];
+let isLoading = false;
 let currentPage = 1, sortCol = null, sortDir = 1, searchTerm = '';
 let revenueChart = null;
 
@@ -579,6 +580,8 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
 }
 
 async function loadAll() {
+  if (isLoading) return; // evitar llamadas concurrentes
+  isLoading = true;
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true; btn.textContent = '↻ Loading...';
   setStatus(false, 'syncing...');
@@ -607,6 +610,7 @@ async function loadAll() {
     showError('Connection error: ' + e.message);
     setFetchStatus(''); setProgress(0);
   } finally {
+    isLoading = false;
     btn.disabled = false; btn.textContent = '↻ Refresh';
   }
 }
