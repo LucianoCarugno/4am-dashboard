@@ -572,9 +572,21 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
         params.set('created_at_max', toDate + 'T23:59:59-03:00');
       }
     }
-    const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    // Reintento automático ante CORS o errores de red
+    let res, data, retries = 0;
+    while (retries < 3) {
+      try {
+        res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        data = await res.json();
+        break;
+      } catch(e) {
+        retries++;
+        if (retries >= 3) throw e;
+        setFetchStatus(`retrying... (${retries}/3)`);
+        await new Promise(r => setTimeout(r, 1000 * retries));
+      }
+    }
     const items = data[key] || [];
 
     if (items.length > 0 && fromMs > 0) {
@@ -588,7 +600,12 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
     setFetchStatus(`loading... ${results.length}`);
     pageInfo = parseNextPageInfo(data._link);
     if (!pageInfo || items.length === 0) break;
-    await new Promise(r => setTimeout(r, 500));
+    // Render parcial para que el usuario vea datos mientras sigue cargando
+    if (results.length >= 250 && endpoint === 'orders') {
+      filteredOrders = results;
+      renderAll();
+    }
+    await new Promise(r => setTimeout(r, 300));
   }
   return results;
 }
