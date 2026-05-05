@@ -272,18 +272,30 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
   let pageInfo = null;
   const isOrders = (endpoint === 'orders');
 
+  // Customers y products: solo una página, no necesitan paginación completa
+  if (!isOrders) {
+    const params = new URLSearchParams();
+    params.set('limit', '250');
+    const url = `${WORKER}/${STORE}/${endpoint}?${params.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${endpoint}`);
+    const data = await res.json();
+    return data[key] || [];
+  }
+
+  // Para orders: paginación completa con early exit por fecha
+  const fromMs = fromDate ? new Date(fromDate + 'T00:00:00-03:00').getTime() : 0;
+
   while (true) {
     const params = new URLSearchParams();
 
     if (pageInfo) {
-      // Con page_info: solo limit y page_info, sin ningún otro filtro
       params.set('limit', '250');
       params.set('page_info', pageInfo);
     } else {
-      // Primera página
       params.set('limit', '250');
       params.set('status', 'any');
-      if (isOrders && fromDate && toDate) {
+      if (fromDate && toDate) {
         params.set('created_at_min', fromDate + 'T00:00:00-03:00');
         params.set('created_at_max', toDate + 'T23:59:59-03:00');
       }
@@ -295,18 +307,24 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
 
     const data = await res.json();
     const items = data[key] || [];
+
+    // Early exit: si la última orden es más vieja que fromDate, paramos
+    if (items.length > 0 && fromMs > 0) {
+      const lastOrderDate = new Date(items[items.length - 1].created_at).getTime();
+      if (lastOrderDate < fromMs) {
+        // Solo agregar las que están dentro del rango
+        const inRange = items.filter(o => new Date(o.created_at).getTime() >= fromMs);
+        results.push(...inRange);
+        break;
+      }
+    }
+
     results.push(...items);
+    setFetchStatus(`loading orders... ${results.length}`);
 
-    // Mostrar progreso en vivo mientras pagina
-    setFetchStatus(`loading ${key}... ${results.length}`);
-
-    // Leer el cursor de la próxima página desde _link (que el Worker copio del header Link)
     pageInfo = parseNextPageInfo(data._link);
-
-    // Sin más páginas o página vacía → terminamos
     if (!pageInfo || items.length === 0) break;
 
-    // Pausa para respetar el rate limit de Shopify (REST: ~2 req/s)
     await new Promise(r => setTimeout(r, 500));
   }
 
