@@ -667,7 +667,12 @@ function renderChannelBreakdown() {
   const total = filteredOrders.length;
   const colors = { tiktok:'#f5a623', web:'#4f8ef7', other:'#00d4a8' };
   // Only show meaningful channels
-  const meaningful = sorted.filter(([src]) => ['tiktok','web'].includes(src) || !['subscription_contract_checkout_one','shopify_draft_order'].includes(src));
+  // Filtrar solo canales con nombre legible (no IDs numéricos ni slugs internos)
+  const meaningful = sorted.filter(([src]) => {
+    if (/^\d+$/.test(src)) return false; // IDs numéricos
+    if (src.includes('_checkout_') || src === 'shopify_draft_order') return false;
+    return true;
+  });
   document.getElementById('channel-breakdown').innerHTML = meaningful.slice(0,5).map(([src,count]) => {
     const pct = total ? Math.round(count/total*100) : 0;
     const color = colors[src] || '#8b6ef7';
