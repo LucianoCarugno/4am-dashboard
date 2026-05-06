@@ -355,9 +355,9 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="period-btn" onclick="setPeriod(1,this)">1D</button>
+      <button class="period-btn active" onclick="setPeriod(1,this)">1D</button>
       <button class="period-btn" onclick="setPeriod(7,this)">7D</button>
-      <button class="period-btn active" onclick="setPeriod(30,this)">30D</button>
+      <button class="period-btn" onclick="setPeriod(30,this)">30D</button>
       <button class="period-btn" onclick="setPeriod(90,this)">90D</button>
       <button class="period-btn" onclick="setPeriod(365,this)">1Y</button>
       <button class="period-btn" onclick="setPeriod(0,this)">All</button>
@@ -508,10 +508,9 @@ const CHART_OPTS = {
 };
 
 function initDates() {
-  const to = new Date(), from = new Date();
-  from.setDate(from.getDate() - 30);
+  const to = new Date();
   document.getElementById('date-to').value = to.toISOString().split('T')[0];
-  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  document.getElementById('date-from').value = to.toISOString().split('T')[0];
 }
 function setPeriod(days, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
