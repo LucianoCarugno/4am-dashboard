@@ -790,12 +790,29 @@ function fmtChange(curr, prev) {
 function renderKPIs() {
   const orders = filteredOrders;
   const prev = getPreviousPeriodOrders();
-  // Net sales = subtotal_price (excluye shipping, igual que Shopify Net Sales)
-  const total = orders.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
-  const prevTotal = prev.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
+  // Net Sales = gross_sales - discounts - returns (igual que Shopify Analytics)
+  // gross_sales = precio original x cantidad por line item
+  const calcNetSales = (orderList) => {
+    return orderList.reduce((s, o) => {
+      const grossSales = (o.line_items||[]).reduce((ls, item) => {
+        return ls + parseFloat(item.price||0) * (item.quantity||1);
+      }, 0);
+      const discounts = parseFloat(o.total_discounts||0);
+      // Refunds de items (refund_line_items)
+      const refundItems = (o.refunds||[]).reduce((rs, r) => {
+        return rs + (r.refund_line_items||[]).reduce((rls, rl) => {
+          return rls + parseFloat(rl.subtotal||0);
+        }, 0);
+      }, 0);
+      return s + grossSales - discounts - refundItems;
+    }, 0);
+  };
+
+  const total = calcNetSales(orders);
+  const prevTotal = calcNetSales(prev);
   const refunded = orders.filter(o => o.financial_status === 'refunded');
   const refundAmt = refunded.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
-  const netRevenue = total - refundAmt;
+  const netRevenue = total;
   const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
   const paid = orders.filter(o => o.financial_status === 'paid').length;
   const prevPaid = prev.filter(o => o.financial_status === 'paid').length;
@@ -808,14 +825,20 @@ function renderKPIs() {
   const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
   const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
 
-  // Revenue breakdown
-  const grossRevenue = orders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  // Revenue breakdown completo
+  const grossRevenue = orders.reduce((s,o) => {
+    return s + (o.line_items||[]).reduce((ls,item) => ls + parseFloat(item.price||0)*(item.quantity||1), 0);
+  }, 0);
   const shippingIncome = orders.reduce((s,o) => {
-    const ship = (o.shipping_lines||[]).reduce((ss,l) => ss + parseFloat(l.price||0), 0);
-    return s + ship;
+    return s + (o.shipping_lines||[]).reduce((ss,l) => ss + parseFloat(l.price||0), 0);
   }, 0);
   const discounts = orders.reduce((s,o) => s + parseFloat(o.total_discounts||0), 0);
   const taxes = orders.reduce((s,o) => s + parseFloat(o.total_tax||0), 0);
+  const returnedItems = orders.reduce((s,o) => {
+    return s + (o.refunds||[]).reduce((rs,r) => {
+      return rs + (r.refund_line_items||[]).reduce((rls,rl) => rls + parseFloat(rl.subtotal||0), 0);
+    }, 0);
+  }, 0);
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(netRevenue)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>${fmtChange(total, prevTotal)}</div>
@@ -831,34 +854,34 @@ function renderKPIs() {
   const revEl = document.getElementById('revenue-breakdown');
   if (revEl) revEl.innerHTML = `
     <div class="stat-cell">
-      <div class="stat-cell-label">Gross Revenue</div>
+      <div class="stat-cell-label">Gross Sales</div>
       <div class="stat-cell-value">$${fmt(grossRevenue)}</div>
-      <div class="stat-cell-sub">total_price incl. shipping & tax</div>
+      <div class="stat-cell-sub">items × price, no descuentos</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-label">Net Sales</div>
+      <div class="stat-cell-label">Discounts</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(discounts)}</div>
+      <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Returns</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(returnedItems)}</div>
+      <div class="stat-cell-sub">${refunded.length} orders</div>
+    </div>
+    <div class="stat-cell" style="background:rgba(0,212,168,0.05);border-left:2px solid var(--accent)">
+      <div class="stat-cell-label" style="color:var(--accent)">Net Sales</div>
       <div class="stat-cell-value" style="color:var(--accent)">$${fmt(total)}</div>
-      <div class="stat-cell-sub">subtotal after discounts</div>
+      <div class="stat-cell-sub">= gross - discounts - returns</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Shipping Income</div>
       <div class="stat-cell-value">$${fmt(shippingIncome)}</div>
-      <div class="stat-cell-sub">${shippingIncome > 0 ? Math.round(shippingIncome/grossRevenue*100)+'% of gross' : 'no shipping charged'}</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Discounts Given</div>
-      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(discounts)}</div>
-      <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders had discount</div>
+      <div class="stat-cell-sub">${shippingIncome > 0 ? Math.round(shippingIncome/grossRevenue*100)+'% of gross' : '—'}</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Taxes Collected</div>
       <div class="stat-cell-value">$${fmt(taxes)}</div>
-      <div class="stat-cell-sub">${grossRevenue ? Math.round(taxes/grossRevenue*100) : 0}% effective tax rate</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Refunds</div>
-      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(refundAmt)}</div>
-      <div class="stat-cell-sub">${refunded.length} orders refunded</div>
+      <div class="stat-cell-sub">${grossRevenue ? Math.round(taxes/grossRevenue*100) : 0}% tax rate</div>
     </div>`;
 }
 
