@@ -559,14 +559,13 @@ function parseNextPageInfo(linkHeader) {
   return null;
 }
 
-// UN SOLO REQUEST al Worker — la paginacion ocurre server-side
+// UN SOLO REQUEST al Worker — paginacion + cache server-side
 async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
   const isOrders = (endpoint === 'orders');
   const params = new URLSearchParams();
   params.set('limit', '250');
 
   if (isOrders) {
-    // fetch_all=true le dice al Worker que pagine todo internamente
     params.set('fetch_all', 'true');
     if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00-03:00');
     if (toDate) params.set('created_at_max', toDate + 'T23:59:59-03:00');
@@ -575,6 +574,14 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
   const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
+
+  // Mostrar si vino del cache
+  if (data.cached) {
+    const mins = Math.round(data.ageSeconds / 60);
+    setFetchStatus(`cached · ${mins}m ago`);
+    setTimeout(() => setFetchStatus(''), 4000);
+  }
+
   return data[key] || [];
 }
 
