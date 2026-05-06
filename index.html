@@ -635,10 +635,11 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   const getETOffset = () => {
     const date = new Date();
     const etStr = date.toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'shortOffset' });
-    const match = etStr.match(/GMT([+-]\d+)/);
+    const match = etStr.match(/GMT([+-])(\d+)/);
     if (match) {
-      const h = parseInt(match[1]);
-      return (h >= 0 ? '+' : '') + String(h).padStart(3, '0') + ':00';
+      const sign = match[1];
+      const h = match[2].padStart(2, '0');
+      return sign + h + ':00';
     }
     return '-04:00'; // fallback
   };
