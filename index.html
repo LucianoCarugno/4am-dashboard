@@ -493,20 +493,18 @@ const STORE = '4am';
 const PAGE_SIZE = 25;
 
 let allOrders = [], filteredOrders = [], allProducts = [], allCustomers = [];
-let isLoading = false;
+let isLoading = false, currentAbortController = null;
 let currentPage = 1, sortCol = null, sortDir = 1, searchTerm = '';
 let revenueChart = null;
 
 Chart.defaults.font.family = 'Roboto Mono';
 Chart.defaults.color = '#44445a';
-
 const CHART_OPTS = {
   tooltip: {
     backgroundColor: '#17171f', borderColor: '#1f1f2e', borderWidth: 1,
     titleColor: '#8888a0', bodyColor: '#e8e8f0',
     titleFont: { family: 'Roboto Mono', size: 9 },
-    bodyFont: { family: 'Roboto Mono', size: 11 },
-    padding: 10,
+    bodyFont: { family: 'Roboto Mono', size: 11 }, padding: 10,
   }
 };
 
@@ -519,7 +517,7 @@ function setPeriod(days, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const to = new Date(), from = new Date();
-  if (days === 1) { /* today same day */ }
+  if (days === 1) { /* today */ }
   else if (days > 1) from.setDate(from.getDate() - days);
   else from.setFullYear(2000);
   document.getElementById('date-to').value = to.toISOString().split('T')[0];
@@ -534,7 +532,7 @@ function setYTD(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const to = new Date();
-  const from = new Date(to.getFullYear(), 0, 1); // 1 enero año actual
+  const from = new Date(to.getFullYear(), 0, 1);
   document.getElementById('date-to').value = to.toISOString().split('T')[0];
   document.getElementById('date-from').value = from.toISOString().split('T')[0];
   loadAll();
@@ -570,18 +568,6 @@ function parseNextPageInfo(linkHeader) {
   }
   return null;
 }
-
-// Paginacion en browser con AbortController para cancelar si cambia el periodo
-let currentAbortController = null;
-
-async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
-  const results = [];
-  let pageInfo = null;
-  const isOrders = (endpoint === 'orders');
-
-  if (!isOrders) {
-// Paginacion en browser con AbortController
-let currentAbortController = null;
 
 async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   const results = [];
@@ -674,7 +660,7 @@ async function loadAll() {
     document.getElementById('page-meta').textContent = `${new Date().toLocaleTimeString('en-US')} · ${allOrders.length} orders`;
   } catch(e) {
     if (e.name === 'AbortError') return;
-    if (allOrders.length > 0) { filteredOrders = allOrders; renderAll(); setStatus(false, 'partial'); document.getElementById('orders-fetched').textContent = `${allOrders.length} orders (partial)`; }
+    if (allOrders.length > 0) { filteredOrders = allOrders; renderAll(); setStatus(false, 'partial'); }
     else { setStatus(false, 'error'); showError('No se pudo conectar. Refrescá para reintentar.'); }
     setFetchStatus('');
   } finally {
@@ -693,128 +679,66 @@ function renderAll() {
   renderProductsCatalog(); renderCustomersTable();
 }
 
-// ── HELPERS para comparación vs período anterior ──
 function getPreviousPeriodOrders() {
   const fromDate = document.getElementById('date-from').value;
   const toDate = document.getElementById('date-to').value;
   if (!fromDate || !toDate) return [];
-  const from = new Date(fromDate);
-  const to = new Date(toDate);
-  const days = Math.round((to - from) / (1000 * 60 * 60 * 24)) || 1;
+  const from = new Date(fromDate), to = new Date(toDate);
+  const days = Math.round((to - from) / (1000*60*60*24)) || 1;
   const prevTo = new Date(from); prevTo.setDate(prevTo.getDate() - 1);
   const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate() - days);
-  return allOrders.filter(o => {
-    const d = new Date(o.created_at);
-    return d >= prevFrom && d <= prevTo;
-  });
+  return allOrders.filter(o => { const d = new Date(o.created_at); return d >= prevFrom && d <= prevTo; });
 }
 
 function fmtChange(curr, prev) {
   if (!prev) return '';
   const pct = Math.round((curr - prev) / prev * 100);
-  const arrow = pct >= 0 ? '↑' : '↓';
   const cls = pct >= 0 ? 'kpi-change up' : 'kpi-change down';
-  return `<div class="${cls}">${arrow} ${Math.abs(pct)}% vs prev period</div>`;
+  return `<div class="${cls}">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}% vs prev</div>`;
 }
 
-// ── KPIs con comparación ──
 function renderKPIs() {
   const orders = filteredOrders;
   const prev = getPreviousPeriodOrders();
-
   const total = orders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
   const prevTotal = prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
-
   const refunded = orders.filter(o => o.financial_status === 'refunded');
   const refundAmt = refunded.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
   const netRevenue = total - refundAmt;
   const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
-
   const paid = orders.filter(o => o.financial_status === 'paid').length;
   const prevPaid = prev.filter(o => o.financial_status === 'paid').length;
-
   const avg = orders.length ? total / orders.length : 0;
   const prevAvg = prev.length ? prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0) / prev.length : 0;
-
   const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
   const web = orders.filter(o => o.source_name === 'web').length;
-
-  // Nuevos vs recurrentes basado en customers
   const customerEmails = {};
-  allOrders.forEach(o => {
-    if (o.customer?.email) {
-      customerEmails[o.customer.email] = (customerEmails[o.customer.email] || 0) + 1;
-    }
-  });
-  const newCustomers = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
+  allOrders.forEach(o => { if (o.customer?.email) customerEmails[o.customer.email] = (customerEmails[o.customer.email]||0)+1; });
+  const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
   const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
 
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Net Revenue</div>
-      <div class="kpi-value">$${fmt(netRevenue)}</div>
-      <div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>
-      ${fmtChange(total, prevTotal)}
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Paid Orders</div>
-      <div class="kpi-value">${paid}</div>
-      <div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>
-      ${fmtChange(paid, prevPaid)}
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg Order Value</div>
-      <div class="kpi-value">$${fmt(avg)}</div>
-      <div class="kpi-sub">per order</div>
-      ${fmtChange(avg, prevAvg)}
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Refund Rate</div>
-      <div class="kpi-value">${refundRate}%</div>
-      <div class="kpi-sub">${refunded.length} refunded · $${fmt(refundAmt)}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">TikTok Shop</div>
-      <div class="kpi-value">${tiktok}</div>
-      <div class="kpi-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Web / Direct</div>
-      <div class="kpi-value">${web}</div>
-      <div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">New Customers</div>
-      <div class="kpi-value">${newCustomers}</div>
-      <div class="kpi-sub">${orders.length ? Math.round(newCustomers/orders.length*100) : 0}% of orders</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Returning</div>
-      <div class="kpi-value">${returning}</div>
-      <div class="kpi-sub">${orders.length ? Math.round(returning/orders.length*100) : 0}% of orders</div>
-    </div>`;
+    <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(netRevenue)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>${fmtChange(total, prevTotal)}</div>
+    <div class="kpi-card"><div class="kpi-label">Paid Orders</div><div class="kpi-value">${paid}</div><div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>${fmtChange(paid, prevPaid)}</div>
+    <div class="kpi-card"><div class="kpi-label">Avg Order Value</div><div class="kpi-value">$${fmt(avg)}</div><div class="kpi-sub">per order</div>${fmtChange(avg, prevAvg)}</div>
+    <div class="kpi-card"><div class="kpi-label">Refund Rate</div><div class="kpi-value">${refundRate}%</div><div class="kpi-sub">${refunded.length} refunded · $${fmt(refundAmt)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">TikTok Shop</div><div class="kpi-value">${tiktok}</div><div class="kpi-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders</div></div>
+    <div class="kpi-card"><div class="kpi-label">Web / Direct</div><div class="kpi-value">${web}</div><div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div></div>
+    <div class="kpi-card"><div class="kpi-label">New Customers</div><div class="kpi-value">${newC}</div><div class="kpi-sub">${orders.length ? Math.round(newC/orders.length*100) : 0}% of orders</div></div>
+    <div class="kpi-card"><div class="kpi-label">Returning</div><div class="kpi-value">${returning}</div><div class="kpi-sub">${orders.length ? Math.round(returning/orders.length*100) : 0}% of orders</div></div>`;
 }
 
-// ── REVENUE CHART con media móvil 7D ──
 function renderRevenueChart() {
   const byDay = {};
   filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.total_price||0); });
   const sorted = Object.keys(byDay).sort();
   const values = sorted.map(d => byDay[d]);
   const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
-
-  // Media movil 7 dias
-  const ma7 = values.map((_, i) => {
-    const slice = values.slice(Math.max(0, i-6), i+1);
-    return slice.reduce((a,b) => a+b, 0) / slice.length;
-  });
-
+  const ma7 = values.map((_,i) => { const s = values.slice(Math.max(0,i-6),i+1); return s.reduce((a,b)=>a+b,0)/s.length; });
   const ctx = document.getElementById('revenue-chart').getContext('2d');
   if (revenueChart) revenueChart.destroy();
   const grad = ctx.createLinearGradient(0,0,0,160);
-  grad.addColorStop(0,'rgba(0,212,168,0.12)');
-  grad.addColorStop(1,'rgba(0,212,168,0.0)');
-
+  grad.addColorStop(0,'rgba(0,212,168,0.12)'); grad.addColorStop(1,'rgba(0,212,168,0.0)');
   revenueChart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets: [
@@ -850,10 +774,7 @@ function renderChannelBreakdown() {
     const pct = total ? Math.round(count/total*100) : 0;
     const color = colors[src] || '#8b6ef7';
     const label = src === 'tiktok' ? 'TikTok Shop' : src === 'web' ? 'Web / Direct' : src.length > 18 ? src.substring(0,16)+'…' : src;
-    return `<div class="breakdown-item">
-      <div class="breakdown-row"><span class="breakdown-name">${label}</span><div class="breakdown-meta"><span>${count}</span> orders · ${pct}%</div></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-    </div>`;
+    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">${label}</span><div class="breakdown-meta"><span>${count}</span> orders · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
   }).join('');
 }
 
@@ -866,11 +787,7 @@ function renderTopProducts() {
   }));
   const sorted = Object.entries(productRev).sort((a,b)=>b[1]-a[1]).slice(0,6);
   document.getElementById('top-products').innerHTML = sorted.length
-    ? sorted.map(([title,rev],i) => `<div class="product-row">
-        <div class="product-rank">${i+1}</div>
-        <div class="product-info"><div class="product-name">${title}</div><div class="product-units">${productUnits[title]} units</div></div>
-        <div class="product-rev">$${fmt(rev)}</div>
-      </div>`).join('')
+    ? sorted.map(([title,rev],i) => `<div class="product-row"><div class="product-rank">${i+1}</div><div class="product-info"><div class="product-name">${title}</div><div class="product-units">${productUnits[title]} units</div></div><div class="product-rev">$${fmt(rev)}</div></div>`).join('')
     : '<div style="color:var(--text3);font-size:10px;padding:8px 0">No data</div>';
 }
 
@@ -882,10 +799,7 @@ function renderStatusBreakdown() {
   const colors = { paid:'#00d4a8', pending:'#f5a623', refunded:'#f04e6a', voided:'#8b6ef7' };
   document.getElementById('status-breakdown').innerHTML = sorted.map(([s,count]) => {
     const pct = total ? Math.round(count/total*100) : 0;
-    return `<div class="breakdown-item">
-      <div class="breakdown-row"><span class="breakdown-name" style="text-transform:capitalize">${s}</span><div class="breakdown-meta"><span>${count}</span> · ${pct}%</div></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[s]||'#8888a0'}"></div></div>
-    </div>`;
+    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name" style="text-transform:capitalize">${s}</span><div class="breakdown-meta"><span>${count}</span> · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[s]||'#8888a0'}"></div></div></div>`;
   }).join('');
 }
 
@@ -1012,7 +926,6 @@ function renderCustomersTable() {
   const avgLTV = customers.length ? totalSpent / customers.length : 0;
   const repeatCustomers = customers.filter(c=>c.orders_count>1).length;
   const repeatRate = customers.length ? (repeatCustomers/customers.length*100).toFixed(1) : 0;
-
   document.getElementById('kpi-customers').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="kpi-value">${customers.length}</div><div class="kpi-sub">${withOrders} with orders</div></div>
     <div class="kpi-card"><div class="kpi-label">Repeat Rate</div><div class="kpi-value">${repeatRate}%</div><div class="kpi-sub">${repeatCustomers} repeat buyers</div></div>
@@ -1020,12 +933,10 @@ function renderCustomersTable() {
     <div class="kpi-card"><div class="kpi-label">Total LTV</div><div class="kpi-value">$${fmt(totalSpent)}</div><div class="kpi-sub">all time</div></div>`;
   document.getElementById('customers-meta').textContent = `${customers.length} customers · ${repeatRate}% repeat rate · avg LTV $${fmt(avgLTV)}`;
   document.getElementById('customers-badge').textContent = customers.length + ' customers';
-
-  // Sort by total spent
   const sorted = [...customers].sort((a,b) => parseFloat(b.total_spent||0) - parseFloat(a.total_spent||0));
   document.getElementById('customers-wrap').innerHTML = customers.length
     ? `<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spent</th><th>Type</th></tr></thead>
-      <tbody>${sorted.map(c=>{
+      <tbody>${sorted.map(c => {
         const isRepeat = c.orders_count > 1;
         return `<tr>
           <td class="customer-name">${c.first_name} ${c.last_name}</td>
