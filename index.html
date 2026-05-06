@@ -438,6 +438,9 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
         </div>
       </div>
 
+      <!-- REVENUE BREAKDOWN -->
+      <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px"></div>
+
       <!-- STATS ROW -->
       <div class="stats-row" id="stats-row"></div>
 
@@ -780,10 +783,11 @@ function fmtChange(curr, prev) {
 function renderKPIs() {
   const orders = filteredOrders;
   const prev = getPreviousPeriodOrders();
-  const total = orders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
-  const prevTotal = prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  // Net sales = subtotal_price (excluye shipping, igual que Shopify Net Sales)
+  const total = orders.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
+  const prevTotal = prev.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
   const refunded = orders.filter(o => o.financial_status === 'refunded');
-  const refundAmt = refunded.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  const refundAmt = refunded.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
   const netRevenue = total - refundAmt;
   const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
   const paid = orders.filter(o => o.financial_status === 'paid').length;
@@ -797,6 +801,15 @@ function renderKPIs() {
   const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
   const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
 
+  // Revenue breakdown
+  const grossRevenue = orders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  const shippingIncome = orders.reduce((s,o) => {
+    const ship = (o.shipping_lines||[]).reduce((ss,l) => ss + parseFloat(l.price||0), 0);
+    return s + ship;
+  }, 0);
+  const discounts = orders.reduce((s,o) => s + parseFloat(o.total_discounts||0), 0);
+  const taxes = orders.reduce((s,o) => s + parseFloat(o.total_tax||0), 0);
+
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(netRevenue)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>${fmtChange(total, prevTotal)}</div>
     <div class="kpi-card"><div class="kpi-label">Paid Orders</div><div class="kpi-value">${paid}</div><div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>${fmtChange(paid, prevPaid)}</div>
@@ -806,11 +819,45 @@ function renderKPIs() {
     <div class="kpi-card"><div class="kpi-label">Web / Direct</div><div class="kpi-value">${web}</div><div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div></div>
     <div class="kpi-card"><div class="kpi-label">New Customers</div><div class="kpi-value">${newC}</div><div class="kpi-sub">${orders.length ? Math.round(newC/orders.length*100) : 0}% of orders</div></div>
     <div class="kpi-card"><div class="kpi-label">Returning Customers</div><div class="kpi-value">${returning}</div><div class="kpi-sub">${orders.length ? Math.round(returning/orders.length*100) : 0}% of orders</div></div>`;
+
+  // Revenue breakdown row
+  const revEl = document.getElementById('revenue-breakdown');
+  if (revEl) revEl.innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-cell-label">Gross Revenue</div>
+      <div class="stat-cell-value">$${fmt(grossRevenue)}</div>
+      <div class="stat-cell-sub">total_price incl. shipping & tax</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Net Sales</div>
+      <div class="stat-cell-value" style="color:var(--accent)">$${fmt(total)}</div>
+      <div class="stat-cell-sub">subtotal after discounts</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Shipping Income</div>
+      <div class="stat-cell-value">$${fmt(shippingIncome)}</div>
+      <div class="stat-cell-sub">${shippingIncome > 0 ? Math.round(shippingIncome/grossRevenue*100)+'% of gross' : 'no shipping charged'}</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Discounts Given</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(discounts)}</div>
+      <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders had discount</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Taxes Collected</div>
+      <div class="stat-cell-value">$${fmt(taxes)}</div>
+      <div class="stat-cell-sub">${grossRevenue ? Math.round(taxes/grossRevenue*100) : 0}% effective tax rate</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Refunds</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(refundAmt)}</div>
+      <div class="stat-cell-sub">${refunded.length} orders refunded</div>
+    </div>`;
 }
 
 function renderRevenueChart() {
   const byDay = {};
-  filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.total_price||0); });
+  filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.subtotal_price||o.total_price||0); });
   const sorted = Object.keys(byDay).sort();
   const values = sorted.map(d => byDay[d]);
   const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
@@ -843,11 +890,11 @@ function renderChannelBreakdown() {
   filteredOrders.forEach(o => {
     const s = o.source_name || 'other';
     channels[s] = (channels[s]||0)+1;
-    channelRev[s] = (channelRev[s]||0) + parseFloat(o.total_price||0);
+    channelRev[s] = (channelRev[s]||0) + parseFloat(o.subtotal_price||o.total_price||0);
   });
   const sorted = Object.entries(channels).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
-  const totalRev = filteredOrders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  const totalRev = filteredOrders.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
   const colors = { tiktok:'#f5a623', web:'#4f8ef7', other:'#00d4a8' };
   const meaningful = sorted.filter(([src]) => {
     if (/^\d+$/.test(src)) return false;
@@ -977,7 +1024,7 @@ function renderProductsCatalog() {
   const productRev={}, productUnits={}, productRefunds={};
   filteredOrders.forEach(o => (o.line_items||[]).forEach(item => {
     const t = item.title||'Unknown';
-    productRev[t]=(productRev[t]||0)+parseFloat(item.price||0)*(item.quantity||1);
+    productRev[t]=(productRev[t]||0)+(parseFloat(item.price||0)-parseFloat(item.discount_allocations?.reduce((s,d)=>s+parseFloat(d.amount||0),0)||0))*(item.quantity||1);
     productUnits[t]=(productUnits[t]||0)+(item.quantity||1);
     if (o.financial_status === 'refunded') productRefunds[t] = (productRefunds[t]||0)+1;
   }));
@@ -1046,7 +1093,7 @@ function renderCustomersTable() {
       customerMap[email] = { name, email, city, isTikTok, orders: 0, revenue: 0 };
     }
     customerMap[email].orders++;
-    customerMap[email].revenue += parseFloat(o.total_price || 0);
+    customerMap[email].revenue += parseFloat(o.subtotal_price || o.total_price || 0);
   });
 
   const customers = Object.values(customerMap).sort((a,b) => b.revenue - a.revenue);
