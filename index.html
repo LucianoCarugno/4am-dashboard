@@ -279,6 +279,11 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .empty-state { text-align: center; padding: 48px; color: var(--text3); font-family: var(--mono); font-size: 10px; }
 .kpi-change { font-family: var(--mono); font-size: 9px; margin-top: 4px; }
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.stat-cell { background: var(--panel); padding: 12px 16px; }
+.stat-cell-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+.stat-cell-value { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+.stat-cell-sub { font-family: var(--mono); font-size: 9px; color: var(--text2); margin-top: 2px; }
 .kpi-change.up { color: var(--accent); }
 .kpi-change.down { color: var(--red); }
 
@@ -423,13 +428,17 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
           </div></div>
         </div>
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Payment Status</div><div class="panel-sub">Order financial status</div></div></div>
-          <div class="panel-body"><div class="breakdown-list" id="status-breakdown">
-            <div class="skeleton" style="height:36px;border-radius:4px"></div>
-            <div class="skeleton" style="height:36px;border-radius:4px;margin-top:8px"></div>
-          </div></div>
+          <div class="panel-header"><div><div class="panel-title">Order Insights</div><div class="panel-sub">Status & weekly patterns</div></div></div>
+          <div class="panel-body">
+            <div class="breakdown-list" id="status-breakdown" style="margin-bottom:16px"></div>
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:8px">Revenue by day of week</div>
+            <div style="height:80px"><canvas id="dow-chart"></canvas></div>
+          </div>
         </div>
       </div>
+
+      <!-- STATS ROW -->
+      <div class="stats-row" id="stats-row"></div>
 
       <div class="table-panel">
         <div class="table-header">
@@ -478,6 +487,16 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
       <div class="kpi-grid" id="kpi-customers" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
         <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="skeleton" style="height:28px;width:55%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
         <div class="kpi-card"><div class="kpi-label">Lifetime Value</div><div class="skeleton" style="height:28px;width:60%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:40%"></div></div>
+      </div>
+      <div class="row row-2" style="margin-bottom:12px">
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Top Cities</div><div class="panel-sub">Customers by location</div></div></div>
+          <div class="panel-body"><div class="breakdown-list" id="geo-breakdown"><div class="skeleton" style="height:32px;border-radius:4px"></div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Top Customers</div><div class="panel-sub">By lifetime value</div></div></div>
+          <div class="panel-body"><div class="product-rows" id="top-customers-list"><div class="skeleton" style="height:32px;border-radius:4px"></div></div></div>
+        </div>
       </div>
       <div class="table-panel">
         <div class="table-header">
@@ -679,8 +698,59 @@ async function loadAll() {
 
 function renderAll() {
   renderKPIs(); renderRevenueChart(); renderChannelBreakdown();
-  renderTopProducts(); renderStatusBreakdown(); renderOrdersTable();
+  renderTopProducts(); renderStatusBreakdown(); renderStatsRow(); renderOrdersTable();
   renderProductsCatalog(); renderCustomersTable();
+}
+
+function renderStatsRow() {
+  const orders = filteredOrders;
+  if (!orders.length) return;
+
+  // Best day
+  const byDay = {};
+  orders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.total_price||0); });
+  const bestDay = Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
+  const bestDayLabel = bestDay ? new Date(bestDay[0]+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+
+  // Best day of week
+  const byDow = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+  const byDowCount = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+  orders.forEach(o => { const dow = new Date(o.created_at).getDay(); byDow[dow] += parseFloat(o.total_price||0); byDowCount[dow]++; });
+  const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const bestDow = Object.entries(byDow).sort((a,b)=>b[1]-a[1])[0];
+
+  // Pending orders
+  const pending = orders.filter(o => o.financial_status === 'pending').length;
+  const pendingRev = orders.filter(o => o.financial_status === 'pending').reduce((s,o) => s+parseFloat(o.total_price||0),0);
+
+  // Orders per day avg
+  const days = Object.keys(byDay).length || 1;
+  const ordersPerDay = (orders.length / days).toFixed(1);
+  const revenuePerDay = (orders.reduce((s,o)=>s+parseFloat(o.total_price||0),0) / days).toFixed(0);
+
+  const el = document.getElementById('stats-row');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-cell-label">Best Day</div>
+      <div class="stat-cell-value">${bestDayLabel}</div>
+      <div class="stat-cell-sub">$${fmt(bestDay?.[1]||0)} revenue</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Best Weekday</div>
+      <div class="stat-cell-value">${dowNames[bestDow?.[0]||0]}</div>
+      <div class="stat-cell-sub">avg $${fmt(bestDow ? byDow[bestDow[0]]/byDowCount[bestDow[0]] : 0)}/day</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Avg/Day</div>
+      <div class="stat-cell-value">${ordersPerDay} orders</div>
+      <div class="stat-cell-sub">$${fmt(revenuePerDay)} revenue/day</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Pending</div>
+      <div class="stat-cell-value" style="color:${pending>0?'var(--amber)':'var(--text)'}">${pending}</div>
+      <div class="stat-cell-sub">${pending>0?'$'+fmt(pendingRev)+' at risk':'all clear'}</div>
+    </div>`;
 }
 
 function getPreviousPeriodOrders() {
@@ -763,10 +833,15 @@ function renderRevenueChart() {
 }
 
 function renderChannelBreakdown() {
-  const channels = {};
-  filteredOrders.forEach(o => { const s = o.source_name || 'other'; channels[s] = (channels[s]||0)+1; });
+  const channels = {}, channelRev = {};
+  filteredOrders.forEach(o => {
+    const s = o.source_name || 'other';
+    channels[s] = (channels[s]||0)+1;
+    channelRev[s] = (channelRev[s]||0) + parseFloat(o.total_price||0);
+  });
   const sorted = Object.entries(channels).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
+  const totalRev = filteredOrders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
   const colors = { tiktok:'#f5a623', web:'#4f8ef7', other:'#00d4a8' };
   const meaningful = sorted.filter(([src]) => {
     if (/^\d+$/.test(src)) return false;
@@ -775,9 +850,15 @@ function renderChannelBreakdown() {
   });
   document.getElementById('channel-breakdown').innerHTML = meaningful.slice(0,5).map(([src,count]) => {
     const pct = total ? Math.round(count/total*100) : 0;
+    const rev = channelRev[src] || 0;
+    const revPct = totalRev ? Math.round(rev/totalRev*100) : 0;
     const color = colors[src] || '#8b6ef7';
     const label = src === 'tiktok' ? 'TikTok Shop' : src === 'web' ? 'Web / Direct' : src.length > 18 ? src.substring(0,16)+'…' : src;
-    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">${label}</span><div class="breakdown-meta"><span>${count}</span> orders · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
+    return `<div class="breakdown-item">
+      <div class="breakdown-row"><span class="breakdown-name">${label}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${revPct}% rev</div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">${count} orders · ${pct}% of orders</div>
+    </div>`;
   }).join('');
 }
 
@@ -800,10 +881,35 @@ function renderStatusBreakdown() {
   const sorted = Object.entries(statuses).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
   const colors = { paid:'#00d4a8', pending:'#f5a623', refunded:'#f04e6a', voided:'#8b6ef7' };
-  document.getElementById('status-breakdown').innerHTML = sorted.map(([s,count]) => {
+  const el = document.getElementById('status-breakdown');
+  if (el) el.innerHTML = sorted.map(([s,count]) => {
     const pct = total ? Math.round(count/total*100) : 0;
     return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name" style="text-transform:capitalize">${s}</span><div class="breakdown-meta"><span>${count}</span> · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[s]||'#8888a0'}"></div></div></div>`;
   }).join('');
+
+  // Day of week revenue chart
+  const dowRev = [0,0,0,0,0,0,0];
+  filteredOrders.forEach(o => { const dow = new Date(o.created_at).getDay(); dowRev[dow] += parseFloat(o.total_price||0); });
+  const dowEl = document.getElementById('dow-chart');
+  if (!dowEl) return;
+  const ctx = dowEl.getContext('2d');
+  if (dowChart) dowChart.destroy();
+  const maxRev = Math.max(...dowRev);
+  dowChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+      datasets: [{ data: dowRev, backgroundColor: dowRev.map(v => v === maxRev ? '#00d4a8' : 'rgba(0,212,168,0.2)'), borderRadius: 3, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ' $'+fmt(c.raw) } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#44445a', font: { size: 8 } } },
+        y: { display: false }
+      }
+    }
+  });
 }
 
 function filterOrders(val) { searchTerm = val.toLowerCase(); currentPage = 1; renderOrdersTable(); }
@@ -860,7 +966,7 @@ function renderOrdersTable() {
 function sortBy(col) { if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=-1;} renderOrdersTable(); }
 function goPage(p) { currentPage=p; renderOrdersTable(); document.querySelector('.table-panel').scrollIntoView({behavior:'smooth',block:'start'}); }
 
-let prodRevChart=null, prodUnitsChart=null;
+let prodRevChart=null, prodUnitsChart=null, dowChart=null;
 function renderProductsCatalog() {
   const productRev={}, productUnits={}, productRefunds={};
   filteredOrders.forEach(o => (o.line_items||[]).forEach(item => {
@@ -937,13 +1043,36 @@ function renderCustomersTable() {
   document.getElementById('customers-meta').textContent = `${customers.length} customers · ${repeatRate}% repeat rate · avg LTV $${fmt(avgLTV)}`;
   document.getElementById('customers-badge').textContent = customers.length + ' customers';
   const sorted = [...customers].sort((a,b) => parseFloat(b.total_spent||0) - parseFloat(a.total_spent||0));
+
+  // Top cities
+  const cities = {};
+  customers.forEach(c => { const city = c.default_address?.city; if (city) cities[city] = (cities[city]||0)+1; });
+  const sortedCities = Object.entries(cities).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxCity = sortedCities[0]?.[1]||1;
+  const geoEl = document.getElementById('geo-breakdown');
+  if (geoEl) geoEl.innerHTML = sortedCities.map(([city,count]) => {
+    const pct = Math.round(count/customers.length*100);
+    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">${city}</span><div class="breakdown-meta"><span>${count}</span> customers · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(count/maxCity*100)}%;background:#4f8ef7"></div></div></div>`;
+  }).join('');
+
+  // Top customers by LTV
+  const topEl = document.getElementById('top-customers-list');
+  if (topEl) topEl.innerHTML = sorted.slice(0,6).map((c,i) => `
+    <div class="product-row">
+      <div class="product-rank">${i+1}</div>
+      <div class="product-info">
+        <div class="product-name">${c.first_name} ${c.last_name}</div>
+        <div class="product-units">${c.orders_count} orders · ${c.default_address?.city||'—'}</div>
+      </div>
+      <div class="product-rev">$${fmt(c.total_spent)}</div>
+    </div>`).join('');
   document.getElementById('customers-wrap').innerHTML = customers.length
     ? `<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spent</th><th>Type</th></tr></thead>
       <tbody>${sorted.map(c => {
         const isRepeat = c.orders_count > 1;
         return `<tr>
           <td class="customer-name">${c.first_name} ${c.last_name}</td>
-          <td style="font-family:var(--mono);font-size:9px;color:var(--text2)">${c.email||'—'}</td>
+          <td style="font-family:var(--mono);font-size:9px;color:var(--text2)">${c.email && c.email.includes('tiktokw.us') ? '<span style="color:var(--text3)">TikTok Customer</span>' : (c.email||'—')}</td>
           <td style="font-size:11px;color:var(--text2)">${c.default_address?.city||'—'}</td>
           <td style="font-family:var(--mono);font-size:10px">${c.orders_count}</td>
           <td class="price">$${fmt(c.total_spent)}</td>
