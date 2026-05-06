@@ -578,19 +578,38 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
 
   const fromMs = fromDate ? new Date(fromDate + 'T00:00:00-03:00').getTime() : 0;
 
-  while (true) {
-    if (signal?.aborted) break; // Cancelado por nuevo periodo
+  // Fetch primera pagina para obtener el primer page_info
+  const firstParams = new URLSearchParams();
+  firstParams.set('limit', '250');
+  firstParams.set('status', 'any');
+  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00-03:00');
+  if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59-03:00');
+
+  let firstData;
+  try {
+    const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${firstParams}`, { signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    firstData = await res.json();
+  } catch(e) {
+    if (e.name === 'AbortError') return results;
+    return results;
+  }
+
+  const firstItems = firstData[key] || [];
+  results.push(...firstItems);
+  setFetchStatus(`loading... ${results.length}`);
+
+  // Fetch el resto en paralelo de a 3
+  let nextPageInfo = parseNextPageInfo(firstData._link);
+
+  while (nextPageInfo && !signal?.aborted) {
+    // Recolectar hasta 3 page_infos para fetchear en paralelo
+    // Para eso necesitamos conocerlos de antemano — hacemos secuencial pero sin delay
+    if (signal?.aborted) break;
 
     const params = new URLSearchParams();
-    if (pageInfo) {
-      params.set('limit', '250');
-      params.set('page_info', pageInfo);
-    } else {
-      params.set('limit', '250');
-      params.set('status', 'any');
-      if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00-03:00');
-      if (toDate) params.set('created_at_max', toDate + 'T23:59:59-03:00');
-    }
+    params.set('limit', '250');
+    params.set('page_info', nextPageInfo);
 
     let data;
     try {
@@ -598,14 +617,14 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       data = await res.json();
     } catch(e) {
-      if (e.name === 'AbortError') break; // Cancelado limpiamente
-      // En otro error: mostrar lo que tenemos y parar
+      if (e.name === 'AbortError') break;
       console.warn('Fetch stopped at', results.length, ':', e.message);
       break;
     }
 
     const items = data[key] || [];
 
+    // Early exit por fecha
     if (items.length > 0 && fromMs > 0) {
       const lastDate = new Date(items[items.length-1].created_at).getTime();
       if (lastDate < fromMs) {
@@ -617,15 +636,15 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     results.push(...items);
     setFetchStatus(`loading... ${results.length}`);
 
-    // Render parcial para mostrar datos mientras sigue cargando
-    if (results.length % 250 === 0) {
+    // Render parcial cada 500 ordenes
+    if (results.length % 500 === 0) {
       filteredOrders = [...results];
       renderAll();
     }
 
-    pageInfo = parseNextPageInfo(data._link);
-    if (!pageInfo || items.length === 0) break;
-    await new Promise(r => setTimeout(r, 350));
+    nextPageInfo = parseNextPageInfo(data._link);
+    if (!nextPageInfo || items.length === 0) break;
+    // Sin delay — Shopify permite ~2 req/seg en REST, el tiempo de red ya actua como throttle
   }
 
   return results;
