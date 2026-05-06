@@ -521,6 +521,8 @@ function setPeriod(days, btn) {
   else from.setFullYear(2000);
   document.getElementById('date-to').value = to.toISOString().split('T')[0];
   document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  // Forzar reset del flag para que siempre cargue al cambiar periodo
+  isLoading = false;
   loadAll();
 }
 function setCustomDate() {
