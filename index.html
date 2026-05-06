@@ -274,6 +274,9 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .empty-state { text-align: center; padding: 48px; color: var(--text3); font-family: var(--mono); font-size: 10px; }
+.kpi-change { font-family: var(--mono); font-size: 9px; margin-top: 4px; }
+.kpi-change.up { color: var(--accent); }
+.kpi-change.down { color: var(--red); }
 
 /* LOADING OVERLAY */
 .loading-overlay {
@@ -468,7 +471,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
         <div class="page-title">Customers</div>
         <div class="page-meta" id="customers-meta">—</div>
       </div>
-      <div class="kpi-grid" id="kpi-customers" style="grid-template-columns:repeat(2,1fr);max-width:480px;margin-bottom:20px">
+      <div class="kpi-grid" id="kpi-customers" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
         <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="skeleton" style="height:28px;width:55%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
         <div class="kpi-card"><div class="kpi-label">Lifetime Value</div><div class="skeleton" style="height:28px;width:60%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:40%"></div></div>
       </div>
@@ -577,20 +580,27 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   const isOrders = (endpoint === 'orders');
 
   if (!isOrders) {
+// Paginacion en browser con AbortController
+let currentAbortController = null;
+
+async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
+  const results = [];
+  const isOrders = (endpoint === 'orders');
+
+  if (!isOrders) {
     const params = new URLSearchParams();
     params.set('limit', '250');
-    const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data[key] || [];
+    try {
+      const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data[key] || [];
+    } catch(e) { return []; }
   }
 
   const fromMs = fromDate ? new Date(fromDate + 'T00:00:00-03:00').getTime() : 0;
-
-  // Fetch primera pagina para obtener el primer page_info
   const firstParams = new URLSearchParams();
-  firstParams.set('limit', '250');
-  firstParams.set('status', 'any');
+  firstParams.set('limit', '250'); firstParams.set('status', 'any');
   if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00-03:00');
   if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59-03:00');
 
@@ -599,68 +609,40 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${firstParams}`, { signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     firstData = await res.json();
-  } catch(e) {
-    if (e.name === 'AbortError') return results;
-    return results;
-  }
+  } catch(e) { return results; }
 
   const firstItems = firstData[key] || [];
   results.push(...firstItems);
   setFetchStatus(`loading... ${results.length}`);
 
-  // Fetch el resto en paralelo de a 3
   let nextPageInfo = parseNextPageInfo(firstData._link);
-
   while (nextPageInfo && !signal?.aborted) {
-    // Recolectar hasta 3 page_infos para fetchear en paralelo
-    // Para eso necesitamos conocerlos de antemano — hacemos secuencial pero sin delay
-    if (signal?.aborted) break;
-
     const params = new URLSearchParams();
-    params.set('limit', '250');
-    params.set('page_info', nextPageInfo);
-
+    params.set('limit', '250'); params.set('page_info', nextPageInfo);
     let data;
     try {
       const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       data = await res.json();
-    } catch(e) {
-      if (e.name === 'AbortError') break;
-      console.warn('Fetch stopped at', results.length, ':', e.message);
-      break;
-    }
-
+    } catch(e) { if (e.name === 'AbortError') break; break; }
     const items = data[key] || [];
-
-    // Early exit por fecha
     if (items.length > 0 && fromMs > 0) {
       const lastDate = new Date(items[items.length-1].created_at).getTime();
-      if (lastDate < fromMs) {
-        results.push(...items.filter(o => new Date(o.created_at).getTime() >= fromMs));
-        break;
-      }
+      if (lastDate < fromMs) { results.push(...items.filter(o => new Date(o.created_at).getTime() >= fromMs)); break; }
     }
-
     results.push(...items);
     setFetchStatus(`loading... ${results.length}`);
-
-    // Render parcial cada 500 ordenes
-    if (results.length % 500 === 0) {
-      filteredOrders = [...results];
-      renderAll();
-    }
-
+    if (results.length % 500 === 0) { filteredOrders = [...results]; renderAll(); }
     nextPageInfo = parseNextPageInfo(data._link);
     if (!nextPageInfo || items.length === 0) break;
-    // Sin delay — Shopify permite ~2 req/seg en REST, el tiempo de red ya actua como throttle
   }
-
   return results;
 }
 
 async function loadAll() {
-  if (isLoading) return;
+  if (currentAbortController) currentAbortController.abort();
+  currentAbortController = new AbortController();
+  const signal = currentAbortController.signal;
   isLoading = true;
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true; btn.textContent = '↻ Loading...';
@@ -670,17 +652,17 @@ async function loadAll() {
   document.getElementById('loading-overlay').classList.add('active');
   document.getElementById('loading-text').textContent = 'Fetching orders from Shopify...';
   document.getElementById('loading-sub').textContent = '';
-  // Deshabilitar todos los botones de periodo
   document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = true);
   const fromDate = document.getElementById('date-from').value;
   const toDate = document.getElementById('date-to').value;
   try {
-    allOrders = await fetchAllPaginated('orders', 'orders', fromDate, toDate);
+    allOrders = await fetchAllPaginated('orders', 'orders', fromDate, toDate, signal);
+    if (signal.aborted) return;
     setProgress(55);
     document.getElementById('loading-text').textContent = 'Loading products & customers...';
-    allProducts = await fetchAllPaginated('products', 'products');
+    allProducts = await fetchAllPaginated('products', 'products', null, null, signal);
     setProgress(75);
-    allCustomers = await fetchAllPaginated('customers', 'customers');
+    allCustomers = await fetchAllPaginated('customers', 'customers', null, null, signal);
     setProgress(100);
     filteredOrders = allOrders;
     currentPage = 1; searchTerm = '';
@@ -690,25 +672,18 @@ async function loadAll() {
     renderAll();
     setStatus(true, 'live');
     document.getElementById('page-meta').textContent = `${new Date().toLocaleTimeString('en-US')} · ${allOrders.length} orders`;
-    setTimeout(() => setProgress(0), 800);
   } catch(e) {
-    // Si falla, mostrar lo que ya cargó en vez de pantalla en blanco
-    if (allOrders.length > 0) {
-      filteredOrders = allOrders;
-      renderAll();
-      setStatus(false, 'partial data');
-      document.getElementById('orders-fetched').textContent = `${allOrders.length} orders (partial)`;
-    } else {
-      setStatus(false, 'error');
-      showError('No se pudo conectar. Refrescá para reintentar.');
-    }
-    setFetchStatus(''); setProgress(0);
+    if (e.name === 'AbortError') return;
+    if (allOrders.length > 0) { filteredOrders = allOrders; renderAll(); setStatus(false, 'partial'); document.getElementById('orders-fetched').textContent = `${allOrders.length} orders (partial)`; }
+    else { setStatus(false, 'error'); showError('No se pudo conectar. Refrescá para reintentar.'); }
+    setFetchStatus('');
   } finally {
-    isLoading = false;
-    btn.disabled = false; btn.textContent = '↻ Refresh';
-    document.getElementById('loading-overlay').classList.remove('active');
-    document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = false);
-    setProgress(0);
+    if (!signal.aborted) {
+      isLoading = false; btn.disabled = false; btn.textContent = '↻ Refresh';
+      document.getElementById('loading-overlay').classList.remove('active');
+      document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = false);
+      setTimeout(() => setProgress(0), 800);
+    }
   }
 }
 
@@ -718,37 +693,140 @@ function renderAll() {
   renderProductsCatalog(); renderCustomersTable();
 }
 
-function renderKPIs() {
-  const orders = filteredOrders;
-  const total = orders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
-  const paid = orders.filter(o => o.financial_status === 'paid').length;
-  const avg = orders.length ? total/orders.length : 0;
-  const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
-  const tiktokPct = orders.length ? Math.round(tiktok/orders.length*100) : 0;
-  document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-value">$${fmt(total)}</div><div class="kpi-sub">${orders.length} orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">Paid Orders</div><div class="kpi-value">${paid}</div><div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg Order Value</div><div class="kpi-value">$${fmt(avg)}</div><div class="kpi-sub">per order</div></div>
-    <div class="kpi-card"><div class="kpi-label">TikTok Shop</div><div class="kpi-value">${tiktok}</div><div class="kpi-sub">${tiktokPct}% of orders</div></div>`;
+// ── HELPERS para comparación vs período anterior ──
+function getPreviousPeriodOrders() {
+  const fromDate = document.getElementById('date-from').value;
+  const toDate = document.getElementById('date-to').value;
+  if (!fromDate || !toDate) return [];
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+  const days = Math.round((to - from) / (1000 * 60 * 60 * 24)) || 1;
+  const prevTo = new Date(from); prevTo.setDate(prevTo.getDate() - 1);
+  const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate() - days);
+  return allOrders.filter(o => {
+    const d = new Date(o.created_at);
+    return d >= prevFrom && d <= prevTo;
+  });
 }
 
+function fmtChange(curr, prev) {
+  if (!prev) return '';
+  const pct = Math.round((curr - prev) / prev * 100);
+  const arrow = pct >= 0 ? '↑' : '↓';
+  const cls = pct >= 0 ? 'kpi-change up' : 'kpi-change down';
+  return `<div class="${cls}">${arrow} ${Math.abs(pct)}% vs prev period</div>`;
+}
+
+// ── KPIs con comparación ──
+function renderKPIs() {
+  const orders = filteredOrders;
+  const prev = getPreviousPeriodOrders();
+
+  const total = orders.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  const prevTotal = prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+
+  const refunded = orders.filter(o => o.financial_status === 'refunded');
+  const refundAmt = refunded.reduce((s,o) => s + parseFloat(o.total_price||0), 0);
+  const netRevenue = total - refundAmt;
+  const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
+
+  const paid = orders.filter(o => o.financial_status === 'paid').length;
+  const prevPaid = prev.filter(o => o.financial_status === 'paid').length;
+
+  const avg = orders.length ? total / orders.length : 0;
+  const prevAvg = prev.length ? prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0) / prev.length : 0;
+
+  const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
+  const web = orders.filter(o => o.source_name === 'web').length;
+
+  // Nuevos vs recurrentes basado en customers
+  const customerEmails = {};
+  allOrders.forEach(o => {
+    if (o.customer?.email) {
+      customerEmails[o.customer.email] = (customerEmails[o.customer.email] || 0) + 1;
+    }
+  });
+  const newCustomers = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
+  const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Net Revenue</div>
+      <div class="kpi-value">$${fmt(netRevenue)}</div>
+      <div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>
+      ${fmtChange(total, prevTotal)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Paid Orders</div>
+      <div class="kpi-value">${paid}</div>
+      <div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>
+      ${fmtChange(paid, prevPaid)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-value">$${fmt(avg)}</div>
+      <div class="kpi-sub">per order</div>
+      ${fmtChange(avg, prevAvg)}
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Refund Rate</div>
+      <div class="kpi-value">${refundRate}%</div>
+      <div class="kpi-sub">${refunded.length} refunded · $${fmt(refundAmt)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">TikTok Shop</div>
+      <div class="kpi-value">${tiktok}</div>
+      <div class="kpi-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Web / Direct</div>
+      <div class="kpi-value">${web}</div>
+      <div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">New Customers</div>
+      <div class="kpi-value">${newCustomers}</div>
+      <div class="kpi-sub">${orders.length ? Math.round(newCustomers/orders.length*100) : 0}% of orders</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Returning</div>
+      <div class="kpi-value">${returning}</div>
+      <div class="kpi-sub">${orders.length ? Math.round(returning/orders.length*100) : 0}% of orders</div>
+    </div>`;
+}
+
+// ── REVENUE CHART con media móvil 7D ──
 function renderRevenueChart() {
   const byDay = {};
   filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.total_price||0); });
   const sorted = Object.keys(byDay).sort();
-  const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
   const values = sorted.map(d => byDay[d]);
+  const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+
+  // Media movil 7 dias
+  const ma7 = values.map((_, i) => {
+    const slice = values.slice(Math.max(0, i-6), i+1);
+    return slice.reduce((a,b) => a+b, 0) / slice.length;
+  });
+
   const ctx = document.getElementById('revenue-chart').getContext('2d');
   if (revenueChart) revenueChart.destroy();
   const grad = ctx.createLinearGradient(0,0,0,160);
-  grad.addColorStop(0,'rgba(0,212,168,0.15)');
+  grad.addColorStop(0,'rgba(0,212,168,0.12)');
   grad.addColorStop(1,'rgba(0,212,168,0.0)');
+
   revenueChart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data: values, borderColor: '#00d4a8', borderWidth: 1.5, backgroundColor: grad, fill: true, tension: 0.3, pointRadius: sorted.length > 60 ? 0 : 2, pointBackgroundColor: '#00d4a8', pointBorderColor: '#0a0a0f', pointBorderWidth: 1.5 }] },
+    data: { labels, datasets: [
+      { label: 'Revenue', data: values, borderColor: '#00d4a8', borderWidth: 1.5, backgroundColor: grad, fill: true, tension: 0.3, pointRadius: sorted.length > 60 ? 0 : 2, pointBackgroundColor: '#00d4a8', pointBorderColor: '#0a0a0f', pointBorderWidth: 1.5, order: 2 },
+      { label: '7D Avg', data: ma7, borderColor: 'rgba(139,110,247,0.7)', borderWidth: 1.5, borderDash: [4,3], fill: false, tension: 0.3, pointRadius: 0, order: 1 }
+    ]},
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ' $'+fmt(c.raw) } } },
+      plugins: {
+        legend: { display: sorted.length > 7, labels: { color: '#44445a', font: { size: 9, family: 'Roboto Mono' }, boxWidth: 20, padding: 12 } },
+        tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ` ${c.dataset.label}: $${fmt(c.raw)}` } }
+      },
       scales: {
         x: { grid: { color: 'rgba(31,31,46,0.8)' }, ticks: { color: '#44445a', font: { size: 8 }, maxTicksLimit: 8 } },
         y: { grid: { color: 'rgba(31,31,46,0.8)' }, ticks: { color: '#44445a', font: { size: 8 }, callback: v => '$'+fmt(v) } }
@@ -763,10 +841,8 @@ function renderChannelBreakdown() {
   const sorted = Object.entries(channels).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
   const colors = { tiktok:'#f5a623', web:'#4f8ef7', other:'#00d4a8' };
-  // Only show meaningful channels
-  // Filtrar solo canales con nombre legible (no IDs numéricos ni slugs internos)
   const meaningful = sorted.filter(([src]) => {
-    if (/^\d+$/.test(src)) return false; // IDs numéricos
+    if (/^\d+$/.test(src)) return false;
     if (src.includes('_checkout_') || src === 'shopify_draft_order' || src.includes('subscription_')) return false;
     return true;
   });
@@ -869,11 +945,12 @@ function goPage(p) { currentPage=p; renderOrdersTable(); document.querySelector(
 
 let prodRevChart=null, prodUnitsChart=null;
 function renderProductsCatalog() {
-  const productRev={}, productUnits={};
+  const productRev={}, productUnits={}, productRefunds={};
   filteredOrders.forEach(o => (o.line_items||[]).forEach(item => {
     const t = item.title||'Unknown';
     productRev[t]=(productRev[t]||0)+parseFloat(item.price||0)*(item.quantity||1);
     productUnits[t]=(productUnits[t]||0)+(item.quantity||1);
+    if (o.financial_status === 'refunded') productRefunds[t] = (productRefunds[t]||0)+1;
   }));
   const byRev = Object.entries(productRev).sort((a,b)=>b[1]-a[1]);
   const byUnits = Object.entries(productUnits).sort((a,b)=>b[1]-a[1]);
@@ -889,7 +966,7 @@ function renderProductsCatalog() {
     <div class="kpi-card"><div class="kpi-label">Units Sold</div><div class="kpi-value">${totalUnits}</div><div class="kpi-sub">in period</div></div>
     <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="kpi-value" style="font-size:16px;letter-spacing:0">${topShort}</div><div class="kpi-sub">$${fmt(byRev[0]?.[1]||0)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Avg Units/Order</div><div class="kpi-value">${avgUnits}</div><div class="kpi-sub">per order</div></div>`;
-  document.getElementById('products-meta').textContent = `${uniqueProducts} products · ${totalUnits} units · period: ${document.getElementById('date-from').value} → ${document.getElementById('date-to').value}`;
+  document.getElementById('products-meta').textContent = `${uniqueProducts} products · ${totalUnits} units · ${document.getElementById('date-from').value} → ${document.getElementById('date-to').value}`;
 
   const top10Rev = byRev.slice(0,10);
   const top10Units = byUnits.slice(0,10);
@@ -920,8 +997,9 @@ function renderProductsCatalog() {
   document.getElementById('products-share-list').innerHTML = byRev.slice(0,10).map(([title,rev],i) => {
     const pct = totalRev ? (rev/totalRev*100).toFixed(1) : 0;
     const units = productUnits[title]||0;
+    const refunds = productRefunds[title]||0;
     return `<div class="breakdown-item" style="margin-bottom:12px">
-      <div class="breakdown-row"><span class="breakdown-name">${title}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${units} units · ${pct}%</div></div>
+      <div class="breakdown-row"><span class="breakdown-name">${title}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${units} units${refunds>0?` · <span style="color:var(--red)">${refunds} refunds</span>`:''} · ${pct}%</div></div>
       <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div>
     </div>`;
   }).join('');
@@ -931,20 +1009,33 @@ function renderCustomersTable() {
   const customers = allCustomers;
   const withOrders = customers.filter(c=>c.orders_count>0).length;
   const totalSpent = customers.reduce((s,c)=>s+parseFloat(c.total_spent||0),0);
+  const avgLTV = customers.length ? totalSpent / customers.length : 0;
+  const repeatCustomers = customers.filter(c=>c.orders_count>1).length;
+  const repeatRate = customers.length ? (repeatCustomers/customers.length*100).toFixed(1) : 0;
+
   document.getElementById('kpi-customers').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="kpi-value">${customers.length}</div><div class="kpi-sub">${withOrders} with orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">Lifetime Value</div><div class="kpi-value">$${fmt(totalSpent)}</div><div class="kpi-sub">all time</div></div>`;
-  document.getElementById('customers-meta').textContent = `${customers.length} customers · ${withOrders} with purchases`;
+    <div class="kpi-card"><div class="kpi-label">Repeat Rate</div><div class="kpi-value">${repeatRate}%</div><div class="kpi-sub">${repeatCustomers} repeat buyers</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg LTV</div><div class="kpi-value">$${fmt(avgLTV)}</div><div class="kpi-sub">per customer</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total LTV</div><div class="kpi-value">$${fmt(totalSpent)}</div><div class="kpi-sub">all time</div></div>`;
+  document.getElementById('customers-meta').textContent = `${customers.length} customers · ${repeatRate}% repeat rate · avg LTV $${fmt(avgLTV)}`;
   document.getElementById('customers-badge').textContent = customers.length + ' customers';
+
+  // Sort by total spent
+  const sorted = [...customers].sort((a,b) => parseFloat(b.total_spent||0) - parseFloat(a.total_spent||0));
   document.getElementById('customers-wrap').innerHTML = customers.length
-    ? `<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spent</th></tr></thead>
-      <tbody>${customers.map(c=>`<tr>
-        <td class="customer-name">${c.first_name} ${c.last_name}</td>
-        <td style="font-family:var(--mono);font-size:9px;color:var(--text2)">${c.email||'—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${c.default_address?.city||'—'}</td>
-        <td style="font-family:var(--mono);font-size:10px">${c.orders_count}</td>
-        <td class="price">$${fmt(c.total_spent)}</td>
-      </tr>`).join('')}</tbody></table>`
+    ? `<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spent</th><th>Type</th></tr></thead>
+      <tbody>${sorted.map(c=>{
+        const isRepeat = c.orders_count > 1;
+        return `<tr>
+          <td class="customer-name">${c.first_name} ${c.last_name}</td>
+          <td style="font-family:var(--mono);font-size:9px;color:var(--text2)">${c.email||'—'}</td>
+          <td style="font-size:11px;color:var(--text2)">${c.default_address?.city||'—'}</td>
+          <td style="font-family:var(--mono);font-size:10px">${c.orders_count}</td>
+          <td class="price">$${fmt(c.total_spent)}</td>
+          <td><span class="status-pill ${isRepeat?'s-paid':'s-pending'}">${isRepeat?'Repeat':'New'}</span></td>
+        </tr>`;
+      }).join('')}</tbody></table>`
     : '<div class="empty-state">No customers found.</div>';
 }
 
