@@ -611,8 +611,13 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   const fromMs = fromDate ? new Date(fromDate + 'T00:00:00-03:00').getTime() : 0;
   const firstParams = new URLSearchParams();
   firstParams.set('limit', '250'); firstParams.set('status', 'any');
-  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00-03:00');
-  if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59-03:00');
+  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00Z');
+  if (toDate) {
+    // Usar el dia siguiente a medianoche UTC para no perder ordenes del dia actual
+    const toDatePlusOne = new Date(toDate);
+    toDatePlusOne.setDate(toDatePlusOne.getDate() + 1);
+    firstParams.set('created_at_max', toDatePlusOne.toISOString().split('T')[0] + 'T00:00:00Z');
+  }
 
   let firstData;
   try {
