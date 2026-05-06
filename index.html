@@ -275,6 +275,27 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .empty-state { text-align: center; padding: 48px; color: var(--text3); font-family: var(--mono); font-size: 10px; }
 
+/* LOADING OVERLAY */
+.loading-overlay {
+  position: fixed; inset: 0; left: var(--sidebar);
+  background: rgba(10,10,15,0.85); backdrop-filter: blur(4px);
+  z-index: 300; display: none;
+  flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+}
+.loading-overlay.active { display: flex; }
+.loading-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+.loading-pct { font-family: var(--mono); font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: -1px; }
+.loading-bar-wrap { width: 220px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.loading-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; width: 0%; box-shadow: 0 0 8px var(--accent); }
+.loading-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
 /* ── SECTIONS ── */
 .tab-section { display: none; }
 .tab-section.active { display: block; }
@@ -301,6 +322,13 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 </head>
 <body>
 <div id="loading-bar"></div>
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-pct" id="loading-pct">0%</div>
+  <div class="loading-bar-wrap"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+  <div class="loading-text" id="loading-text">Connecting to Shopify...</div>
+  <div class="loading-sub" id="loading-sub"></div>
+</div>
 
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -511,9 +539,16 @@ function setStatus(ok, msg) {
   document.getElementById('status-dot').className = 'status-dot' + (ok ? ' live' : '');
   document.getElementById('live-text').textContent = msg;
 }
-function setProgress(pct) { document.getElementById('loading-bar').style.width = pct + '%'; }
+function setProgress(pct) {
+  document.getElementById('loading-bar').style.width = pct + '%';
+  document.getElementById('loading-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('loading-bar-fill').style.width = pct + '%';
+}
 function showError(msg) { const el = document.getElementById('error-banner'); el.style.display = 'block'; el.textContent = '⚠ ' + msg; }
-function setFetchStatus(msg) { document.getElementById('fetch-status').textContent = msg; }
+function setFetchStatus(msg) {
+  document.getElementById('fetch-status').textContent = msg;
+  if (msg) document.getElementById('loading-sub').textContent = msg;
+}
 
 function parseNextPageInfo(linkHeader) {
   if (!linkHeader) return null;
@@ -551,11 +586,17 @@ async function loadAll() {
   setStatus(false, 'syncing...');
   setProgress(10); setFetchStatus('');
   document.getElementById('error-banner').style.display = 'none';
+  document.getElementById('loading-overlay').classList.add('active');
+  document.getElementById('loading-text').textContent = 'Fetching orders from Shopify...';
+  document.getElementById('loading-sub').textContent = '';
+  // Deshabilitar todos los botones de periodo
+  document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = true);
   const fromDate = document.getElementById('date-from').value;
   const toDate = document.getElementById('date-to').value;
   try {
     allOrders = await fetchAllPaginated('orders', 'orders', fromDate, toDate);
     setProgress(55);
+    document.getElementById('loading-text').textContent = 'Loading products & customers...';
     allProducts = await fetchAllPaginated('products', 'products');
     setProgress(75);
     allCustomers = await fetchAllPaginated('customers', 'customers');
@@ -584,6 +625,9 @@ async function loadAll() {
   } finally {
     isLoading = false;
     btn.disabled = false; btn.textContent = '↻ Refresh';
+    document.getElementById('loading-overlay').classList.remove('active');
+    document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = false);
+    setProgress(0);
   }
 }
 
