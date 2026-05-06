@@ -524,63 +524,27 @@ function parseNextPageInfo(linkHeader) {
   return null;
 }
 
+// UN SOLO REQUEST al Worker — la paginacion ocurre server-side
 async function fetchAllPaginated(endpoint, key, fromDate, toDate) {
-  const results = [];
-  let pageInfo = null;
   const isOrders = (endpoint === 'orders');
-  if (!isOrders) {
-    const params = new URLSearchParams();
-    params.set('limit', '250');
-    const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data[key] || [];
+  const params = new URLSearchParams();
+  params.set('limit', '250');
+
+  if (isOrders) {
+    // fetch_all=true le dice al Worker que pagine todo internamente
+    params.set('fetch_all', 'true');
+    if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00-03:00');
+    if (toDate) params.set('created_at_max', toDate + 'T23:59:59-03:00');
   }
-  const fromMs = fromDate ? new Date(fromDate + 'T00:00:00-03:00').getTime() : 0;
-  while (true) {
-    const params = new URLSearchParams();
-    if (pageInfo) { params.set('limit','250'); params.set('page_info', pageInfo); }
-    else {
-      params.set('limit','250'); params.set('status','any');
-      if (fromDate && toDate) {
-        params.set('created_at_min', fromDate + 'T00:00:00-03:00');
-        params.set('created_at_max', toDate + 'T23:59:59-03:00');
-      }
-    }
-    let res, data, retries = 0;
-    while (retries < 3) {
-      try {
-        res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        data = await res.json();
-        break;
-      } catch(e) {
-        retries++;
-        if (retries >= 3) throw e;
-        setFetchStatus(`retrying... (${retries}/3)`);
-        await new Promise(r => setTimeout(r, 1000 * retries));
-      }
-    }
-    const items = data[key] || [];
-    if (items.length > 0 && fromMs > 0) {
-      const lastDate = new Date(items[items.length-1].created_at).getTime();
-      if (lastDate < fromMs) {
-        results.push(...items.filter(o => new Date(o.created_at).getTime() >= fromMs));
-        break;
-      }
-    }
-    results.push(...items);
-    setFetchStatus(`loading... ${results.length}`);
-    pageInfo = parseNextPageInfo(data._link);
-    if (!pageInfo || items.length === 0) break;
-    if (results.length >= 250 && endpoint === 'orders') { filteredOrders = results; renderAll(); }
-    await new Promise(r => setTimeout(r, 300));
-  }
-  return results;
+
+  const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data[key] || [];
 }
 
 async function loadAll() {
-  if (isLoading) return; // evitar llamadas concurrentes
+  if (isLoading) return;
   isLoading = true;
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true; btn.textContent = '↻ Loading...';
@@ -606,8 +570,16 @@ async function loadAll() {
     document.getElementById('page-meta').textContent = `${new Date().toLocaleTimeString('en-US')} · ${allOrders.length} orders`;
     setTimeout(() => setProgress(0), 800);
   } catch(e) {
-    setStatus(false, 'error');
-    showError('Connection error: ' + e.message);
+    // Si falla, mostrar lo que ya cargó en vez de pantalla en blanco
+    if (allOrders.length > 0) {
+      filteredOrders = allOrders;
+      renderAll();
+      setStatus(false, 'partial data');
+      document.getElementById('orders-fetched').textContent = `${allOrders.length} orders (partial)`;
+    } else {
+      setStatus(false, 'error');
+      showError('No se pudo conectar. Refrescá para reintentar.');
+    }
     setFetchStatus(''); setProgress(0);
   } finally {
     isLoading = false;
