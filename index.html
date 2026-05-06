@@ -1029,56 +1029,60 @@ function renderProductsCatalog() {
 }
 
 function renderCustomersTable() {
-  const customers = allCustomers;
-  const withOrders = customers.filter(c=>c.orders_count>0).length;
-  const totalSpent = customers.reduce((s,c)=>s+parseFloat(c.total_spent||0),0);
-  const avgLTV = customers.length ? totalSpent / customers.length : 0;
-  const repeatCustomers = customers.filter(c=>c.orders_count>1).length;
+  // Construir customers 100% desde las ordenes del periodo
+  const customerMap = {};
+  filteredOrders.forEach(o => {
+    const email = o.customer?.email || ('guest_' + o.order_number);
+    const name = o.customer ? (o.customer.first_name + ' ' + o.customer.last_name).trim() : 'Guest';
+    const city = o.shipping_address?.city || '—';
+    const isTikTok = email.includes('tiktokw.us');
+    if (!customerMap[email]) {
+      customerMap[email] = { name, email, city, isTikTok, orders: 0, revenue: 0 };
+    }
+    customerMap[email].orders++;
+    customerMap[email].revenue += parseFloat(o.total_price || 0);
+  });
+
+  const customers = Object.values(customerMap).sort((a,b) => b.revenue - a.revenue);
+  const totalRevenue = customers.reduce((s,c) => s+c.revenue, 0);
+  const repeatCustomers = customers.filter(c => c.orders > 1).length;
   const repeatRate = customers.length ? (repeatCustomers/customers.length*100).toFixed(1) : 0;
+  const avgRevPerCustomer = customers.length ? totalRevenue/customers.length : 0;
+
   document.getElementById('kpi-customers').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="kpi-value">${customers.length}</div><div class="kpi-sub">${withOrders} with orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">Repeat Rate</div><div class="kpi-value">${repeatRate}%</div><div class="kpi-sub">${repeatCustomers} repeat buyers</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg LTV</div><div class="kpi-value">$${fmt(avgLTV)}</div><div class="kpi-sub">per customer</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total LTV</div><div class="kpi-value">$${fmt(totalSpent)}</div><div class="kpi-sub">all time</div></div>`;
-  document.getElementById('customers-meta').textContent = `${customers.length} customers · ${repeatRate}% repeat rate · avg LTV $${fmt(avgLTV)}`;
+    <div class="kpi-card"><div class="kpi-label">Unique Buyers</div><div class="kpi-value">${customers.length}</div><div class="kpi-sub">in selected period</div></div>
+    <div class="kpi-card"><div class="kpi-label">Repeat Rate</div><div class="kpi-value">${repeatRate}%</div><div class="kpi-sub">${repeatCustomers} bought 2+ times</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Rev / Buyer</div><div class="kpi-value">$${fmt(avgRevPerCustomer)}</div><div class="kpi-sub">in period</div></div>
+    <div class="kpi-card"><div class="kpi-label">Period Revenue</div><div class="kpi-value">$${fmt(totalRevenue)}</div><div class="kpi-sub">${filteredOrders.length} orders</div></div>`;
+
+  document.getElementById('customers-meta').textContent = customers.length + ' buyers · ' + repeatRate + '% repeat · avg $' + fmt(avgRevPerCustomer) + '/buyer';
   document.getElementById('customers-badge').textContent = customers.length + ' customers';
-  const sorted = [...customers].sort((a,b) => parseFloat(b.total_spent||0) - parseFloat(a.total_spent||0));
 
   // Top cities
   const cities = {};
-  customers.forEach(c => { const city = c.default_address?.city; if (city) cities[city] = (cities[city]||0)+1; });
+  customers.forEach(c => { if (c.city && c.city !== '—') cities[c.city] = (cities[c.city]||0)+1; });
   const sortedCities = Object.entries(cities).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxCity = sortedCities[0]?.[1]||1;
   const geoEl = document.getElementById('geo-breakdown');
   if (geoEl) geoEl.innerHTML = sortedCities.map(([city,count]) => {
     const pct = Math.round(count/customers.length*100);
-    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">${city}</span><div class="breakdown-meta"><span>${count}</span> customers · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(count/maxCity*100)}%;background:#4f8ef7"></div></div></div>`;
+    return '<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">' + city + '</span><div class="breakdown-meta"><span>' + count + '</span> buyers · ' + pct + '%</div></div><div class="bar-track"><div class="bar-fill" style="width:' + Math.round(count/maxCity*100) + '%;background:#4f8ef7"></div></div></div>';
   }).join('');
 
-  // Top customers by LTV
+  // Top customers by revenue
   const topEl = document.getElementById('top-customers-list');
-  if (topEl) topEl.innerHTML = sorted.slice(0,6).map((c,i) => `
-    <div class="product-row">
-      <div class="product-rank">${i+1}</div>
-      <div class="product-info">
-        <div class="product-name">${c.first_name} ${c.last_name}</div>
-        <div class="product-units">${c.orders_count} orders · ${c.default_address?.city||'—'}</div>
-      </div>
-      <div class="product-rev">$${fmt(c.total_spent)}</div>
-    </div>`).join('');
+  if (topEl) topEl.innerHTML = customers.slice(0,6).map((c,i) =>
+    '<div class="product-row"><div class="product-rank">' + (i+1) + '</div><div class="product-info"><div class="product-name">' + c.name + '</div><div class="product-units">' + c.orders + ' orders · ' + c.city + '</div></div><div class="product-rev">$' + fmt(c.revenue) + '</div></div>'
+  ).join('');
+
+  // Full table
   document.getElementById('customers-wrap').innerHTML = customers.length
-    ? `<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spent</th><th>Type</th></tr></thead>
-      <tbody>${sorted.map(c => {
-        const isRepeat = c.orders_count > 1;
-        return `<tr>
-          <td class="customer-name">${c.first_name} ${c.last_name}</td>
-          <td style="font-family:var(--mono);font-size:9px;color:var(--text2)">${c.email && c.email.includes('tiktokw.us') ? '<span style="color:var(--text3)">TikTok Customer</span>' : (c.email||'—')}</td>
-          <td style="font-size:11px;color:var(--text2)">${c.default_address?.city||'—'}</td>
-          <td style="font-family:var(--mono);font-size:10px">${c.orders_count}</td>
-          <td class="price">$${fmt(c.total_spent)}</td>
-          <td><span class="status-pill ${isRepeat?'s-paid':'s-pending'}">${isRepeat?'Repeat':'New'}</span></td>
-        </tr>`;
-      }).join('')}</tbody></table>`
+    ? '<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Revenue</th><th>Type</th></tr></thead><tbody>' +
+      customers.map(c => {
+        const isRepeat = c.orders > 1;
+        const emailDisplay = c.isTikTok ? '<span style="color:var(--text3)">TikTok Customer</span>' : c.email.startsWith('guest_') ? '<span style="color:var(--text3)">Guest</span>' : c.email;
+        return '<tr><td class="customer-name">' + c.name + '</td><td style="font-family:var(--mono);font-size:9px;color:var(--text2)">' + emailDisplay + '</td><td style="font-size:11px;color:var(--text2)">' + c.city + '</td><td style="font-family:var(--mono);font-size:10px">' + c.orders + '</td><td class="price">$' + fmt(c.revenue) + '</td><td><span class="status-pill ' + (isRepeat?'s-paid':'s-pending') + '">' + (isRepeat?'Repeat':'New') + '</span></td></tr>';
+      }).join('') + '</tbody></table>'
     : '<div class="empty-state">No customers found.</div>';
 }
 
