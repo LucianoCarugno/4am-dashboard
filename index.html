@@ -738,7 +738,6 @@ function renderRevenueChart() {
   const sorted = Object.keys(byDay).sort();
   const values = sorted.map(d => byDay[d]);
   const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
-  const ma7 = values.map((_,i) => { const s = values.slice(Math.max(0,i-6),i+1); return s.reduce((a,b)=>a+b,0)/s.length; });
   const ctx = document.getElementById('revenue-chart').getContext('2d');
   if (revenueChart) revenueChart.destroy();
   const grad = ctx.createLinearGradient(0,0,0,160);
@@ -747,13 +746,13 @@ function renderRevenueChart() {
     type: 'line',
     data: { labels, datasets: [
       { label: 'Revenue', data: values, borderColor: '#00d4a8', borderWidth: 1.5, backgroundColor: grad, fill: true, tension: 0.3, pointRadius: sorted.length > 60 ? 0 : 2, pointBackgroundColor: '#00d4a8', pointBorderColor: '#0a0a0f', pointBorderWidth: 1.5, order: 2 },
-      { label: '7D Avg', data: ma7, borderColor: 'rgba(139,110,247,0.7)', borderWidth: 1.5, borderDash: [4,3], fill: false, tension: 0.3, pointRadius: 0, order: 1 }
+
     ]},
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { display: sorted.length > 7, labels: { color: '#44445a', font: { size: 9, family: 'Roboto Mono' }, boxWidth: 20, padding: 12 } },
-        tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ` ${c.dataset.label}: $${fmt(c.raw)}` } }
+        legend: { display: false },
+        tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ' $'+fmt(c.raw) } }
       },
       scales: {
         x: { grid: { color: 'rgba(31,31,46,0.8)' }, ticks: { color: '#44445a', font: { size: 8 }, maxTicksLimit: 8 } },
