@@ -367,7 +367,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="period-btn active" onclick="setPeriod(1,this)">1D</button>
+      <button class="period-btn active" onclick="setPeriod(1,this)">Today</button>
       <button class="period-btn" onclick="setPeriod(7,this)">7D</button>
       <button class="period-btn" onclick="setPeriod(30,this)">30D</button>
       <button class="period-btn" onclick="setPeriod(90,this)">90D</button>
@@ -542,21 +542,27 @@ const CHART_OPTS = {
   }
 };
 
-function initDates() {
-  const to = new Date();
-  document.getElementById('date-to').value = to.toISOString().split('T')[0];
-  document.getElementById('date-from').value = to.toISOString().split('T')[0];
-}
+
 function setPeriod(days, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const to = new Date(), from = new Date();
-  if (days === 1) { /* today */ }
-  else if (days > 1) from.setDate(from.getDate() - days);
-  else from.setFullYear(2000);
-  document.getElementById('date-to').value = to.toISOString().split('T')[0];
-  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  // Usar Eastern Time (GMT-05:00) para calcular "hoy" igual que Shopify
+  const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const todayET = nowET.toISOString().split('T')[0];
+  const fromET = new Date(nowET);
+  if (days === 1) { /* today - from y to son el mismo dia */ }
+  else if (days > 1) fromET.setDate(fromET.getDate() - days);
+  else fromET.setFullYear(2000);
+  document.getElementById('date-to').value = todayET;
+  document.getElementById('date-from').value = fromET.toISOString().split('T')[0];
   loadAll();
+}
+
+function initDates() {
+  const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const todayET = nowET.toISOString().split('T')[0];
+  document.getElementById('date-to').value = todayET;
+  document.getElementById('date-from').value = todayET;
 }
 function setCustomDate() {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
