@@ -633,9 +633,15 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   firstParams.set('limit', '250'); firstParams.set('status', 'any');
   // Timezone de la tienda: Eastern Time (GMT-05:00) — configurado en Shopify Settings
   // Calcular offset de Eastern Time dinamicamente (maneja DST automaticamente)
-  // Sin timezone — Shopify usa el timezone de la tienda automaticamente
-  if (fromDate) firstParams.set('created_at_min', fromDate);
-  if (toDate) firstParams.set('created_at_max', toDate);
+  // Usar UTC con margen amplio para cubrir cualquier timezone
+  // from: medianoche UTC del dia seleccionado
+  // to: medianoche UTC del dia siguiente (cubre hasta 23:59 en cualquier timezone del mundo)
+  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00Z');
+  if (toDate) {
+    const nextDay = new Date(toDate + 'T00:00:00Z');
+    nextDay.setDate(nextDay.getDate() + 1);
+    firstParams.set('created_at_max', nextDay.toISOString().split('T')[0] + 'T00:00:00Z');
+  }
 
   let firstData;
   try {
