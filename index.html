@@ -633,10 +633,26 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   firstParams.set('limit', '250'); firstParams.set('status', 'any');
   // Timezone de la tienda: Eastern Time (GMT-05:00) — configurado en Shopify Settings
   // Calcular offset de Eastern Time dinamicamente (maneja DST automaticamente)
-  // Usar EST (-05:00) para el min y EST+1dia para el max
-  // Esto cubre correctamente el cambio DST de marzo
-  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00-05:00');
-  if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59-04:00');
+  // Eastern Time offset — calculado correctamente independiente del browser
+  // DST start: segundo domingo de marzo | DST end: primer domingo de noviembre
+  function getETOffset(dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    // Calcular segundo domingo de marzo
+    const mar1 = new Date(Date.UTC(year, 2, 1)); // marzo 1
+    const mar1dow = mar1.getUTCDay(); // dia de la semana (0=dom)
+    const dstStartDay = 8 + (7 - mar1dow) % 7; // segundo domingo
+    // Calcular primer domingo de noviembre
+    const nov1 = new Date(Date.UTC(year, 10, 1)); // nov 1
+    const nov1dow = nov1.getUTCDay();
+    const dstEndDay = 1 + (7 - nov1dow) % 7; // primer domingo
+    // Comparar
+    const isAfterDSTStart = (month > 3) || (month === 3 && day >= dstStartDay);
+    const isBeforeDSTEnd = (month < 11) || (month === 11 && day < dstEndDay);
+    const isEDT = isAfterDSTStart && isBeforeDSTEnd;
+    return isEDT ? '-04:00' : '-05:00';
+  }
+  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00' + getETOffset(fromDate));
+  if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59' + getETOffset(toDate));
 
   let firstData = null;
   for (let retry = 0; retry < 5; retry++) {
