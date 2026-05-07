@@ -633,9 +633,10 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   firstParams.set('limit', '250'); firstParams.set('status', 'any');
   // Timezone de la tienda: Eastern Time (GMT-05:00) — configurado en Shopify Settings
   // Calcular offset de Eastern Time dinamicamente (maneja DST automaticamente)
-  // Shopify acepta fecha sola y aplica el timezone de la tienda automaticamente
-  if (fromDate) firstParams.set('created_at_min', fromDate);
-  if (toDate) firstParams.set('created_at_max', toDate);
+  // Usar medianoche UTC del dia seleccionado para capturar todas las ordenes
+  // independientemente del timezone donde se crearon
+  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00Z');
+  if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59Z');
   let firstData = null;
   for (let retry = 0; retry < 5; retry++) {
     if (signal?.aborted) return results;
@@ -656,10 +657,20 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   results.push(...firstItems);
   setFetchStatus(`loading... ${results.length}`);
 
-  let nextPageInfo = parseNextPageInfo(firstData._link);
-  while (nextPageInfo && !signal?.aborted) {
+  // Paginacion con cursor (GraphQL) o page_info (REST)
+  let nextCursor = firstData._cursor || parseNextPageInfo(firstData._link);
+  let useGraphQL = !!firstData._cursor;
+
+  while (nextCursor && !signal?.aborted) {
     const params = new URLSearchParams();
-    params.set('limit', '250'); params.set('page_info', nextPageInfo);
+    if (useGraphQL) {
+      params.set('cursor', nextCursor);
+      if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00Z');
+      if (toDate) params.set('created_at_max', toDate + 'T23:59:59Z');
+    } else {
+      params.set('limit', '250');
+      params.set('page_info', nextCursor);
+    }
 
     let data = null;
     let retries = 0;
@@ -668,7 +679,6 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
       try {
         const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
         if (res.ok) { data = await res.json(); break; }
-        // 503 o error del servidor — esperar y reintentar
         setFetchStatus(`retrying... (${retries+1}/5)`);
         await new Promise(r => setTimeout(r, 1000 * (retries + 1)));
         retries++;
@@ -681,14 +691,14 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
       }
     }
 
-    if (!data) break; // No se pudo obtener esta pagina, mostrar lo que tenemos
+    if (!data) break;
 
     const items = data[key] || [];
     results.push(...items);
     setFetchStatus(`loading... ${results.length}`);
     if (results.length % 500 === 0) { filteredOrders = [...results]; renderAll(); }
-    nextPageInfo = parseNextPageInfo(data._link);
-    if (!nextPageInfo || items.length === 0) break;
+    nextCursor = data._cursor || parseNextPageInfo(data._link);
+    if (!nextCursor || items.length === 0) break;
   }
   return results;
 }
