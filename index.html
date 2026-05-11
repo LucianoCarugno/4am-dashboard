@@ -652,12 +652,9 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   const fromMs = 0;
   const firstParams = new URLSearchParams();
   firstParams.set('limit', '250'); firstParams.set('status', 'any');
-  // Timezone de la tienda: Eastern Time (GMT-05:00) — configurado en Shopify Settings
-  // Calcular offset de Eastern Time dinamicamente (maneja DST automaticamente)
-  // GraphQL requiere formato ISO con hora para filtrar correctamente
-  // Sin hora, interpreta la fecha como semana ISO causando offset de 7 dias
   if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00Z');
   if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59Z');
+
   let firstData = null;
   for (let retry = 0; retry < 5; retry++) {
     if (signal?.aborted) return results;
@@ -673,6 +670,14 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     }
   }
   if (!firstData) return results;
+
+  // Cache hit — todas las ordenes vienen de una sola vez
+  if (firstData._cached === true) {
+    const cachedOrders = firstData[key] || [];
+    setFetchStatus(`loaded from cache · ${cachedOrders.length} orders`);
+    document.getElementById('loading-text').textContent = `⚡ Loaded from cache · ${cachedOrders.length.toLocaleString()} orders`;
+    return cachedOrders;
+  }
 
   const firstItems = firstData[key] || [];
   results.push(...firstItems);
