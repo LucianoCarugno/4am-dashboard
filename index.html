@@ -384,6 +384,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
       <span id="fetch-status"></span>
       <span id="orders-fetched"></span>
       <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+      <button class="refresh-btn" id="clear-cache-btn" onclick="clearCache()" title="Clear cache and reload fresh data" style="border-color:var(--amber);color:var(--amber)">⚡ Clear Cache</button>
     </div>
   </div>
 
@@ -616,6 +617,30 @@ function setProgress(pct) {
   document.getElementById('loading-bar-fill').style.width = pct + '%';
 }
 function showError(msg) { const el = document.getElementById('error-banner'); el.style.display = 'block'; el.textContent = '⚠ ' + msg; }
+async function clearCache() {
+  const btn = document.getElementById('clear-cache-btn');
+  btn.textContent = '⚡ Clearing...';
+  btn.disabled = true;
+  try {
+    await Promise.all(['today','7d','30d','90d','ytd'].map(p =>
+      fetch(`${WORKER}/save-cache`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({period: p, orders: [], from: '', to: ''})
+      })
+    ));
+    btn.textContent = '⚡ Cleared!';
+    setTimeout(() => {
+      btn.textContent = '⚡ Clear Cache';
+      btn.disabled = false;
+      loadAll();
+    }, 1000);
+  } catch(e) {
+    btn.textContent = '⚡ Clear Cache';
+    btn.disabled = false;
+  }
+}
+
 function cancelLoad() {
   if (currentAbortController) {
     currentAbortController.abort();
