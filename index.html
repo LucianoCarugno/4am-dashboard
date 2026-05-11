@@ -545,6 +545,23 @@ const CHART_OPTS = {
 
 
 // Devuelve YYYY-MM-DD en Eastern Time
+function getPeriodKey(fromDate, toDate) {
+  if (!fromDate || !toDate) return null;
+  const today = todayET();
+  const year = today.split('-')[0];
+  const offset = (days) => {
+    const d = new Date(today + 'T12:00:00Z');
+    d.setDate(d.getDate() - days);
+    return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  };
+  if (fromDate === today && toDate === today) return 'today';
+  if (fromDate === offset(7) && toDate === today) return '7d';
+  if (fromDate === offset(30) && toDate === today) return '30d';
+  if (fromDate === offset(90) && toDate === today) return '90d';
+  if (fromDate === `${year}-01-01` && toDate === today) return 'ytd';
+  return null;
+}
+
 function todayET() {
   const now = new Date();
   return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // en-CA = YYYY-MM-DD
@@ -749,6 +766,16 @@ async function loadAll() {
     allOrders = await fetchAllPaginated('orders', 'orders', fromDate, toDate, signal);
     if (signal.aborted) return;
     setProgress(55);
+
+    // Guardar en cache si es un período conocido
+    const periodKey = getPeriodKey(fromDate, toDate);
+    if (periodKey && allOrders.length > 0) {
+      fetch(`${WORKER}/save-cache`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ period: periodKey, orders: allOrders, from: fromDate, to: toDate })
+      }).catch(e => console.warn('Cache save failed:', e.message));
+    }
     document.getElementById('loading-text').textContent = 'Loading products & customers...';
     allProducts = await fetchAllPaginated('products', 'products', null, null, signal);
     setProgress(75);
