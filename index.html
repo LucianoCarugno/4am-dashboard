@@ -864,7 +864,7 @@ function renderKPIs() {
           return rls + parseFloat(rl.subtotal||0);
         }, 0);
       }, 0);
-      return s + grossSales - discounts - refundItems;
+      return s + grossSales - discounts - parseFloat(o.total_refunded||0);
     }, 0);
   };
 
@@ -926,7 +926,7 @@ function renderKPIs() {
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Returns</div>
-      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(returnedItems)}</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(refundAmt)}</div>
       <div class="stat-cell-sub">${refunded.length} orders</div>
     </div>
     <div class="stat-cell" style="background:rgba(0,212,168,0.05);border-left:2px solid var(--accent)">
