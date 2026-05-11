@@ -340,6 +340,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
   <div class="loading-bar-wrap"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
   <div class="loading-text" id="loading-text">Connecting to Shopify...</div>
   <div class="loading-sub" id="loading-sub"></div>
+  <button onclick="cancelLoad()" style="margin-top:16px;font-family:var(--mono);font-size:10px;padding:6px 16px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;">✕ Cancel</button>
 </div>
 
 <aside class="sidebar">
@@ -598,9 +599,29 @@ function setProgress(pct) {
   document.getElementById('loading-bar-fill').style.width = pct + '%';
 }
 function showError(msg) { const el = document.getElementById('error-banner'); el.style.display = 'block'; el.textContent = '⚠ ' + msg; }
+function cancelLoad() {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    document.getElementById('loading-overlay').classList.remove('active');
+    document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = false);
+    document.getElementById('refresh-btn').disabled = false;
+    document.getElementById('refresh-btn').textContent = '↻ Refresh';
+    isLoading = false;
+    setFetchStatus('');
+    setStatus(false, 'cancelled');
+  }
+}
+
 function setFetchStatus(msg) {
   document.getElementById('fetch-status').textContent = msg;
-  if (msg) document.getElementById('loading-sub').textContent = msg;
+  if (msg) {
+    document.getElementById('loading-sub').textContent = msg;
+    // Update loading text with order count
+    const match = msg.match(/(\d+)/);
+    if (match) {
+      document.getElementById('loading-text').textContent = `Fetching orders... ${parseInt(match[1]).toLocaleString()} loaded`;
+    }
+  }
 }
 
 function parseNextPageInfo(linkHeader) {
@@ -849,15 +870,8 @@ function renderKPIs() {
 
   const total = calcNetSales(orders);
   const prevTotal = calcNetSales(prev);
-  // Calcular refunds desde refund_line_items de todas las ordenes
-  const refundAmt = orders.reduce((s, o) => {
-    const orderRefunds = (o.refunds||[]).reduce((rs, r) => {
-      return rs + (r.refund_line_items||[]).reduce((rls, rl) => {
-        return rls + parseFloat(rl.subtotal||0);
-      }, 0);
-    }, 0);
-    return s + orderRefunds;
-  }, 0);
+  // Usar total_refunded del Worker (GraphQL totalRefundedSet)
+  const refundAmt = orders.reduce((s, o) => s + parseFloat(o.total_refunded||0), 0);
   const refunded = orders.filter(o => o.financial_status === 'refunded' || o.financial_status === 'partially refunded');
   const netRevenue = total;
   const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
