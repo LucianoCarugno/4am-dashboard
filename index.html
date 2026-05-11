@@ -399,12 +399,12 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
 
       <!-- REVENUE BREAKDOWN - lo primero que ve el CFO -->
       <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px">
-        <div class="stat-cell"><div class="stat-cell-label">Gross Revenue</div><div class="skeleton" style="height:20px;width:70%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:20px;width:70%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Returns</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Shipping Income</div><div class="skeleton" style="height:20px;width:55%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Taxes</div><div class="skeleton" style="height:20px;width:50%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Refunds</div><div class="skeleton" style="height:20px;width:55%;margin:4px 0 3px"></div></div>
       </div>
 
       <div class="kpi-grid" id="kpi-grid">
@@ -857,10 +857,13 @@ function renderKPIs() {
       const grossSales = (o.line_items||[]).reduce((ls, item) => {
         return ls + parseFloat(item.price||0) * (item.quantity||1);
       }, 0);
-      // Usar total_discounts (igual que Shopify Analytics)
-      const discounts = parseFloat(o.total_discounts||0);
+      // Usar discount_allocations por line item (= Shopify "line item discounts")
+      // Excluye order-level discounts y seller discounts de TikTok
+      const lineItemDiscounts = (o.line_items||[]).reduce((ls, item) => {
+        return ls + (item.discount_allocations||[]).reduce((ds, d) => ds + parseFloat(d.amount||0), 0);
+      }, 0);
       const returns = parseFloat(o.total_refunded||0);
-      return s + grossSales - discounts - returns;
+      return s + grossSales - lineItemDiscounts - returns;
     }, 0);
   };
 
@@ -889,13 +892,14 @@ function renderKPIs() {
   const shippingIncome = orders.reduce((s,o) => {
     return s + (o.shipping_lines||[]).reduce((ss,l) => ss + parseFloat(l.price||0), 0);
   }, 0);
-  const discounts = orders.reduce((s,o) => s + parseFloat(o.total_discounts||0), 0);
-  const taxes = orders.reduce((s,o) => s + parseFloat(o.total_tax||0), 0);
-  const returnedItems = orders.reduce((s,o) => {
-    return s + (o.refunds||[]).reduce((rs,r) => {
-      return rs + (r.refund_line_items||[]).reduce((rls,rl) => rls + parseFloat(rl.subtotal||0), 0);
+  // Line item discounts (igual que Shopify Analytics — excluye order-level y seller discounts)
+  const discounts = orders.reduce((s,o) => {
+    return s + (o.line_items||[]).reduce((ls, item) => {
+      return ls + (item.discount_allocations||[]).reduce((ds, d) => ds + parseFloat(d.amount||0), 0);
     }, 0);
   }, 0);
+  const taxes = orders.reduce((s,o) => s + parseFloat(o.total_tax||0), 0);
+  const returnedItems = refundAmt;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(netRevenue)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>${fmtChange(total, prevTotal)}</div>
