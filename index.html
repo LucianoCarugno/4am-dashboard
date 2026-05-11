@@ -849,8 +849,16 @@ function renderKPIs() {
 
   const total = calcNetSales(orders);
   const prevTotal = calcNetSales(prev);
-  const refunded = orders.filter(o => o.financial_status === 'refunded');
-  const refundAmt = refunded.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
+  // Calcular refunds desde refund_line_items de todas las ordenes
+  const refundAmt = orders.reduce((s, o) => {
+    const orderRefunds = (o.refunds||[]).reduce((rs, r) => {
+      return rs + (r.refund_line_items||[]).reduce((rls, rl) => {
+        return rls + parseFloat(rl.subtotal||0);
+      }, 0);
+    }, 0);
+    return s + orderRefunds;
+  }, 0);
+  const refunded = orders.filter(o => o.financial_status === 'refunded' || o.financial_status === 'partially refunded');
   const netRevenue = total;
   const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
   const paid = orders.filter(o => o.financial_status === 'paid').length;
