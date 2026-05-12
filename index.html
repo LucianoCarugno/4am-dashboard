@@ -5,97 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>4AM Skin — Analytics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* Howard light executive palette */
-  --bg:#F6F4EF; --s0:#FFFFFF; --s1:#FFFFFF; --s2:#F1EEE7; --s3:#E8E4DA; --s4:#DDD7CA;
-  --b0:rgba(28,25,20,0.04); --b1:rgba(28,25,20,0.08); --b2:rgba(28,25,20,0.12); --b3:rgba(28,25,20,0.18);
-  --t0:#1A1814; --t1:#3D3A33; --t2:#6B6659; --t3:#9E988A;
-  /* Accents */
-  --teal:#0F766E; --teal-dim:rgba(15,118,110,0.10); --teal-ring:rgba(15,118,110,0.25); --teal-glow:rgba(15,118,110,0.06);
-  --emerald:#15803D; --emerald-dim:rgba(21,128,61,0.10); --emerald-ring:rgba(21,128,61,0.25);
-  --amber:#B45309; --amber-dim:rgba(180,83,9,0.10); --amber-ring:rgba(180,83,9,0.25);
-  --rose:#B91C1C; --rose-dim:rgba(185,28,28,0.10); --rose-ring:rgba(185,28,28,0.25);
-  --violet:#6D28D9; --violet-dim:rgba(109,40,217,0.10); --violet-ring:rgba(109,40,217,0.25);
-  --blue:#1D4ED8; --blue-dim:rgba(29,78,216,0.10);
-  /* Legacy aliases (so any hard-coded var refs in render code still work) */
-  --accent:var(--teal); --accent-dim:var(--teal-dim); --red:var(--rose);
-  --panel:#FFFFFF; --panel2:var(--s2); --panel3:var(--s3); --border:var(--b1); --border2:var(--b2);
-  --text:var(--t0); --text2:var(--t2); --text3:var(--t3);
-  --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif;
-  --shadow:0 1px 4px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
-  --shadow-md:0 2px 8px rgba(0,0,0,0.08),0 8px 24px rgba(0,0,0,0.05);
-  --sidebar:212px;
-  --r1:4px; --r2:8px; --r3:12px;
+  --bg: #0a0a0f;
+  --panel: #111118;
+  --panel2: #17171f;
+  --panel3: #1e1e28;
+  --border: #1f1f2e;
+  --border2: #28283a;
+  --accent: #00d4a8;
+  --accent-dim: rgba(0,212,168,0.12);
+  --accent-glow: rgba(0,212,168,0.06);
+  --red: #f04e6a;
+  --blue: #4f8ef7;
+  --amber: #f5a623;
+  --purple: #8b6ef7;
+  --green: #00d4a8;
+  --text: #e8e8f0;
+  --text2: #8888a0;
+  --text3: #44445a;
+  --mono: 'Roboto Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --sidebar: 200px;
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-html { font-size: 13px; -webkit-font-smoothing: antialiased; color-scheme: light; }
-body { background: var(--bg); color: var(--t0); font-family: var(--sans); min-height: 100vh; line-height: 1.55; }
+html { font-size: 13px; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
 
 /* ── SIDEBAR ── */
 .sidebar {
   position: fixed; left:0; top:0; bottom:0; width: var(--sidebar);
-  background: #FFFFFF; border-right: 1px solid var(--b1);
+  background: var(--panel); border-right: 1px solid var(--border);
   display: flex; flex-direction: column; z-index: 100;
-  box-shadow: 1px 0 0 rgba(0,0,0,0.02);
 }
 .sidebar-logo {
-  padding: 18px 18px 16px;
-  border-bottom: 1px solid var(--b1);
-  display: flex; align-items: center; gap: 11px;
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
 }
-.logo-mark-icon {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: var(--teal); color: #fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size: 11px; font-weight: 800; letter-spacing: .5px;
-  box-shadow: 0 2px 8px rgba(15,118,110,0.30); position: relative;
-  flex-shrink: 0;
-}
-.logo-mark-icon::after{content:'';position:absolute;inset:0;border-radius:10px;background:linear-gradient(135deg,rgba(255,255,255,0.22) 0%,transparent 55%);}
-.logo-text { display:flex; flex-direction:column; gap:2px; min-width:0;}
 .logo-mark {
-  font-size: 14px; font-weight: 700; color: var(--t0);
-  letter-spacing: -.3px; line-height: 1.1;
+  font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--text); line-height: 1.2;
 }
 .logo-sub {
-  font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
-  color: var(--t3); font-weight: 600;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text3); margin-top: 3px; font-weight: 400;
 }
-.nav-group { padding: 18px 0 4px; }
+.nav-group { padding: 16px 0 4px; }
 .nav-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
-  color: var(--t3); padding: 0 18px 8px;
+  font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text3); padding: 0 18px 6px;
 }
 .nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 18px; cursor: pointer; transition: all 0.12s;
-  color: var(--t2); font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 18px; cursor: pointer; transition: all 0.12s;
+  color: var(--text2); font-size: 12px; font-weight: 500;
   border-left: 2px solid transparent; margin: 1px 0;
 }
-.nav-item:hover { color: var(--t0); background: var(--s2); }
-.nav-item.active { color: var(--teal); border-left-color: var(--teal); background: var(--teal-dim); font-weight: 600; }
-.nav-icon { font-size: 11px; width: 14px; opacity: 0.6; }
-.nav-item.active .nav-icon { opacity: 1; }
+.nav-item:hover { color: var(--text); background: var(--panel2); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-glow); }
+.nav-icon { font-size: 13px; width: 16px; opacity: 0.7; }
 .sidebar-footer {
   margin-top: auto; padding: 14px 18px;
-  border-top: 1px solid var(--b1);
+  border-top: 1px solid var(--border);
 }
-.store-status { display: flex; align-items: center; gap: 9px; }
+.store-status { display: flex; align-items: center; gap: 8px; }
 .status-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: var(--t3); flex-shrink: 0;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0;
   transition: all 0.3s;
 }
-.status-dot.live { background: var(--emerald); box-shadow: 0 0 0 3px rgba(21,128,61,0.18); }
-.status-dot.live::before {
-  content:''; position:absolute; width:8px; height:8px; border-radius:50%;
-  background: var(--emerald); animation: pulse 2.4s infinite;
-}
-@keyframes pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(21,128,61,0.4);} 50%{ box-shadow:0 0 0 6px rgba(21,128,61,0);} }
+.status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .store-info { overflow: hidden; }
-.store-name { font-size: 12px; font-weight: 600; color: var(--t0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.store-status-text { font-size: 10px; color: var(--t3); font-family: var(--mono); }
+.store-name { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.store-status-text { font-size: 9px; color: var(--text3); font-family: var(--mono); }
 
 /* ── MAIN ── */
 .main { margin-left: var(--sidebar); min-height: 100vh; }
@@ -103,95 +86,81 @@ body { background: var(--bg); color: var(--t0); font-family: var(--sans); min-he
 /* ── TOPBAR ── */
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 28px; min-height: 60px;
-  border-bottom: 1px solid var(--b1);
-  background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  padding: 0 24px; height: 48px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.95); backdrop-filter: blur(8px);
   position: sticky; top: 0; z-index: 50;
-  gap: 16px; flex-wrap: wrap; row-gap: 10px;
 }
-.topbar-left { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; row-gap: 6px; flex: 1; min-width: 0; }
+.topbar-left { display: flex; align-items: center; gap: 4px; }
 .period-btn {
-  font-family: var(--sans); font-size: 11px; font-weight: 600;
-  padding: 6px 10px; border-radius: 6px; border: 1px solid transparent;
-  background: transparent; color: var(--t2); cursor: pointer; transition: all 0.12s;
-  letter-spacing: 0.02em; white-space: nowrap;
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  padding: 4px 10px; border-radius: 4px; border: 1px solid transparent;
+  background: transparent; color: var(--text3); cursor: pointer; transition: all 0.12s;
+  letter-spacing: 0.02em;
 }
-.period-btn:hover { color: var(--t0); background: var(--s2); }
-.period-btn.active { background: var(--teal-dim); color: var(--teal); border-color: var(--teal-ring); }
-.topbar-divider { width: 1px; height: 22px; background: var(--b2); margin: 0 4px; flex-shrink: 0; }
+.period-btn:hover { color: var(--text2); background: var(--panel2); }
+.period-btn.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(0,212,168,0.2); }
+.topbar-divider { width: 1px; height: 16px; background: var(--border2); margin: 0 8px; }
 .custom-date {
-  font-family: var(--mono); font-size: 11px; padding: 6px 10px;
-  border-radius: 6px; border: 1px solid var(--b2);
-  background: #fff; color: var(--t1); cursor: pointer;
-  letter-spacing: .2px;
+  font-family: var(--mono); font-size: 10px; padding: 4px 8px;
+  border-radius: 4px; border: 1px solid var(--border2);
+  background: var(--panel2); color: var(--text2); cursor: pointer; color-scheme: dark;
 }
-.custom-date:hover { border-color: var(--b3); }
-.topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; row-gap: 8px; }
-#fetch-status { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 0.04em; font-weight: 500; }
-#orders-fetched { font-family: var(--mono); font-size: 10px; color: var(--t3); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+#fetch-status { font-family: var(--mono); font-size: 9px; color: var(--accent); letter-spacing: 0.05em; }
+#orders-fetched { font-family: var(--mono); font-size: 9px; color: var(--text3); }
 .refresh-btn {
-  font-family: var(--sans); font-size: 11px; font-weight: 600; padding: 7px 13px;
-  border-radius: 6px; border: 1px solid var(--b2);
-  background: #fff; color: var(--t1); cursor: pointer; transition: all 0.12s;
-  display: flex; align-items: center; gap: 6px;
-  box-shadow: var(--shadow);
+  font-family: var(--mono); font-size: 10px; padding: 5px 12px;
+  border-radius: 4px; border: 1px solid var(--border2);
+  background: var(--panel2); color: var(--text2); cursor: pointer; transition: all 0.12s;
+  display: flex; align-items: center; gap: 5px;
 }
-.refresh-btn:hover { color: var(--t0); border-color: var(--b3); background: var(--s2); }
+.refresh-btn:hover { color: var(--text); border-color: var(--border2); background: var(--panel3); }
 .refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.refresh-btn.primary { background: var(--teal); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(15,118,110,0.30); }
-.refresh-btn.primary:hover { background: #0B5F58; box-shadow: 0 4px 16px rgba(15,118,110,0.35); color: #fff; }
 
 /* ── LOADING BAR ── */
 #loading-bar {
-  position: fixed; top: 0; left: var(--sidebar); right: 0; height: 2px;
-  background: var(--teal); width: 0%; transition: width 0.3s; z-index: 200;
-  box-shadow: 0 0 6px rgba(15,118,110,0.5);
+  position: fixed; top: 0; left: var(--sidebar); right: 0; height: 1px;
+  background: var(--accent); width: 0%; transition: width 0.3s; z-index: 200;
 }
 
 /* ── CONTENT ── */
-.content { padding: 26px 28px 60px; }
+.content { padding: 24px; }
 
 /* ── PAGE HEADER ── */
-.page-header { margin-bottom: 22px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.page-title { font-size: 22px; font-weight: 700; color: var(--t0); letter-spacing: -0.5px; }
-.page-meta { font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .2px; }
+.page-header { margin-bottom: 20px; display: flex; align-items: baseline; justify-content: space-between; }
+.page-title { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+.page-meta { font-family: var(--mono); font-size: 9px; color: var(--text3); }
 
 /* ── ERROR ── */
 .error-banner {
-  background: var(--rose-dim); border: 1px solid var(--rose-ring);
-  border-radius: 8px; padding: 12px 16px; font-family: var(--sans); font-size: 12px;
-  color: var(--rose); margin-bottom: 16px; display: none; font-weight: 500;
+  background: rgba(240,78,106,0.06); border: 1px solid rgba(240,78,106,0.15);
+  border-radius: 6px; padding: 10px 14px; font-family: var(--mono); font-size: 10px;
+  color: var(--red); margin-bottom: 16px; display: none;
 }
 
 /* ── KPI GRID ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 18px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; margin-bottom: 20px; background: var(--border); border-radius: 8px; overflow: hidden; }
 .kpi-card {
-  background: #FFFFFF; padding: 18px 18px 16px;
-  border: 1px solid var(--b1); border-radius: 12px;
-  position: relative; transition: all 0.18s;
-  box-shadow: var(--shadow); overflow: hidden;
+  background: var(--panel); padding: 18px 20px;
+  position: relative; transition: background 0.15s;
 }
-.kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-.kpi-card::before {
-  content: ''; position: absolute; top:0; left:0; right:0; height: 3px;
-  background: var(--kpi-accent, var(--b2));
-  border-radius: 12px 12px 0 0;
-}
-.kpi-card:nth-child(1) { --kpi-accent: var(--teal); }
-.kpi-card:nth-child(2) { --kpi-accent: var(--emerald); }
-.kpi-card:nth-child(3) { --kpi-accent: var(--blue); }
-.kpi-card:nth-child(4) { --kpi-accent: var(--rose); }
-.kpi-card:nth-child(5) { --kpi-accent: var(--amber); }
-.kpi-card:nth-child(6) { --kpi-accent: var(--violet); }
-.kpi-card:nth-child(7) { --kpi-accent: var(--teal); }
-.kpi-card:nth-child(8) { --kpi-accent: var(--amber); }
+.kpi-card:hover { background: var(--panel2); }
 .kpi-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--t1); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
 }
-.kpi-label::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kpi-accent, var(--t3)); display: inline-block; flex-shrink: 0; }
-.kpi-value { font-size: 24px; font-weight: 700; letter-spacing: -0.6px; line-height: 1; margin-bottom: 6px; color: var(--t0); font-variant-numeric: tabular-nums; }
-.kpi-sub { font-family: var(--mono); font-size: 10px; color: var(--t2); letter-spacing: .2px; }
+.kpi-label::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: inline-block; }
+.kpi-card:nth-child(1) .kpi-label { color: var(--accent); }
+.kpi-card:nth-child(2) .kpi-label { color: var(--blue); }
+.kpi-card:nth-child(3) .kpi-label { color: var(--purple); }
+.kpi-card:nth-child(4) .kpi-label { color: var(--amber); }
+.kpi-card:nth-child(5) .kpi-label { color: #fb923c; }
+.kpi-card:nth-child(6) .kpi-label { color: var(--blue); }
+.kpi-card:nth-child(7) .kpi-label { color: #34d399; }
+.kpi-card:nth-child(8) .kpi-label { color: var(--purple); }
+.kpi-value { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 5px; color: var(--text); }
+.kpi-sub { font-family: var(--mono); font-size: 9px; color: var(--text2); }
 
 /* ── ROW LAYOUT ── */
 .row { display: grid; gap: 12px; margin-bottom: 12px; }
@@ -200,182 +169,166 @@ body { background: var(--bg); color: var(--t0); font-family: var(--sans); min-he
 
 /* ── PANEL CARD ── */
 .panel {
-  background: #FFFFFF; border: 1px solid var(--b1);
-  border-radius: 12px; overflow: hidden; box-shadow: var(--shadow);
-  transition: box-shadow .2s;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
 }
-.panel:hover { box-shadow: var(--shadow-md); }
 .panel-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-bottom: 1px solid var(--b1);
-  background: var(--s2);
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
 }
-.panel-title { font-size: 13px; font-weight: 700; color: var(--t0); letter-spacing: -.1px; }
-.panel-sub { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; letter-spacing: .2px; }
-.panel-body { padding: 18px 20px; }
-.chart-wrap { height: 180px; position: relative; }
-.chart-wrap-tall { height: 240px; position: relative; }
+.panel-title { font-size: 11px; font-weight: 600; color: var(--text); }
+.panel-sub { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 1px; }
+.panel-body { padding: 16px 18px; }
+.chart-wrap { height: 160px; position: relative; }
+.chart-wrap-tall { height: 220px; position: relative; }
 
 /* ── BREAKDOWN ── */
-.breakdown-list { display: flex; flex-direction: column; gap: 12px; }
+.breakdown-list { display: flex; flex-direction: column; gap: 10px; }
 .breakdown-item { }
-.breakdown-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; gap: 12px; }
-.breakdown-name { font-size: 12px; font-weight: 600; color: var(--t0); }
-.breakdown-meta { font-family: var(--mono); font-size: 10px; color: var(--t3); text-align: right; }
-.breakdown-meta span { color: var(--t1); font-weight: 600; }
-.bar-track { height: 4px; background: var(--s3); border-radius: 2px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 2px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+.breakdown-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.breakdown-name { font-size: 11px; font-weight: 500; color: var(--text); }
+.breakdown-meta { font-family: var(--mono); font-size: 9px; color: var(--text3); text-align: right; }
+.breakdown-meta span { color: var(--text2); }
+.bar-track { height: 3px; background: var(--panel3); border-radius: 2px; }
+.bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
 
 /* ── PRODUCT ROWS ── */
 .product-rows { display: flex; flex-direction: column; }
 .product-row {
-  display: flex; align-items: center; gap: 14px; padding: 11px 0;
-  border-bottom: 1px solid var(--b0);
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--border);
 }
 .product-row:last-child { border-bottom: none; }
-.product-rank { font-family: var(--mono); font-size: 10px; color: var(--t3); width: 18px; text-align: center; flex-shrink: 0; font-weight: 500; }
+.product-rank { font-family: var(--mono); font-size: 9px; color: var(--text3); width: 16px; text-align: center; flex-shrink: 0; }
 .product-info { flex: 1; min-width: 0; }
-.product-name { font-size: 12px; font-weight: 600; color: var(--t0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.product-units { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; }
-.product-rev { font-family: var(--mono); font-size: 12px; color: var(--teal); font-weight: 600; flex-shrink: 0; }
+.product-name { font-size: 11px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-units { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 1px; }
+.product-rev { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 500; flex-shrink: 0; }
 
 /* ── TABLE ── */
-.table-panel { background: #FFFFFF; border: 1px solid var(--b1); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+.table-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .table-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px; border-bottom: 1px solid var(--b1);
-  gap: 12px; flex-wrap: wrap; background: var(--s2);
+  padding: 12px 18px; border-bottom: 1px solid var(--border);
+  gap: 10px; flex-wrap: wrap;
 }
-.table-title-text { font-size: 13px; font-weight: 700; color: var(--t0); letter-spacing: -.1px; }
+.table-title-text { font-size: 11px; font-weight: 600; }
 .count-badge {
-  font-family: var(--mono); font-size: 10px; color: var(--t2); font-weight: 600;
-  background: #fff; border: 1px solid var(--b2);
-  padding: 3px 10px; border-radius: 12px;
+  font-family: var(--mono); font-size: 9px; color: var(--text3);
+  background: var(--panel2); border: 1px solid var(--border2);
+  padding: 2px 8px; border-radius: 3px;
 }
 .search-input {
-  font-family: var(--sans); font-size: 12px; padding: 7px 12px;
-  background: #fff; border: 1px solid var(--b2); border-radius: 6px;
-  color: var(--t0); outline: none; width: 240px; transition: all 0.15s;
+  font-family: var(--mono); font-size: 10px; padding: 5px 10px;
+  background: var(--panel2); border: 1px solid var(--border2); border-radius: 4px;
+  color: var(--text); outline: none; width: 200px; transition: border-color 0.15s;
 }
-.search-input:focus { border-color: var(--teal-ring); box-shadow: 0 0 0 3px var(--teal-dim); }
-.search-input::placeholder { color: var(--t3); }
-table { width: 100%; border-collapse: collapse; background: #fff; }
+.search-input:focus { border-color: rgba(0,212,168,0.3); }
+.search-input::placeholder { color: var(--text3); }
+table { width: 100%; border-collapse: collapse; }
 thead th {
-  font-family: var(--sans); font-size: 9px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.12em; color: #fff; padding: 11px 16px; text-align: left;
-  background: #1F2937; border-bottom: 1px solid #111827;
+  font-family: var(--mono); font-size: 9px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text3); padding: 8px 16px; text-align: left;
+  background: var(--panel2); border-bottom: 1px solid var(--border);
   cursor: pointer; user-select: none; white-space: nowrap;
 }
-thead th:hover { background: #2A3543; }
-thead th.sort-asc::after { content: ' ↑'; color: #5EEAD4; }
-thead th.sort-desc::after { content: ' ↓'; color: #5EEAD4; }
+thead th:hover { color: var(--text2); }
+thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
 tbody td {
-  padding: 11px 16px; font-size: 12px; color: var(--t1);
-  border-bottom: 1px solid var(--b0); vertical-align: middle;
-  font-family: var(--mono); font-size: 11.5px;
+  padding: 9px 16px; font-size: 11px;
+  border-bottom: 1px solid var(--border); vertical-align: middle;
 }
-tbody td:first-child { font-family: var(--sans); }
 tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: var(--s2); }
-.order-num { font-family: var(--mono) !important; font-size: 11px; color: var(--teal); font-weight: 600; }
-.customer-name { font-weight: 600; color: var(--t0) !important; }
+tbody tr:hover td { background: rgba(255,255,255,0.015); }
+.order-num { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+.customer-name { font-weight: 500; }
 .source-tag {
-  font-family: var(--sans); font-size: 9px; padding: 3px 8px;
-  border-radius: 12px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
-  display: inline-block;
+  font-family: var(--mono); font-size: 8px; padding: 2px 6px;
+  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
 }
-.source-tiktok { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-ring); }
-.source-web { background: var(--teal-dim); color: var(--teal); border: 1px solid var(--teal-ring); }
-.source-other { background: var(--violet-dim); color: var(--violet); border: 1px solid var(--violet-ring); }
+.source-tiktok { background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid rgba(255,255,255,0.08); }
+.source-web { background: rgba(79,142,247,0.1); color: var(--blue); border: 1px solid rgba(79,142,247,0.15); }
+.source-other { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,212,168,0.15); }
 .status-pill {
-  font-family: var(--sans); font-size: 9px; padding: 3px 8px;
-  border-radius: 12px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
-  display: inline-block;
+  font-family: var(--mono); font-size: 8px; padding: 2px 7px;
+  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
 }
-.status-pill::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-right: 4px; vertical-align: middle; }
-.s-paid { background: var(--emerald-dim); color: var(--emerald); }
-.s-pending { background: var(--amber-dim); color: var(--amber); }
-.s-refunded { background: var(--rose-dim); color: var(--rose); }
-.price { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--t0) !important; }
+.s-paid { background: rgba(0,212,168,0.08); color: var(--accent); border: 1px solid rgba(0,212,168,0.15); }
+.s-pending { background: rgba(245,166,35,0.08); color: var(--amber); border: 1px solid rgba(245,166,35,0.15); }
+.s-refunded { background: rgba(240,78,106,0.08); color: var(--red); border: 1px solid rgba(240,78,106,0.15); }
+.price { font-family: var(--mono); font-size: 11px; font-weight: 500; }
 .pagination {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 20px; border-top: 1px solid var(--b1);
-  background: var(--s2);
+  padding: 10px 16px; border-top: 1px solid var(--border);
 }
 .page-btn {
-  font-family: var(--sans); font-size: 11px; font-weight: 600; padding: 6px 12px;
-  border: 1px solid var(--b2); border-radius: 6px;
-  background: #fff; color: var(--t1); cursor: pointer; transition: all 0.12s;
+  font-family: var(--mono); font-size: 9px; padding: 4px 10px;
+  border: 1px solid var(--border2); border-radius: 4px;
+  background: var(--panel2); color: var(--text2); cursor: pointer; transition: all 0.12s;
 }
-.page-btn:hover:not(:disabled) { border-color: var(--teal-ring); color: var(--teal); background: var(--teal-dim); }
-.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.page-info { font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .2px; }
+.page-btn:hover:not(:disabled) { border-color: rgba(0,212,168,0.3); color: var(--accent); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.page-info { font-family: var(--mono); font-size: 9px; color: var(--text3); }
 
 /* ── SKELETON ── */
 .skeleton {
-  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
-  background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px;
+  background: linear-gradient(90deg, var(--panel2) 25%, var(--panel3) 50%, var(--panel2) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 3px;
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-.empty-state { text-align: center; padding: 56px; color: var(--t3); font-family: var(--mono); font-size: 11px; }
-.kpi-change { font-family: var(--mono); font-size: 10px; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 4px; font-weight: 600; letter-spacing: .2px; }
-.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 12px; }
-.stat-cell { background: #fff; padding: 14px 16px; border: 1px solid var(--b1); border-radius: 10px; box-shadow: var(--shadow); transition: box-shadow .2s; }
-.stat-cell:hover { box-shadow: var(--shadow-md); }
-.stat-cell-label { font-family: var(--sans); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--t1); margin-bottom: 6px; }
-.stat-cell-value { font-size: 17px; font-weight: 700; color: var(--t0); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.stat-cell-sub { font-family: var(--mono); font-size: 10px; color: var(--t2); margin-top: 4px; letter-spacing: .2px; }
-.kpi-change.up { background: var(--emerald-dim); color: var(--emerald); }
-.kpi-change.down { background: var(--rose-dim); color: var(--rose); }
+.empty-state { text-align: center; padding: 48px; color: var(--text3); font-family: var(--mono); font-size: 10px; }
+.kpi-change { font-family: var(--mono); font-size: 9px; margin-top: 4px; }
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.stat-cell { background: var(--panel); padding: 12px 16px; }
+.stat-cell-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+.stat-cell-value { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+.stat-cell-sub { font-family: var(--mono); font-size: 9px; color: var(--text2); margin-top: 2px; }
+.kpi-change.up { color: var(--accent); }
+.kpi-change.down { color: var(--red); }
 
 /* LOADING OVERLAY */
 .loading-overlay {
   position: fixed; inset: 0; left: var(--sidebar);
-  background: rgba(246,244,239,0.92); backdrop-filter: blur(8px);
+  background: rgba(10,10,15,0.85); backdrop-filter: blur(4px);
   z-index: 300; display: none;
   flex-direction: column; align-items: center; justify-content: center; gap: 20px;
 }
 .loading-overlay.active { display: flex; }
 .loading-spinner {
-  width: 44px; height: 44px; border-radius: 50%;
-  border: 2.5px solid var(--b2);
-  border-top-color: var(--teal);
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--t1); }
-.loading-pct { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--teal); letter-spacing: -1.5px; }
-.loading-bar-wrap { width: 260px; height: 4px; background: var(--s3); border-radius: 2px; overflow: hidden; }
-.loading-bar-fill { height: 100%; background: var(--teal); border-radius: 2px; transition: width 0.4s ease; width: 0%; box-shadow: 0 0 8px rgba(15,118,110,0.4); }
-.loading-sub { font-family: var(--mono); font-size: 11px; color: var(--t3); letter-spacing: .2px; }
-.loading-cancel { margin-top: 8px; font-family: var(--sans); font-size: 11px; font-weight: 600; padding: 8px 18px; border-radius: 6px; border: 1px solid var(--b2); background: #fff; color: var(--t2); cursor: pointer; transition: all .15s; }
-.loading-cancel:hover { border-color: var(--rose-ring); color: var(--rose); background: var(--rose-dim); }
+.loading-text { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+.loading-pct { font-family: var(--mono); font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: -1px; }
+.loading-bar-wrap { width: 220px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.loading-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; width: 0%; box-shadow: 0 0 8px var(--accent); }
+.loading-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); }
 
 /* ── SECTIONS ── */
 .tab-section { display: none; }
 .tab-section.active { display: block; }
 
 /* ── PRODUCT GRID ── */
-.product-catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 10px; padding: 18px; }
-.pc-card { background: #fff; border: 1px solid var(--b1); border-radius: 10px; padding: 14px; transition: all 0.15s; box-shadow: var(--shadow); }
-.pc-card:hover { border-color: var(--b3); box-shadow: var(--shadow-md); }
-.pc-name { font-size: 12px; font-weight: 700; color: var(--t0); margin-bottom: 4px; }
-.pc-type { font-family: var(--mono); font-size: 9px; color: var(--t3); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.product-catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 8px; padding: 16px; }
+.pc-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 14px; transition: border-color 0.15s; }
+.pc-card:hover { border-color: var(--border2); }
+.pc-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+.pc-type { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
 .pc-foot { display: flex; align-items: center; justify-content: space-between; }
-.pc-price { font-family: var(--mono); font-size: 12px; color: var(--teal); font-weight: 600; }
-.pc-vars { font-family: var(--mono); font-size: 10px; color: var(--t3); }
+.pc-price { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 500; }
+.pc-vars { font-family: var(--mono); font-size: 9px; color: var(--text3); }
 
-@media(max-width:1100px){
-  .kpi-grid { grid-template-columns: repeat(2,1fr); }
-  .stats-row { grid-template-columns: repeat(2,1fr); }
-  .row-2,.row-3 { grid-template-columns:1fr; }
-}
 @media(max-width:900px){
   .sidebar { display:none; }
   .main { margin-left:0; }
   #loading-bar { left:0; }
-  .loading-overlay { left: 0; }
-  .content { padding: 18px; }
+  .kpi-grid { grid-template-columns:1fr 1fr; }
+  .row-2,.row-3 { grid-template-columns:1fr; }
+  .content { padding:16px; }
 }
 </style>
 </head>
@@ -385,18 +338,15 @@ tbody tr:hover td { background: var(--s2); }
   <div class="loading-spinner"></div>
   <div class="loading-pct" id="loading-pct">0%</div>
   <div class="loading-bar-wrap"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
-  <div class="loading-text" id="loading-text">Connecting to Shopify…</div>
+  <div class="loading-text" id="loading-text">Connecting to Shopify...</div>
   <div class="loading-sub" id="loading-sub"></div>
-  <button class="loading-cancel" onclick="cancelLoad()">✕ Cancel</button>
+  <button onclick="cancelLoad()" style="margin-top:16px;font-family:var(--mono);font-size:10px;padding:6px 16px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;">✕ Cancel</button>
 </div>
 
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark-icon">4AM</div>
-    <div class="logo-text">
-      <div class="logo-mark">4AM Skin</div>
-      <div class="logo-sub">Analytics</div>
-    </div>
+    <div class="logo-mark">4AM<br>Skin</div>
+    <div class="logo-sub">Analytics</div>
   </div>
   <div class="nav-group">
     <div class="nav-label">Reports</div>
@@ -409,7 +359,7 @@ tbody tr:hover td { background: var(--s2); }
       <div class="status-dot" id="status-dot"></div>
       <div class="store-info">
         <div class="store-name">4amskin.com</div>
-        <div class="store-status-text" id="live-text">connecting…</div>
+        <div class="store-status-text" id="live-text">connecting...</div>
       </div>
     </div>
   </div>
@@ -431,13 +381,13 @@ tbody tr:hover td { background: var(--s2); }
       <div class="topbar-divider"></div>
       <input type="date" class="custom-date" id="date-from">
       <input type="date" class="custom-date" id="date-to">
-      <button class="period-btn" onclick="setCustomDate()" id="apply-btn" style="background:var(--teal-dim);color:var(--teal);border-color:var(--teal-ring)">Apply</button>
+      <button class="period-btn" onclick="setCustomDate()" id="apply-btn" style="border-color:var(--accent);color:var(--accent)">Apply</button>
     </div>
     <div class="topbar-right">
       <span id="fetch-status"></span>
       <span id="orders-fetched"></span>
-      <button class="refresh-btn primary" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
-      <button class="refresh-btn" id="clear-cache-btn" onclick="clearCache()" title="Clear cache and reload fresh data">⚡ Clear Cache</button>
+      <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+      <button class="refresh-btn" id="clear-cache-btn" onclick="clearCache()" title="Clear cache and reload fresh data" style="border-color:var(--amber);color:var(--amber)">⚡ Clear Cache</button>
     </div>
   </div>
 
@@ -448,17 +398,17 @@ tbody tr:hover td { background: var(--s2); }
     <div class="tab-section active" id="section-sales">
       <div class="page-header">
         <div class="page-title">Sales Overview</div>
-        <div class="page-meta" id="page-meta">Loading…</div>
+        <div class="page-meta" id="page-meta">Loading...</div>
       </div>
 
-      <!-- REVENUE BREAKDOWN -->
-      <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px">
-        <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Returns</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Shipping Income</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Taxes</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div></div>
+      <!-- REVENUE BREAKDOWN - lo primero que ve el CFO -->
+      <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px">
+        <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:20px;width:70%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Returns</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="skeleton" style="height:20px;width:60%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Shipping Income</div><div class="skeleton" style="height:20px;width:55%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Taxes</div><div class="skeleton" style="height:20px;width:50%;margin:4px 0 3px"></div></div>
       </div>
 
       <div class="kpi-grid" id="kpi-grid">
@@ -478,8 +428,8 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header"><div><div class="panel-title">Channels</div><div class="panel-sub">Order source</div></div></div>
           <div class="panel-body"><div class="breakdown-list" id="channel-breakdown">
-            <div class="skeleton" style="height:40px;border-radius:6px"></div>
-            <div class="skeleton" style="height:40px;border-radius:6px;margin-top:10px"></div>
+            <div class="skeleton" style="height:36px;border-radius:4px"></div>
+            <div class="skeleton" style="height:36px;border-radius:4px;margin-top:8px"></div>
           </div></div>
         </div>
       </div>
@@ -488,17 +438,17 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header"><div><div class="panel-title">Top Products</div><div class="panel-sub">By revenue in period</div></div></div>
           <div class="panel-body"><div class="product-rows" id="top-products">
-            <div class="skeleton" style="height:36px;border-radius:6px;margin-bottom:8px"></div>
-            <div class="skeleton" style="height:36px;border-radius:6px;margin-bottom:8px"></div>
-            <div class="skeleton" style="height:36px;border-radius:6px"></div>
+            <div class="skeleton" style="height:32px;border-radius:4px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:32px;border-radius:4px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:32px;border-radius:4px"></div>
           </div></div>
         </div>
         <div class="panel">
           <div class="panel-header"><div><div class="panel-title">Order Insights</div><div class="panel-sub">Status & weekly patterns</div></div></div>
           <div class="panel-body">
-            <div class="breakdown-list" id="status-breakdown" style="margin-bottom:18px"></div>
-            <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:10px">Revenue by day of week</div>
-            <div style="height:90px"><canvas id="dow-chart"></canvas></div>
+            <div class="breakdown-list" id="status-breakdown" style="margin-bottom:16px"></div>
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:8px">Revenue by day of week</div>
+            <div style="height:80px"><canvas id="dow-chart"></canvas></div>
           </div>
         </div>
       </div>
@@ -509,10 +459,10 @@ tbody tr:hover td { background: var(--s2); }
       <div class="table-panel">
         <div class="table-header">
           <div class="table-title-text">Orders</div>
-          <input type="text" class="search-input" placeholder="Search order, customer…" oninput="filterOrders(this.value)" id="order-search">
+          <input type="text" class="search-input" placeholder="Search order, customer..." oninput="filterOrders(this.value)" id="order-search">
           <div class="count-badge" id="orders-badge">—</div>
         </div>
-        <div id="orders-wrap"><div class="empty-state">Loading orders…</div></div>
+        <div id="orders-wrap"><div class="empty-state">Loading orders...</div></div>
       </div>
     </div>
 
@@ -557,11 +507,11 @@ tbody tr:hover td { background: var(--s2); }
       <div class="row row-2" style="margin-bottom:12px">
         <div class="panel">
           <div class="panel-header"><div><div class="panel-title">Top Cities</div><div class="panel-sub">Customers by location</div></div></div>
-          <div class="panel-body"><div class="breakdown-list" id="geo-breakdown"><div class="skeleton" style="height:36px;border-radius:6px"></div></div></div>
+          <div class="panel-body"><div class="breakdown-list" id="geo-breakdown"><div class="skeleton" style="height:32px;border-radius:4px"></div></div></div>
         </div>
         <div class="panel">
           <div class="panel-header"><div><div class="panel-title">Top Customers</div><div class="panel-sub">By lifetime value</div></div></div>
-          <div class="panel-body"><div class="product-rows" id="top-customers-list"><div class="skeleton" style="height:36px;border-radius:6px"></div></div></div>
+          <div class="panel-body"><div class="product-rows" id="top-customers-list"><div class="skeleton" style="height:32px;border-radius:4px"></div></div></div>
         </div>
       </div>
       <div class="table-panel">
@@ -569,7 +519,7 @@ tbody tr:hover td { background: var(--s2); }
           <div class="table-title-text">All Customers</div>
           <div class="count-badge" id="customers-badge">—</div>
         </div>
-        <div id="customers-wrap"><div class="empty-state">Loading…</div></div>
+        <div id="customers-wrap"><div class="empty-state">Loading...</div></div>
       </div>
     </div>
   </div>
@@ -586,34 +536,17 @@ let isLoading = false, currentAbortController = null;
 let currentPage = 1, sortCol = null, sortDir = 1, searchTerm = '';
 let revenueChart = null;
 
-// Chart palette — Howard light executive
-const PALETTE = {
-  teal:    '#0F766E',
-  emerald: '#15803D',
-  amber:   '#B45309',
-  rose:    '#B91C1C',
-  violet:  '#6D28D9',
-  blue:    '#1D4ED8',
-  text:    '#3D3A33',
-  axis:    '#9E988A',
-  grid:    'rgba(28,25,20,0.07)',
-  cardBg:  '#FFFFFF',
-  cardBorder: 'rgba(28,25,20,0.10)',
-};
-const CHART_COLORS = ['#0F766E','#B45309','#1D4ED8','#6D28D9','#15803D','#B91C1C','#0E7490','#A16207','#7C3AED','#BE185D'];
-
-Chart.defaults.font.family = "DM Sans, sans-serif";
-Chart.defaults.color = PALETTE.axis;
+Chart.defaults.font.family = 'Roboto Mono';
+Chart.defaults.color = '#44445a';
 const CHART_OPTS = {
   tooltip: {
-    backgroundColor: PALETTE.cardBg, borderColor: PALETTE.cardBorder, borderWidth: 1,
-    titleColor: PALETTE.text, bodyColor: '#1A1814',
-    titleFont: { family: 'DM Mono', size: 10, weight: '600' },
-    bodyFont:  { family: 'DM Mono', size: 11, weight: '500' },
-    padding: 10, cornerRadius: 6, displayColors: false,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+    backgroundColor: '#17171f', borderColor: '#1f1f2e', borderWidth: 1,
+    titleColor: '#8888a0', bodyColor: '#e8e8f0',
+    titleFont: { family: 'Roboto Mono', size: 9 },
+    bodyFont: { family: 'Roboto Mono', size: 11 }, padding: 10,
   }
 };
+
 
 // Devuelve YYYY-MM-DD en Eastern Time
 function getPeriodKey(fromDate, toDate) {
@@ -631,14 +564,17 @@ function getPeriodKey(fromDate, toDate) {
   if (fromDate === offset(90) && toDate === today) return '90d';
   if (fromDate === `${year}-01-01` && toDate === today) return 'ytd';
   if (fromDate === offset(365) && toDate === today) return '1y';
+  // This Month
   const thisMonthStart = `${year}-${today.split('-')[1]}-01`;
   if (fromDate === thisMonthStart && toDate === today) return 'this_month';
+  // Last Month
   const d = new Date(today + 'T12:00:00Z');
   const firstOfThisMonth = new Date(d.getFullYear(), d.getMonth(), 1);
   const lastOfLastMonth = new Date(firstOfThisMonth - 1);
   const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
   const fmt = dt => dt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   if (fromDate === fmt(firstOfLastMonth) && toDate === fmt(lastOfLastMonth)) return 'last_month';
+  // Last quarter
   const dq = new Date(today + 'T12:00:00Z');
   const currentQ = Math.floor(dq.getMonth() / 3);
   const yr = dq.getFullYear();
@@ -652,7 +588,7 @@ function getPeriodKey(fromDate, toDate) {
 
 function todayET() {
   const now = new Date();
-  return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // en-CA = YYYY-MM-DD
 }
 function offsetDaysET(days) {
   const now = new Date();
@@ -680,10 +616,10 @@ function setCustomDate() {
 function setYTD(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const to = new Date();
-  const from = new Date(to.getFullYear(), 0, 1);
-  document.getElementById('date-to').value = to.toISOString().split('T')[0];
-  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  const today = todayET();
+  const year = today.split('-')[0];
+  document.getElementById('date-to').value = today;
+  document.getElementById('date-from').value = `${year}-01-01`;
   loadAll();
 }
 function setThisMonth(btn) {
@@ -701,12 +637,14 @@ function setLastMonth(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const today = new Date(todayET() + 'T12:00:00Z');
-  const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const lastOfLastMonth = new Date(firstOfThisMonth - 1);
-  const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+  const year = today.getFullYear();
+  const month = today.getMonth(); // 0-indexed, current month
+  // Last month: month - 1
+  const lastMonthStart = new Date(year, month - 1, 1);
+  const lastMonthEnd = new Date(year, month, 0); // day 0 = last day of previous month
   const fmt = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  document.getElementById('date-from').value = fmt(firstOfLastMonth);
-  document.getElementById('date-to').value = fmt(lastOfLastMonth);
+  document.getElementById('date-from').value = fmt(lastMonthStart);
+  document.getElementById('date-to').value = fmt(lastMonthEnd);
   loadAll();
 }
 
@@ -716,14 +654,15 @@ function setLastQuarter(btn) {
   const today = new Date(todayET() + 'T12:00:00Z');
   const currentQuarter = Math.floor(today.getMonth() / 3);
   const year = today.getFullYear();
-  let qStart, qEnd;
+  let qStartMonth, qYear;
   if (currentQuarter === 0) {
-    qStart = new Date(year - 1, 9, 1);
-    qEnd = new Date(year - 1, 11, 31);
+    // Estamos en Q1 → last quarter = Q4 del año anterior (oct-dic)
+    qStartMonth = 9; qYear = year - 1;
   } else {
-    qStart = new Date(year, (currentQuarter - 1) * 3, 1);
-    qEnd = new Date(year, currentQuarter * 3, 0);
+    qStartMonth = (currentQuarter - 1) * 3; qYear = year;
   }
+  const qStart = new Date(qYear, qStartMonth, 1);
+  const qEnd = new Date(qYear, qStartMonth + 3, 0); // ultimo dia del trimestre
   const fmt = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   document.getElementById('date-from').value = fmt(qStart);
   document.getElementById('date-to').value = fmt(qEnd);
@@ -759,7 +698,7 @@ function setProgress(pct) {
 function showError(msg) { const el = document.getElementById('error-banner'); el.style.display = 'block'; el.textContent = '⚠ ' + msg; }
 async function clearCache() {
   const btn = document.getElementById('clear-cache-btn');
-  btn.textContent = '⚡ Clearing…';
+  btn.textContent = '⚡ Clearing...';
   btn.disabled = true;
   try {
     await Promise.all(['today','7d','30d','90d','ytd'].map(p =>
@@ -798,9 +737,10 @@ function setFetchStatus(msg) {
   document.getElementById('fetch-status').textContent = msg;
   if (msg) {
     document.getElementById('loading-sub').textContent = msg;
+    // Update loading text with order count
     const match = msg.match(/(\d+)/);
     if (match) {
-      document.getElementById('loading-text').textContent = `Fetching orders… ${parseInt(match[1]).toLocaleString()} loaded`;
+      document.getElementById('loading-text').textContent = `Fetching orders... ${parseInt(match[1]).toLocaleString()} loaded`;
     }
   }
 }
@@ -829,9 +769,12 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     } catch(e) { return []; }
   }
 
+  // fromMs no se usa para early exit — Shopify ya filtra por fecha en el primer request
+  const fromMs = 0;
   const firstParams = new URLSearchParams();
   firstParams.set('limit', '250'); firstParams.set('status', 'any');
-  // Use Eastern Time so it matches the Shopify store's timezone
+  // Usar Eastern Time (-05:00 EST) para que coincida con el timezone de la tienda en Shopify
+  // Esto evita que ordenes de las primeras horas UTC se cuenten en el dia anterior ET
   const etOffset = (() => {
     const etStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'shortOffset' });
     const match = etStr.match(/GMT([+-])(\d+)/);
@@ -846,16 +789,17 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     try {
       const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${firstParams}`, { signal });
       if (res.ok) { firstData = await res.json(); break; }
-      setFetchStatus(`connecting… (${retry+1}/5)`);
+      setFetchStatus(`connecting... (${retry+1}/5)`);
       await new Promise(r => setTimeout(r, 1000 * (retry + 1)));
     } catch(e) {
       if (e.name === 'AbortError') return results;
-      setFetchStatus(`connecting… (${retry+1}/5)`);
+      setFetchStatus(`connecting... (${retry+1}/5)`);
       await new Promise(r => setTimeout(r, 1000 * (retry + 1)));
     }
   }
   if (!firstData) return results;
 
+  // Cache hit — todas las ordenes vienen de una sola vez
   if (firstData._cached === true) {
     const cachedOrders = firstData[key] || [];
     setFetchStatus(`loaded from cache · ${cachedOrders.length} orders`);
@@ -865,9 +809,9 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
 
   const firstItems = firstData[key] || [];
   results.push(...firstItems);
-  setFetchStatus(`loading… ${results.length}`);
+  setFetchStatus(`loading... ${results.length}`);
 
-  // Pagination with cursor (GraphQL) or page_info (REST)
+  // Paginacion con cursor (GraphQL) o page_info (REST)
   let nextCursor = firstData._cursor || parseNextPageInfo(firstData._link);
   let useGraphQL = !!firstData._cursor;
 
@@ -889,14 +833,14 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
       try {
         const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
         if (res.ok) { data = await res.json(); break; }
-        setFetchStatus(`retrying… (${retries+1}/5)`);
+        setFetchStatus(`retrying... (${retries+1}/5)`);
         await new Promise(r => setTimeout(r, 1000 * (retries + 1)));
         retries++;
       } catch(e) {
         if (e.name === 'AbortError') return results;
         retries++;
         if (retries >= 5) break;
-        setFetchStatus(`retrying… (${retries}/5)`);
+        setFetchStatus(`retrying... (${retries}/5)`);
         await new Promise(r => setTimeout(r, 1000 * retries));
       }
     }
@@ -905,7 +849,7 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
 
     const items = data[key] || [];
     results.push(...items);
-    setFetchStatus(`loading… ${results.length}`);
+    setFetchStatus(`loading... ${results.length}`);
     if (results.length % 500 === 0) { filteredOrders = [...results]; renderAll(); }
     nextCursor = data._cursor || parseNextPageInfo(data._link);
     if (!nextCursor || items.length === 0) break;
@@ -919,12 +863,12 @@ async function loadAll() {
   const signal = currentAbortController.signal;
   isLoading = true;
   const btn = document.getElementById('refresh-btn');
-  btn.disabled = true; btn.textContent = '↻ Loading…';
-  setStatus(false, 'syncing…');
+  btn.disabled = true; btn.textContent = '↻ Loading...';
+  setStatus(false, 'syncing...');
   setProgress(10); setFetchStatus('');
   document.getElementById('error-banner').style.display = 'none';
   document.getElementById('loading-overlay').classList.add('active');
-  document.getElementById('loading-text').textContent = 'Fetching orders from Shopify…';
+  document.getElementById('loading-text').textContent = 'Fetching orders from Shopify...';
   document.getElementById('loading-sub').textContent = '';
   document.querySelectorAll('.period-btn, .custom-date').forEach(b => b.disabled = true);
   const fromDate = document.getElementById('date-from').value;
@@ -934,6 +878,7 @@ async function loadAll() {
     if (signal.aborted) return;
     setProgress(55);
 
+    // Guardar en cache si es un período conocido
     const periodKey = getPeriodKey(fromDate, toDate);
     if (periodKey && allOrders.length > 0) {
       fetch(`${WORKER}/save-cache`, {
@@ -942,7 +887,7 @@ async function loadAll() {
         body: JSON.stringify({ period: periodKey, orders: allOrders, from: fromDate, to: toDate })
       }).catch(e => console.warn('Cache save failed:', e.message));
     }
-    document.getElementById('loading-text').textContent = 'Loading products & customers…';
+    document.getElementById('loading-text').textContent = 'Loading products & customers...';
     allProducts = await fetchAllPaginated('products', 'products', null, null, signal);
     setProgress(75);
     allCustomers = await fetchAllPaginated('customers', 'customers', null, null, signal);
@@ -958,7 +903,7 @@ async function loadAll() {
   } catch(e) {
     if (e.name === 'AbortError') return;
     if (allOrders.length > 0) { filteredOrders = allOrders; renderAll(); setStatus(false, 'partial'); }
-    else { setStatus(false, 'error'); showError('Could not connect. Refresh to retry.'); }
+    else { setStatus(false, 'error'); showError('No se pudo conectar. Refrescá para reintentar.'); }
     setFetchStatus('');
   } finally {
     if (!signal.aborted) {
@@ -980,20 +925,24 @@ function renderStatsRow() {
   const orders = filteredOrders;
   if (!orders.length) return;
 
+  // Best day
   const byDay = {};
   orders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.total_price||0); });
   const bestDay = Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
   const bestDayLabel = bestDay ? new Date(bestDay[0]+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
 
+  // Best day of week
   const byDow = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
   const byDowCount = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
   orders.forEach(o => { const dow = new Date(o.created_at).getDay(); byDow[dow] += parseFloat(o.total_price||0); byDowCount[dow]++; });
   const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const bestDow = Object.entries(byDow).sort((a,b)=>b[1]-a[1])[0];
 
+  // Pending orders
   const pending = orders.filter(o => o.financial_status === 'pending').length;
   const pendingRev = orders.filter(o => o.financial_status === 'pending').reduce((s,o) => s+parseFloat(o.total_price||0),0);
 
+  // Orders per day avg
   const days = Object.keys(byDay).length || 1;
   const ordersPerDay = (orders.length / days).toFixed(1);
   const revenuePerDay = (orders.reduce((s,o)=>s+parseFloat(o.total_price||0),0) / days).toFixed(0);
@@ -1012,13 +961,13 @@ function renderStatsRow() {
       <div class="stat-cell-sub">avg $${fmt(bestDow ? byDow[bestDow[0]]/byDowCount[bestDow[0]] : 0)}/day</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-label">Avg / Day</div>
+      <div class="stat-cell-label">Avg/Day</div>
       <div class="stat-cell-value">${ordersPerDay} orders</div>
-      <div class="stat-cell-sub">$${fmt(revenuePerDay)} revenue / day</div>
+      <div class="stat-cell-sub">$${fmt(revenuePerDay)} revenue/day</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Pending</div>
-      <div class="stat-cell-value" style="color:${pending>0?'var(--amber)':'var(--t0)'}">${pending}</div>
+      <div class="stat-cell-value" style="color:${pending>0?'var(--amber)':'var(--text)'}">${pending}</div>
       <div class="stat-cell-sub">${pending>0?'$'+fmt(pendingRev)+' at risk':'all clear'}</div>
     </div>`;
 }
@@ -1044,12 +993,15 @@ function fmtChange(curr, prev) {
 function renderKPIs() {
   const orders = filteredOrders;
   const prev = getPreviousPeriodOrders();
-  // Net Sales = gross_sales - discounts - returns (matches Shopify Analytics)
+  // Net Sales = gross_sales - discounts - returns (igual que Shopify Analytics)
+  // gross_sales = precio original x cantidad por line item
   const calcNetSales = (orderList) => {
     return orderList.reduce((s, o) => {
       const grossSales = (o.line_items||[]).reduce((ls, item) => {
         return ls + parseFloat(item.price||0) * (item.quantity||1);
       }, 0);
+      // Usar discount_allocations por line item (= Shopify "line item discounts")
+      // Excluye order-level discounts y seller discounts de TikTok
       const lineItemDiscounts = (o.line_items||[]).reduce((ls, item) => {
         return ls + (item.discount_allocations||[]).reduce((ds, d) => ds + parseFloat(d.amount||0), 0);
       }, 0);
@@ -1060,6 +1012,7 @@ function renderKPIs() {
 
   const total = calcNetSales(orders);
   const prevTotal = calcNetSales(prev);
+  // Usar total_refunded del Worker (GraphQL totalRefundedSet)
   const refundAmt = orders.reduce((s, o) => s + parseFloat(o.total_refunded||0), 0);
   const refunded = orders.filter(o => o.financial_status === 'refunded' || o.financial_status === 'partially refunded');
   const netRevenue = total;
@@ -1075,19 +1028,21 @@ function renderKPIs() {
   const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
   const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
 
-  // Revenue breakdown
+  // Revenue breakdown completo
   const grossRevenue = orders.reduce((s,o) => {
     return s + (o.line_items||[]).reduce((ls,item) => ls + parseFloat(item.price||0)*(item.quantity||1), 0);
   }, 0);
   const shippingIncome = orders.reduce((s,o) => {
     return s + (o.shipping_lines||[]).reduce((ss,l) => ss + parseFloat(l.price||0), 0);
   }, 0);
+  // Line item discounts (igual que Shopify Analytics — excluye order-level y seller discounts)
   const discounts = orders.reduce((s,o) => {
     return s + (o.line_items||[]).reduce((ls, item) => {
       return ls + (item.discount_allocations||[]).reduce((ds, d) => ds + parseFloat(d.amount||0), 0);
     }, 0);
   }, 0);
   const taxes = orders.reduce((s,o) => s + parseFloat(o.total_tax||0), 0);
+  const returnedItems = refundAmt;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(netRevenue)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>${fmtChange(total, prevTotal)}</div>
@@ -1099,27 +1054,28 @@ function renderKPIs() {
     <div class="kpi-card"><div class="kpi-label">New Customers</div><div class="kpi-value">${newC}</div><div class="kpi-sub">${orders.length ? Math.round(newC/orders.length*100) : 0}% of orders</div></div>
     <div class="kpi-card"><div class="kpi-label">Returning Customers</div><div class="kpi-value">${returning}</div><div class="kpi-sub">${orders.length ? Math.round(returning/orders.length*100) : 0}% of orders</div></div>`;
 
+  // Revenue breakdown row
   const revEl = document.getElementById('revenue-breakdown');
   if (revEl) revEl.innerHTML = `
     <div class="stat-cell">
       <div class="stat-cell-label">Gross Sales</div>
       <div class="stat-cell-value">$${fmt(grossRevenue)}</div>
-      <div class="stat-cell-sub">items × price, no discounts</div>
+      <div class="stat-cell-sub">items × price, no descuentos</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Discounts</div>
-      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(discounts)}</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(discounts)}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Returns</div>
-      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(refundAmt)}</div>
+      <div class="stat-cell-value" style="color:var(--red)">-$${fmt(refundAmt)}</div>
       <div class="stat-cell-sub">${refunded.length} orders</div>
     </div>
-    <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)">
-      <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
-      <div class="stat-cell-value" style="color:var(--teal)">$${fmt(total)}</div>
-      <div class="stat-cell-sub">gross − discounts − returns</div>
+    <div class="stat-cell" style="background:rgba(0,212,168,0.05);border-left:2px solid var(--accent)">
+      <div class="stat-cell-label" style="color:var(--accent)">Net Sales</div>
+      <div class="stat-cell-value" style="color:var(--accent)">$${fmt(total)}</div>
+      <div class="stat-cell-sub">= gross - discounts - returns</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Shipping Income</div>
@@ -1141,12 +1097,13 @@ function renderRevenueChart() {
   const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
   const ctx = document.getElementById('revenue-chart').getContext('2d');
   if (revenueChart) revenueChart.destroy();
-  const grad = ctx.createLinearGradient(0,0,0,180);
-  grad.addColorStop(0,'rgba(15,118,110,0.18)'); grad.addColorStop(1,'rgba(15,118,110,0.0)');
+  const grad = ctx.createLinearGradient(0,0,0,160);
+  grad.addColorStop(0,'rgba(0,212,168,0.12)'); grad.addColorStop(1,'rgba(0,212,168,0.0)');
   revenueChart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets: [
-      { label: 'Revenue', data: values, borderColor: PALETTE.teal, borderWidth: 2, backgroundColor: grad, fill: true, tension: 0.3, pointRadius: sorted.length > 60 ? 0 : 3, pointBackgroundColor: PALETTE.teal, pointBorderColor: '#fff', pointBorderWidth: 1.5, order: 2 },
+      { label: 'Revenue', data: values, borderColor: '#00d4a8', borderWidth: 1.5, backgroundColor: grad, fill: true, tension: 0.3, pointRadius: sorted.length > 60 ? 0 : 2, pointBackgroundColor: '#00d4a8', pointBorderColor: '#0a0a0f', pointBorderWidth: 1.5, order: 2 },
+
     ]},
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -1155,8 +1112,8 @@ function renderRevenueChart() {
         tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ' $'+fmt(c.raw) } }
       },
       scales: {
-        x: { grid: { color: PALETTE.grid, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, maxTicksLimit: 8 } },
-        y: { grid: { color: PALETTE.grid, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, callback: v => '$'+fmt(v) } }
+        x: { grid: { color: 'rgba(31,31,46,0.8)' }, ticks: { color: '#44445a', font: { size: 8 }, maxTicksLimit: 8 } },
+        y: { grid: { color: 'rgba(31,31,46,0.8)' }, ticks: { color: '#44445a', font: { size: 8 }, callback: v => '$'+fmt(v) } }
       }
     }
   });
@@ -1172,7 +1129,7 @@ function renderChannelBreakdown() {
   const sorted = Object.entries(channels).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
   const totalRev = filteredOrders.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
-  const colors = { tiktok: PALETTE.amber, web: PALETTE.teal, other: PALETTE.violet };
+  const colors = { tiktok:'#f5a623', web:'#4f8ef7', other:'#00d4a8' };
   const meaningful = sorted.filter(([src]) => {
     if (/^\d+$/.test(src)) return false;
     if (src.includes('_checkout_') || src === 'shopify_draft_order' || src.includes('subscription_')) return false;
@@ -1182,12 +1139,12 @@ function renderChannelBreakdown() {
     const pct = total ? Math.round(count/total*100) : 0;
     const rev = channelRev[src] || 0;
     const revPct = totalRev ? Math.round(rev/totalRev*100) : 0;
-    const color = colors[src] || PALETTE.blue;
+    const color = colors[src] || '#8b6ef7';
     const label = src === 'tiktok' ? 'TikTok Shop' : src === 'web' ? 'Web / Direct' : src.length > 18 ? src.substring(0,16)+'…' : src;
     return `<div class="breakdown-item">
       <div class="breakdown-row"><span class="breakdown-name">${label}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${revPct}% rev</div></div>
       <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:4px;letter-spacing:.2px">${count} orders · ${pct}% of orders</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">${count} orders · ${pct}% of orders</div>
     </div>`;
   }).join('');
 }
@@ -1202,7 +1159,7 @@ function renderTopProducts() {
   const sorted = Object.entries(productRev).sort((a,b)=>b[1]-a[1]).slice(0,6);
   document.getElementById('top-products').innerHTML = sorted.length
     ? sorted.map(([title,rev],i) => `<div class="product-row"><div class="product-rank">${i+1}</div><div class="product-info"><div class="product-name">${title}</div><div class="product-units">${productUnits[title]} units</div></div><div class="product-rev">$${fmt(rev)}</div></div>`).join('')
-    : '<div style="color:var(--t3);font-size:11px;padding:10px 0;font-family:var(--mono)">No data</div>';
+    : '<div style="color:var(--text3);font-size:10px;padding:8px 0">No data</div>';
 }
 
 function renderStatusBreakdown() {
@@ -1210,11 +1167,11 @@ function renderStatusBreakdown() {
   filteredOrders.forEach(o => { const s = o.financial_status||'unknown'; statuses[s]=(statuses[s]||0)+1; });
   const sorted = Object.entries(statuses).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
-  const colors = { paid: PALETTE.emerald, pending: PALETTE.amber, refunded: PALETTE.rose, voided: PALETTE.violet };
+  const colors = { paid:'#00d4a8', pending:'#f5a623', refunded:'#f04e6a', voided:'#8b6ef7' };
   const el = document.getElementById('status-breakdown');
   if (el) el.innerHTML = sorted.map(([s,count]) => {
     const pct = total ? Math.round(count/total*100) : 0;
-    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name" style="text-transform:capitalize">${s}</span><div class="breakdown-meta"><span>${count}</span> · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[s]||PALETTE.blue}"></div></div></div>`;
+    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name" style="text-transform:capitalize">${s}</span><div class="breakdown-meta"><span>${count}</span> · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[s]||'#8888a0'}"></div></div></div>`;
   }).join('');
 
   // Day of week revenue chart
@@ -1229,13 +1186,13 @@ function renderStatusBreakdown() {
     type: 'bar',
     data: {
       labels: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-      datasets: [{ data: dowRev, backgroundColor: dowRev.map(v => v === maxRev ? PALETTE.teal : 'rgba(15,118,110,0.25)'), borderRadius: 4, borderSkipped: false }]
+      datasets: [{ data: dowRev, backgroundColor: dowRev.map(v => v === maxRev ? '#00d4a8' : 'rgba(0,212,168,0.2)'), borderRadius: 3, borderSkipped: false }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ' $'+fmt(c.raw) } } },
       scales: {
-        x: { grid: { display: false }, ticks: { color: PALETTE.axis, font: { size: 10, family: 'DM Sans', weight: '600' } } },
+        x: { grid: { display: false }, ticks: { color: '#44445a', font: { size: 8 } } },
         y: { display: false }
       }
     }
@@ -1278,10 +1235,10 @@ function renderOrdersTable() {
     return `<tr>
       <td class="order-num">#${o.order_number}</td>
       <td class="customer-name">${customer}</td>
-      <td style="color:var(--t2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--sans);font-size:11.5px">${item}${o.line_items?.length>1?` <span style="color:var(--t3)">+${o.line_items.length-1}</span>`:''}</td>
+      <td style="color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item}${o.line_items?.length>1?` <span style="color:var(--text3)">+${o.line_items.length-1}</span>`:''}</td>
       <td><span class="source-tag ${srcCls}">${srcLabel}</span></td>
       <td><span class="status-pill ${cls}">${o.financial_status}</span></td>
-      <td style="font-family:var(--mono);font-size:10.5px;color:var(--t2)">${fmtDate(o.created_at)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text2)">${fmtDate(o.created_at)}</td>
       <td class="price">$${fmt(o.total_price)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
@@ -1294,7 +1251,7 @@ function renderOrdersTable() {
 }
 
 function sortBy(col) { if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=-1;} renderOrdersTable(); }
-function goPage(p) { currentPage=p; renderOrdersTable(); window.scrollTo({top: document.querySelector('.table-panel').offsetTop - 80, behavior:'smooth'}); }
+function goPage(p) { currentPage=p; renderOrdersTable(); document.querySelector('.table-panel').scrollIntoView({behavior:'smooth',block:'start'}); }
 
 let prodRevChart=null, prodUnitsChart=null, dowChart=null;
 function renderProductsCatalog() {
@@ -1317,21 +1274,22 @@ function renderProductsCatalog() {
   document.getElementById('kpi-products').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Products Sold</div><div class="kpi-value">${uniqueProducts}</div><div class="kpi-sub">unique SKUs</div></div>
     <div class="kpi-card"><div class="kpi-label">Units Sold</div><div class="kpi-value">${totalUnits}</div><div class="kpi-sub">in period</div></div>
-    <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="kpi-value" style="font-size:16px;letter-spacing:-.2px">${topShort}</div><div class="kpi-sub">$${fmt(byRev[0]?.[1]||0)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg Units / Order</div><div class="kpi-value">${avgUnits}</div><div class="kpi-sub">per order</div></div>`;
+    <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="kpi-value" style="font-size:16px;letter-spacing:0">${topShort}</div><div class="kpi-sub">$${fmt(byRev[0]?.[1]||0)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Units/Order</div><div class="kpi-value">${avgUnits}</div><div class="kpi-sub">per order</div></div>`;
   document.getElementById('products-meta').textContent = `${uniqueProducts} products · ${totalUnits} units · ${document.getElementById('date-from').value} → ${document.getElementById('date-to').value}`;
 
   const top10Rev = byRev.slice(0,10);
   const top10Units = byUnits.slice(0,10);
+  const COLORS = ['#00d4a8','#4f8ef7','#8b6ef7','#f5a623','#f04e6a','#34d399','#f472b6','#facc15','#60a5fa','#c084fc'];
 
   const ctxR = document.getElementById('products-revenue-chart').getContext('2d');
   if (prodRevChart) prodRevChart.destroy();
   prodRevChart = new Chart(ctxR, {
     type: 'bar',
-    data: { labels: top10Rev.map(([t])=>t.length>22?t.substring(0,20)+'…':t), datasets: [{data:top10Rev.map(([,v])=>v),backgroundColor:CHART_COLORS,borderRadius:4,borderSkipped:false}] },
+    data: { labels: top10Rev.map(([t])=>t.length>22?t.substring(0,20)+'…':t), datasets: [{data:top10Rev.map(([,v])=>v),backgroundColor:COLORS,borderRadius:3,borderSkipped:false}] },
     options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
       plugins:{ legend:{display:false}, tooltip:{...CHART_OPTS.tooltip, callbacks:{label:c=>' $'+fmt(c.raw)}} },
-      scales: { x:{grid:{color:PALETTE.grid,drawBorder:false},ticks:{color:PALETTE.axis,font:{size:9,family:'DM Mono'},callback:v=>'$'+fmt(v)}}, y:{grid:{display:false,drawBorder:false},ticks:{color:PALETTE.text,font:{size:10,family:'DM Sans',weight:'500'}}} }
+      scales: { x:{grid:{color:'rgba(31,31,46,0.8)'},ticks:{color:'#44445a',font:{size:8},callback:v=>'$'+fmt(v)}}, y:{grid:{display:false},ticks:{color:'#8888a0',font:{size:9}}} }
     }
   });
 
@@ -1339,10 +1297,10 @@ function renderProductsCatalog() {
   if (prodUnitsChart) prodUnitsChart.destroy();
   prodUnitsChart = new Chart(ctxU, {
     type: 'bar',
-    data: { labels: top10Units.map(([t])=>t.length>22?t.substring(0,20)+'…':t), datasets: [{data:top10Units.map(([,v])=>v),backgroundColor:CHART_COLORS,borderRadius:4,borderSkipped:false}] },
+    data: { labels: top10Units.map(([t])=>t.length>22?t.substring(0,20)+'…':t), datasets: [{data:top10Units.map(([,v])=>v),backgroundColor:COLORS,borderRadius:3,borderSkipped:false}] },
     options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
       plugins:{ legend:{display:false}, tooltip:{...CHART_OPTS.tooltip, callbacks:{label:c=>' '+c.raw+' units'}} },
-      scales: { x:{grid:{color:PALETTE.grid,drawBorder:false},ticks:{color:PALETTE.axis,font:{size:9,family:'DM Mono'}}}, y:{grid:{display:false,drawBorder:false},ticks:{color:PALETTE.text,font:{size:10,family:'DM Sans',weight:'500'}}} }
+      scales: { x:{grid:{color:'rgba(31,31,46,0.8)'},ticks:{color:'#44445a',font:{size:8}}}, y:{grid:{display:false},ticks:{color:'#8888a0',font:{size:9}}} }
     }
   });
 
@@ -1350,14 +1308,15 @@ function renderProductsCatalog() {
     const pct = totalRev ? (rev/totalRev*100).toFixed(1) : 0;
     const units = productUnits[title]||0;
     const refunds = productRefunds[title]||0;
-    return `<div class="breakdown-item" style="margin-bottom:14px">
-      <div class="breakdown-row"><span class="breakdown-name">${title}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${units} units${refunds>0?` · <span style="color:var(--rose)">${refunds} refunds</span>`:''} · ${pct}%</div></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${CHART_COLORS[i%CHART_COLORS.length]}"></div></div>
+    return `<div class="breakdown-item" style="margin-bottom:12px">
+      <div class="breakdown-row"><span class="breakdown-name">${title}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${units} units${refunds>0?` · <span style="color:var(--red)">${refunds} refunds</span>`:''} · ${pct}%</div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div>
     </div>`;
   }).join('');
 }
 
 function renderCustomersTable() {
+  // Construir customers 100% desde las ordenes del periodo
   const customerMap = {};
   filteredOrders.forEach(o => {
     const email = o.customer?.email || ('guest_' + o.order_number);
@@ -1383,9 +1342,10 @@ function renderCustomersTable() {
     <div class="kpi-card"><div class="kpi-label">Avg Rev / Buyer</div><div class="kpi-value">$${fmt(avgRevPerCustomer)}</div><div class="kpi-sub">in period</div></div>
     <div class="kpi-card"><div class="kpi-label">Period Revenue</div><div class="kpi-value">$${fmt(totalRevenue)}</div><div class="kpi-sub">${filteredOrders.length} orders</div></div>`;
 
-  document.getElementById('customers-meta').textContent = customers.length + ' buyers · ' + repeatRate + '% repeat · avg $' + fmt(avgRevPerCustomer) + ' / buyer';
+  document.getElementById('customers-meta').textContent = customers.length + ' buyers · ' + repeatRate + '% repeat · avg $' + fmt(avgRevPerCustomer) + '/buyer';
   document.getElementById('customers-badge').textContent = customers.length + ' customers';
 
+  // Top cities
   const cities = {};
   customers.forEach(c => { if (c.city && c.city !== '—') cities[c.city] = (cities[c.city]||0)+1; });
   const sortedCities = Object.entries(cities).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -1393,20 +1353,22 @@ function renderCustomersTable() {
   const geoEl = document.getElementById('geo-breakdown');
   if (geoEl) geoEl.innerHTML = sortedCities.map(([city,count]) => {
     const pct = Math.round(count/customers.length*100);
-    return '<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">' + city + '</span><div class="breakdown-meta"><span>' + count + '</span> buyers · ' + pct + '%</div></div><div class="bar-track"><div class="bar-fill" style="width:' + Math.round(count/maxCity*100) + '%;background:' + PALETTE.blue + '"></div></div></div>';
+    return '<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">' + city + '</span><div class="breakdown-meta"><span>' + count + '</span> buyers · ' + pct + '%</div></div><div class="bar-track"><div class="bar-fill" style="width:' + Math.round(count/maxCity*100) + '%;background:#4f8ef7"></div></div></div>';
   }).join('');
 
+  // Top customers by revenue
   const topEl = document.getElementById('top-customers-list');
   if (topEl) topEl.innerHTML = customers.slice(0,6).map((c,i) =>
     '<div class="product-row"><div class="product-rank">' + (i+1) + '</div><div class="product-info"><div class="product-name">' + c.name + '</div><div class="product-units">' + c.orders + ' orders · ' + c.city + '</div></div><div class="product-rev">$' + fmt(c.revenue) + '</div></div>'
   ).join('');
 
+  // Full table
   document.getElementById('customers-wrap').innerHTML = customers.length
     ? '<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Revenue</th><th>Type</th></tr></thead><tbody>' +
       customers.map(c => {
         const isRepeat = c.orders > 1;
-        const emailDisplay = c.isTikTok ? '<span style="color:var(--t3)">TikTok Customer</span>' : c.email.startsWith('guest_') ? '<span style="color:var(--t3)">Guest</span>' : c.email;
-        return '<tr><td class="customer-name">' + c.name + '</td><td style="font-family:var(--mono);font-size:10px;color:var(--t2)">' + emailDisplay + '</td><td style="font-size:11.5px;color:var(--t2);font-family:var(--sans)">' + c.city + '</td><td style="font-family:var(--mono);font-size:11px">' + c.orders + '</td><td class="price">$' + fmt(c.revenue) + '</td><td><span class="status-pill ' + (isRepeat?'s-paid':'s-pending') + '">' + (isRepeat?'Repeat':'New') + '</span></td></tr>';
+        const emailDisplay = c.isTikTok ? '<span style="color:var(--text3)">TikTok Customer</span>' : c.email.startsWith('guest_') ? '<span style="color:var(--text3)">Guest</span>' : c.email;
+        return '<tr><td class="customer-name">' + c.name + '</td><td style="font-family:var(--mono);font-size:9px;color:var(--text2)">' + emailDisplay + '</td><td style="font-size:11px;color:var(--text2)">' + c.city + '</td><td style="font-family:var(--mono);font-size:10px">' + c.orders + '</td><td class="price">$' + fmt(c.revenue) + '</td><td><span class="status-pill ' + (isRepeat?'s-paid':'s-pending') + '">' + (isRepeat?'Repeat':'New') + '</span></td></tr>';
       }).join('') + '</tbody></table>'
     : '<div class="empty-state">No customers found.</div>';
 }
