@@ -559,6 +559,7 @@ function getPeriodKey(fromDate, toDate) {
   if (fromDate === offset(30) && toDate === today) return '30d';
   if (fromDate === offset(90) && toDate === today) return '90d';
   if (fromDate === `${year}-01-01` && toDate === today) return 'ytd';
+  if (fromDate === offset(365) && toDate === today) return '1y';
   return null;
 }
 
