@@ -374,6 +374,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.015); }
       <button class="period-btn" onclick="setPeriod(90,this)">90D</button>
       <button class="period-btn" onclick="setPeriod(365,this)">1Y</button>
       <button class="period-btn" onclick="setYTD(this)">YTD</button>
+      <button class="period-btn" onclick="setThisMonth(this)">This Month</button>
+      <button class="period-btn" onclick="setLastMonth(this)">Last Month</button>
+      <button class="period-btn" onclick="setLastQuarter(this)">Last Quarter</button>
+      <button class="period-btn" onclick="setLastYear(this)">Last Year</button>
       <div class="topbar-divider"></div>
       <input type="date" class="custom-date" id="date-from">
       <input type="date" class="custom-date" id="date-to">
@@ -560,6 +564,25 @@ function getPeriodKey(fromDate, toDate) {
   if (fromDate === offset(90) && toDate === today) return '90d';
   if (fromDate === `${year}-01-01` && toDate === today) return 'ytd';
   if (fromDate === offset(365) && toDate === today) return '1y';
+  // This Month
+  const thisMonthStart = `${year}-${today.split('-')[1]}-01`;
+  if (fromDate === thisMonthStart && toDate === today) return 'this_month';
+  // Last Month
+  const d = new Date(today + 'T12:00:00Z');
+  const firstOfThisMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  const lastOfLastMonth = new Date(firstOfThisMonth - 1);
+  const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+  const fmt = dt => dt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  if (fromDate === fmt(firstOfLastMonth) && toDate === fmt(lastOfLastMonth)) return 'last_month';
+  // Last quarter
+  const dq = new Date(today + 'T12:00:00Z');
+  const currentQ = Math.floor(dq.getMonth() / 3);
+  const yr = dq.getFullYear();
+  let qStart, qEnd;
+  if (currentQ === 0) { qStart = new Date(yr-1,9,1); qEnd = new Date(yr-1,11,31); }
+  else { qStart = new Date(yr,(currentQ-1)*3,1); qEnd = new Date(yr,currentQ*3,0); }
+  const fmtq = dt => dt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  if (fromDate === fmtq(qStart) && toDate === fmtq(qEnd)) return 'last_quarter';
   return null;
 }
 
@@ -599,6 +622,60 @@ function setYTD(btn) {
   document.getElementById('date-from').value = from.toISOString().split('T')[0];
   loadAll();
 }
+function setThisMonth(btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const today = todayET();
+  const year = today.split('-')[0];
+  const month = today.split('-')[1];
+  document.getElementById('date-from').value = `${year}-${month}-01`;
+  document.getElementById('date-to').value = today;
+  loadAll();
+}
+
+function setLastMonth(btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const today = new Date(todayET() + 'T12:00:00Z');
+  const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastOfLastMonth = new Date(firstOfThisMonth - 1);
+  const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+  const fmt = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  document.getElementById('date-from').value = fmt(firstOfLastMonth);
+  document.getElementById('date-to').value = fmt(lastOfLastMonth);
+  loadAll();
+}
+
+function setLastQuarter(btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const today = new Date(todayET() + 'T12:00:00Z');
+  const currentQuarter = Math.floor(today.getMonth() / 3);
+  const year = today.getFullYear();
+  let qStart, qEnd;
+  if (currentQuarter === 0) {
+    // Q1 actual → last quarter = Q4 del año anterior
+    qStart = new Date(year - 1, 9, 1);
+    qEnd = new Date(year - 1, 11, 31);
+  } else {
+    qStart = new Date(year, (currentQuarter - 1) * 3, 1);
+    qEnd = new Date(year, currentQuarter * 3, 0);
+  }
+  const fmt = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  document.getElementById('date-from').value = fmt(qStart);
+  document.getElementById('date-to').value = fmt(qEnd);
+  loadAll();
+}
+
+function setLastYear(btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const year = new Date().getFullYear() - 1;
+  document.getElementById('date-from').value = `${year}-01-01`;
+  document.getElementById('date-to').value = `${year}-12-31`;
+  loadAll();
+}
+
 function showSection(name) {
   document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
