@@ -855,9 +855,9 @@ function parseNextPageInfo(linkHeader) {
 }
 
 async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
-  const results = [];
   const isOrders = (endpoint === 'orders');
 
+  // products & customers: una sola llamada al worker (sin paginación cliente)
   if (!isOrders) {
     const params = new URLSearchParams();
     params.set('limit', '250');
@@ -869,88 +869,38 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     } catch(e) { return []; }
   }
 
-  const firstParams = new URLSearchParams();
-  firstParams.set('limit', '250'); firstParams.set('status', 'any');
-  // Use Eastern Time so it matches the Shopify store's timezone
-  const etOffset = (() => {
-    const etStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'shortOffset' });
-    const match = etStr.match(/GMT([+-])(\d+)/);
-    return match ? match[1] + match[2].padStart(2,'0') + ':00' : '-05:00';
-  })();
-  if (fromDate) firstParams.set('created_at_min', fromDate + 'T00:00:00' + etOffset);
-  if (toDate) firstParams.set('created_at_max', toDate + 'T23:59:59' + etOffset);
+  // ORDERS: el worker ahora sirve todo el rango desde cache particionado en una sola llamada.
+  // No hay paginación cliente. Si el cache está caliente, esto es <500ms.
+  const params = new URLSearchParams();
+  if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00Z');
+  if (toDate)   params.set('created_at_max', toDate   + 'T23:59:59Z');
 
-  let firstData = null;
+  let data = null;
   for (let retry = 0; retry < 5; retry++) {
-    if (signal?.aborted) return results;
+    if (signal?.aborted) return [];
     try {
-      const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${firstParams}`, { signal });
-      if (res.ok) { firstData = await res.json(); break; }
+      const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
+      if (res.ok) { data = await res.json(); break; }
       setFetchStatus(`connecting… (${retry+1}/5)`);
       await new Promise(r => setTimeout(r, 1000 * (retry + 1)));
     } catch(e) {
-      if (e.name === 'AbortError') return results;
+      if (e.name === 'AbortError') return [];
       setFetchStatus(`connecting… (${retry+1}/5)`);
       await new Promise(r => setTimeout(r, 1000 * (retry + 1)));
     }
   }
-  if (!firstData) return results;
+  if (!data) return [];
 
-  if (firstData._cached === true) {
-    const cachedOrders = firstData[key] || [];
-    setFetchStatus(`loaded from cache · ${cachedOrders.length} orders`);
-    document.getElementById('loading-text').textContent = `⚡ Loaded from cache · ${cachedOrders.length.toLocaleString()} orders`;
-    return cachedOrders;
+  const orders = data[key] || [];
+  const lastSync = data._last_sync_at;
+  let label = `loaded ${orders.length.toLocaleString()} orders`;
+  if (lastSync) {
+    const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
+    label += ` · synced ${ageMin}m ago`;
   }
-
-  const firstItems = firstData[key] || [];
-  results.push(...firstItems);
-  setFetchStatus(`loading… ${results.length}`);
-
-  // Pagination with cursor (GraphQL) or page_info (REST)
-  let nextCursor = firstData._cursor || parseNextPageInfo(firstData._link);
-  let useGraphQL = !!firstData._cursor;
-
-  while (nextCursor && !signal?.aborted) {
-    const params = new URLSearchParams();
-    if (useGraphQL) {
-      params.set('cursor', nextCursor);
-      if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00' + etOffset);
-      if (toDate) params.set('created_at_max', toDate + 'T23:59:59' + etOffset);
-    } else {
-      params.set('limit', '250');
-      params.set('page_info', nextCursor);
-    }
-
-    let data = null;
-    let retries = 0;
-    while (retries < 5) {
-      if (signal?.aborted) return results;
-      try {
-        const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
-        if (res.ok) { data = await res.json(); break; }
-        setFetchStatus(`retrying… (${retries+1}/5)`);
-        await new Promise(r => setTimeout(r, 1000 * (retries + 1)));
-        retries++;
-      } catch(e) {
-        if (e.name === 'AbortError') return results;
-        retries++;
-        if (retries >= 5) break;
-        setFetchStatus(`retrying… (${retries}/5)`);
-        await new Promise(r => setTimeout(r, 1000 * retries));
-      }
-    }
-
-    if (!data) break;
-
-    const items = data[key] || [];
-    results.push(...items);
-    setFetchStatus(`loading… ${results.length}`);
-    if (results.length % 500 === 0) { filteredOrders = [...results]; renderAll(); }
-    nextCursor = data._cursor || parseNextPageInfo(data._link);
-    if (!nextCursor || items.length === 0) break;
-  }
-  return results;
+  setFetchStatus(label);
+  document.getElementById('loading-text').textContent = `⚡ ${label}`;
+  return orders;
 }
 
 async function loadAll() {
@@ -974,14 +924,6 @@ async function loadAll() {
     if (signal.aborted) return;
     setProgress(55);
 
-    const periodKey = getPeriodKey(fromDate, toDate);
-    if (periodKey && allOrders.length > 0) {
-      fetch(`${WORKER}/save-cache`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period: periodKey, orders: allOrders, from: fromDate, to: toDate })
-      }).catch(e => console.warn('Cache save failed:', e.message));
-    }
     document.getElementById('loading-text').textContent = 'Loading products & customers…';
     allProducts = await fetchAllPaginated('products', 'products', null, null, signal);
     setProgress(75);
