@@ -869,18 +869,19 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     } catch(e) { return []; }
   }
 
-  // ORDERS: pedimos el manifest primero. Si el worker devuelve <=2 particiones
-  // ya viene todo. Si devuelve más, pedimos cada partición en paralelo.
+  // ORDERS: el worker devuelve un manifest con las particiones del rango.
+  // Pedimos cada partición en paralelo (devuelven JSON crudo del KV).
+  // Filtramos los bordes (primer y último mes) localmente.
   const params = new URLSearchParams();
   if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00Z');
   if (toDate)   params.set('created_at_max', toDate   + 'T23:59:59Z');
 
-  let data = null;
+  let manifest = null;
   for (let retry = 0; retry < 5; retry++) {
     if (signal?.aborted) return [];
     try {
       const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${params}`, { signal });
-      if (res.ok) { data = await res.json(); break; }
+      if (res.ok) { manifest = await res.json(); break; }
       setFetchStatus(`connecting… (${retry+1}/5)`);
       await new Promise(r => setTimeout(r, 1000 * (retry + 1)));
     } catch(e) {
@@ -889,57 +890,52 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
       await new Promise(r => setTimeout(r, 1000 * (retry + 1)));
     }
   }
-  if (!data) return [];
+  if (!manifest || !manifest._partitions) return [];
 
-  // Caso 1: el worker devolvió todas las órdenes directamente (rango chico, <=2 particiones)
-  if (data.orders && data.orders.length > 0) {
-    const lastSync = data._last_sync_at;
-    let label = `loaded ${data.orders.length.toLocaleString()} orders`;
-    if (lastSync) {
-      const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
-      label += ` · synced ${ageMin}m ago`;
+  const parts = manifest._partitions;
+  const lastSync = manifest._last_sync_at;
+  setFetchStatus(`loading ${parts.length} month${parts.length>1?'s':''} in parallel…`);
+
+  // Pedir todas las particiones en paralelo. Cada respuesta es el JSON crudo del KV
+  // con la forma {orders: [...], updated_at, count}.
+  const results = await Promise.all(parts.map(async (part) => {
+    const partParams = new URLSearchParams();
+    partParams.set('created_at_min', fromDate + 'T00:00:00Z');
+    partParams.set('created_at_max', toDate + 'T23:59:59Z');
+    partParams.set('partition', part);
+    try {
+      const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${partParams}`, { signal });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.orders || [];
+    } catch(e) {
+      return [];
     }
-    setFetchStatus(label);
-    document.getElementById('loading-text').textContent = `⚡ ${label}`;
-    return data.orders;
-  }
+  }));
 
-  // Caso 2: el worker devolvió un manifest con la lista de particiones
-  if (data._partitions && data._partitions.length > 0) {
-    const parts = data._partitions;
-    setFetchStatus(`loading ${parts.length} months in parallel…`);
-    const results = await Promise.all(parts.map(async (part) => {
-      const partParams = new URLSearchParams();
-      if (fromDate) partParams.set('created_at_min', fromDate + 'T00:00:00Z');
-      if (toDate)   partParams.set('created_at_max', toDate   + 'T23:59:59Z');
-      partParams.set('partition', part);
-      try {
-        const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${partParams}`, { signal });
-        if (!res.ok) return [];
-        const partData = await res.json();
-        return partData.orders || [];
-      } catch(e) {
-        return [];
+  // Merge y filter por rango exacto (los meses de borde traen días fuera del rango)
+  const merged = [];
+  for (const arr of results) {
+    for (const o of arr) {
+      if (!o.created_at) continue;
+      // ET date del created_at
+      const etDate = new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+      if (etDate >= fromDate && etDate <= toDate) {
+        merged.push(o);
       }
-    }));
-    // Mergear y ordenar desc por created_at
-    const merged = [];
-    for (const arr of results) merged.push(...arr);
-    merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-
-    const lastSync = data._last_sync_at;
-    let label = `loaded ${merged.length.toLocaleString()} orders`;
-    if (lastSync) {
-      const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
-      label += ` · synced ${ageMin}m ago`;
     }
-    setFetchStatus(label);
-    document.getElementById('loading-text').textContent = `⚡ ${label}`;
-    return merged;
   }
+  // Sort desc por created_at
+  merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
-  // Caso 3: respuesta vacía (no hay órdenes en el rango)
-  return data.orders || [];
+  let label = `loaded ${merged.length.toLocaleString()} orders`;
+  if (lastSync) {
+    const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
+    label += ` · synced ${ageMin}m ago`;
+  }
+  setFetchStatus(label);
+  document.getElementById('loading-text').textContent = `⚡ ${label}`;
+  return merged;
 }
 
 async function loadAll() {
