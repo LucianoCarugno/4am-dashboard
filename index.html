@@ -723,7 +723,7 @@ const WORKER = 'https://shopify-proxy.luciano-bd7.workers.dev';
 const STORE = '4am';
 const PAGE_SIZE = 25;
 
-let allOrders = [], filteredOrders = [], allProducts = [], allCustomers = [];
+let allOrders = [], filteredOrders = [], ttmOrders = [], allProducts = [], allCustomers = [];
 let isLoading = false, currentAbortController = null;
 let currentPage = 1, sortCol = null, sortDir = 1, searchTerm = '';
 let revenueChart = null;
@@ -1097,7 +1097,19 @@ async function loadAll() {
   const fromDate = document.getElementById('date-from').value;
   const toDate = document.getElementById('date-to').value;
   try {
-    allOrders = await fetchAllPaginated('orders', 'orders', fromDate, toDate, signal);
+    // Load filtered orders (for Sales tab) and TTM orders (for Insights tab) in parallel.
+    // TTM = last 365 days; always loaded regardless of date filter.
+    const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const ttmStart = new Date(todayET + 'T00:00:00Z');
+    ttmStart.setUTCDate(ttmStart.getUTCDate() - 365);
+    const ttmStartStr = ttmStart.toISOString().split('T')[0];
+
+    const [filteredResult, ttmResult] = await Promise.all([
+      fetchAllPaginated('orders', 'orders', fromDate, toDate, signal),
+      fetchAllPaginated('orders', 'orders', ttmStartStr, todayET, signal),
+    ]);
+    allOrders = filteredResult;
+    ttmOrders = ttmResult;
     if (signal.aborted) return;
     setProgress(55);
 
@@ -1146,22 +1158,15 @@ function renderAll() {
 
 // =============== TTM (Trailing Twelve Months) helpers ===============
 
-// Returns orders from the last 365 days from today (ET).
-let _ttmCache = null;
-let _ttmCacheKey = null;
+// Returns the TTM orders loaded by loadAll() — already filtered to the last 365 days.
+// This is loaded separately from `allOrders` so that Insights always shows TTM,
+// regardless of what date filter the user has set for the Sales tab.
 function getTTMOrders() {
-  const key = (allOrders || []).length + ':' + (allOrders?.[0]?.id || '');
-  if (_ttmCacheKey === key && _ttmCache) return _ttmCache;
-  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  const cutoff = new Date(todayET + 'T00:00:00Z');
-  cutoff.setUTCDate(cutoff.getUTCDate() - 365);
-  const cutoffMs = cutoff.getTime();
-  _ttmCache = (allOrders || []).filter(o => o.created_at && new Date(o.created_at).getTime() >= cutoffMs);
-  _ttmCacheKey = key;
-  return _ttmCache;
+  return ttmOrders || [];
 }
 
-// Returns the 12 months immediately preceding the TTM window (for trend comparison).
+// Returns the 12 months immediately preceding TTM — for trend comparison.
+// This data may or may not be available (depends on how much history is backfilled).
 function getPriorTTMOrders() {
   const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const endOfPrior = new Date(todayET + 'T00:00:00Z');
@@ -1170,7 +1175,7 @@ function getPriorTTMOrders() {
   startOfPrior.setUTCDate(startOfPrior.getUTCDate() - 365);
   const endMs = endOfPrior.getTime();
   const startMs = startOfPrior.getTime();
-  return (allOrders || []).filter(o => {
+  return (ttmOrders || []).filter(o => {  // ttm is what we have; will be empty for this if backfill is only 12mo
     if (!o.created_at) return false;
     const t = new Date(o.created_at).getTime();
     return t >= startMs && t < endMs;
@@ -1810,22 +1815,22 @@ function _etDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-// Helper: indexar all orders by customer email, sorted by created_at asc
-let _ordersByEmailCache = null;
-let _ordersByEmailCacheKey = null;
-function getOrdersByEmail() {
-  const key = (allOrders || []).length + ':' + (allOrders?.[0]?.id || '');
-  if (_ordersByEmailCacheKey === key) return _ordersByEmailCache;
+// Helper: index orders by customer email, sorted by created_at asc.
+// Pass the source list explicitly: getOrdersByEmail(allOrders) for Sales tab,
+// getOrdersByEmail(ttmOrders) for Insights tab.
+const _ordersByEmailMemo = new WeakMap();
+function getOrdersByEmail(sourceList) {
+  const list = sourceList || allOrders || [];
+  if (_ordersByEmailMemo.has(list)) return _ordersByEmailMemo.get(list);
   const map = new Map();
-  for (const o of (allOrders || [])) {
+  for (const o of list) {
     const email = o.customer?.email?.toLowerCase();
     if (!email || !o.created_at) continue;
     if (!map.has(email)) map.set(email, []);
     map.get(email).push(o);
   }
   for (const arr of map.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
-  _ordersByEmailCache = map;
-  _ordersByEmailCacheKey = key;
+  _ordersByEmailMemo.set(list, map);
   return map;
 }
 
@@ -1835,7 +1840,7 @@ function getOrdersByEmail() {
 function renderCohortRetention() {
   const el = document.getElementById('cohort-retention');
   if (!el) return;
-  const byEmail = getOrdersByEmail();
+  const byEmail = getOrdersByEmail(ttmOrders);
   if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No customer data</div>'; return; }
 
   // Limitar a los \u00faltimos 12 meses para que la tabla sea legible.
@@ -1952,7 +1957,7 @@ function renderCohortRetention() {
 function renderLTV() {
   const el = document.getElementById('ltv-cards');
   if (!el) return;
-  const byEmail = getOrdersByEmail();
+  const byEmail = getOrdersByEmail(ttmOrders);
   const now = Date.now();
   const windows = [30, 60, 90, 180];
   const results = windows.map(days => {
@@ -2170,7 +2175,7 @@ function renderChannelPerformance() {
   const orders = getTTMOrders();
   if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
-  const byEmail = getOrdersByEmail();
+  const byEmail = getOrdersByEmail(ttmOrders);
   const channels = new Map();
   for (const o of orders) {
     const src = (o.source_name || 'unknown').toLowerCase();
