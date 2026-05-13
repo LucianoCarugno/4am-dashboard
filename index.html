@@ -717,7 +717,7 @@ tbody tr:hover td { background: var(--s2); }
     <div class="tab-section" id="section-customers">
       <div class="page-header">
         <div class="page-title">Customers</div>
-        <div class="page-meta">Top section reflects the selected date range. Lifetime metrics use the last 12 months.</div>
+        <div class="page-meta">Top section reflects the selected date range. Lifetime metrics use your full available order history.</div>
       </div>
 
       <!-- KPIs: this period -->
@@ -730,7 +730,7 @@ tbody tr:hover td { background: var(--s2); }
       </div>
 
       <!-- Lifetime metrics (TTM) -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span style="color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;font-size:9px">LAST 12 MONTHS</span></div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span id="lifetime-badge" style="color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;font-size:9px">ALL HISTORY</span></div>
       <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers (by email) across the last 12 months">Total Customers (12m)</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Average revenue per customer across all their orders in the last 12 months">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
@@ -801,7 +801,7 @@ const WORKER = 'https://shopify-proxy.luciano-bd7.workers.dev';
 const STORE = '4am';
 const PAGE_SIZE = 25;
 
-let allOrders = [], filteredOrders = [], ttmOrders = [], allProducts = [], allCustomers = [];
+let allOrders = [], filteredOrders = [], ttmOrders = [], lifetimeOrders = [], allProducts = [], allCustomers = [];
 let isLoading = false, currentAbortController = null;
 let currentPage = 1, sortCol = null, sortDir = 1, searchTerm = '';
 let revenueChart = null;
@@ -1182,12 +1182,20 @@ async function loadAll() {
     ttmStart.setUTCDate(ttmStart.getUTCDate() - 365);
     const ttmStartStr = ttmStart.toISOString().split('T')[0];
 
-    const [filteredResult, ttmResult] = await Promise.all([
+    // Lifetime window: 5 years back from today. The worker only returns partitions
+    // that actually exist in KV, so this safely loads "all available history".
+    const lifetimeStart = new Date(todayET + 'T00:00:00Z');
+    lifetimeStart.setUTCFullYear(lifetimeStart.getUTCFullYear() - 5);
+    const lifetimeStartStr = lifetimeStart.toISOString().split('T')[0];
+
+    const [filteredResult, ttmResult, lifetimeResult] = await Promise.all([
       fetchAllPaginated('orders', 'orders', fromDate, toDate, signal),
       fetchAllPaginated('orders', 'orders', ttmStartStr, todayET, signal),
+      fetchAllPaginated('orders', 'orders', lifetimeStartStr, todayET, signal),
     ]);
     allOrders = filteredResult;
     ttmOrders = ttmResult;
+    lifetimeOrders = lifetimeResult;
     if (signal.aborted) return;
     setProgress(55);
 
@@ -2061,45 +2069,49 @@ function renderCustomersPeriodKPIs() {
     ordersByCustomer.get(e).push(o);
   }
 
-  // Definition (matches Shopify Analytics):
-  //   - "New customer" in the period = customer whose VERY FIRST order
-  //     (looking at full available history) falls within the period.
-  //   - "Returning customer" = had purchased BEFORE the period started.
-  //
-  // We use ttmOrders as the history reference. If the customer's earliest
-  // ttm order is on/after the period start, they're new; otherwise returning.
+  // Detect whether we have enough history BEFORE the selected period to
+  // accurately classify customers as new-vs-returning by their first-ever order.
   const fromDate = document.getElementById('date-from').value;
-  const byEmailHistory = getOrdersByEmail(ttmOrders);
+  const historyStart = lifetimeOrders.length > 0
+    ? new Date(Math.min(...lifetimeOrders.map(o => new Date(o.created_at).getTime())))
+        .toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+    : fromDate;
+  // We have enough history if there are at least 30 days of orders before the period start.
+  const hasPriorHistory = (new Date(fromDate) - new Date(historyStart)) / 86400000 >= 30;
 
   let newC = 0, repeatC = 0;
-  for (const [email, periodOrders] of ordersByCustomer) {
-    const history = byEmailHistory.get(email);
-    if (!history || history.length === 0) { newC++; continue; }
-    // history is sorted ascending by created_at
-    const firstOrderDate = new Date(history[0].created_at)
-      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    if (firstOrderDate < fromDate) {
-      // Their first-ever order (within our data window) predates this period
-      // → they're a returning customer
-      repeatC++;
-    } else {
-      // First-ever order falls inside this period → new customer
-      newC++;
+  let methodLabel = '';
+
+  if (hasPriorHistory) {
+    // Strict definition: a customer is "new" if their first-ever order falls in this period.
+    methodLabel = 'first-time buyers';
+    const byEmailHistory = getOrdersByEmail(lifetimeOrders);
+    for (const [email, periodOrders] of ordersByCustomer) {
+      const history = byEmailHistory.get(email);
+      if (!history || history.length === 0) { newC++; continue; }
+      const firstOrderDate = new Date(history[0].created_at)
+        .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+      if (firstOrderDate < fromDate) repeatC++;
+      else newC++;
+    }
+  } else {
+    // Fallback: not enough history before this period to know prior purchase behavior.
+    // Use Shopify's alternate definition: "Returning" = made 2+ orders in the period.
+    methodLabel = 'only 1 order in period';
+    for (const [, periodOrders] of ordersByCustomer) {
+      if (periodOrders.length >= 2) repeatC++;
+      else newC++;
     }
   }
+
   const activeTotal = ordersByCustomer.size;
   const newPct = activeTotal > 0 ? Math.round(newC / activeTotal * 100) : 0;
   const repeatPct = activeTotal > 0 ? Math.round(repeatC / activeTotal * 100) : 0;
   const spendPerCustomer = activeTotal > 0 ? revInPeriod / activeTotal : 0;
 
-  // Edge case: if the date range covers our entire data window, almost all
-  // customers will be "new" by definition (we can't see their pre-window history).
-  // Detect this and warn the user.
-  const ttmStart = ttmOrders.length > 0
-    ? new Date(Math.min(...ttmOrders.map(o => new Date(o.created_at).getTime())))
-        .toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
-    : fromDate;
-  const noHistoryWarning = fromDate <= ttmStart && repeatC === 0 && activeTotal > 10;
+  const methodNote = hasPriorHistory
+    ? 'Compared to their full purchase history.'
+    : 'Counted within the selected period only (we do not have purchase history before this date range).';
 
   document.getElementById('customers-period-kpis').innerHTML = `
     <div class="stat-cell">
@@ -2107,15 +2119,15 @@ function renderCustomersPeriodKPIs() {
       <div class="stat-cell-value">${activeTotal.toLocaleString()}</div>
       <div class="stat-cell-sub">placed at least 1 order</div>
     </div>
-    <div class="stat-cell" title="${noHistoryWarning ? 'Date range covers your full data history, so we cannot see prior purchases. Try a shorter date range to see returning customers.' : 'Customers whose very first ever order falls within this period.'}">
-      <div class="stat-cell-label">New Customers</div>
+    <div class="stat-cell" title="${methodNote}">
+      <div class="stat-cell-label">${hasPriorHistory ? 'New Customers' : 'One-time Buyers'}</div>
       <div class="stat-cell-value">${newC.toLocaleString()}</div>
-      <div class="stat-cell-sub">${newPct}% of active${noHistoryWarning ? ' · <span style="color:var(--amber)">range = full history</span>' : ' · first-time buyers'}</div>
+      <div class="stat-cell-sub">${newPct}% of active · ${methodLabel}</div>
     </div>
-    <div class="stat-cell" title="${noHistoryWarning ? 'We cannot detect returning customers when the date range matches our full data window. The Lifetime View below shows repeat behavior across all of TTM.' : 'Customers who had purchased before this period started.'}">
-      <div class="stat-cell-label">Returning Customers</div>
+    <div class="stat-cell" title="${methodNote}">
+      <div class="stat-cell-label">${hasPriorHistory ? 'Returning Customers' : 'Repeat Buyers'}</div>
       <div class="stat-cell-value">${repeatC.toLocaleString()}</div>
-      <div class="stat-cell-sub">${repeatPct}% of active${noHistoryWarning ? ' · <span style="color:var(--amber)">see Lifetime View ↓</span>' : ' · had bought before'}</div>
+      <div class="stat-cell-sub">${repeatPct}% of active · ${hasPriorHistory ? 'had bought before' : '2+ orders in period'}</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Spend per Customer</div>
@@ -2126,26 +2138,37 @@ function renderCustomersPeriodKPIs() {
 }
 
 function renderCustomersLifetimeKPIs() {
-  const ttm = getTTMOrders();
-  if (ttm.length === 0) return;
-  const byEmail = getOrdersByEmail(ttm);
+  // Use the FULL available history (5 years back), not just TTM.
+  // This way, businesses with multiple years of data see their true lifetime metrics.
+  const history = lifetimeOrders || [];
+  if (history.length === 0) return;
+  const byEmail = getOrdersByEmail(history);
 
   // Total customers
   const totalCustomers = byEmail.size;
 
-  // Avg LTV (last 12 months)
+  // Avg LTV — total revenue / unique customers across all history
   let totalRev = 0;
-  for (const o of ttm) totalRev += parseFloat(o.total_price || 0);
+  for (const o of history) totalRev += parseFloat(o.total_price || 0);
   const avgLTV = totalCustomers > 0 ? totalRev / totalCustomers : 0;
 
-  // Reorder cycle = median days between 1st and 2nd purchase
+  // Date span of the available history (for the subtitle)
+  let oldestMs = Infinity, newestMs = 0;
+  for (const o of history) {
+    const t = new Date(o.created_at).getTime();
+    if (t < oldestMs) oldestMs = t;
+    if (t > newestMs) newestMs = t;
+  }
+  const monthsSpan = oldestMs < Infinity ? Math.round((newestMs - oldestMs) / (86400000 * 30)) : 0;
+
+  // Reorder cycle = median days between 1st and 2nd purchase (across all history)
   const cyclesDays = [];
   for (const [, arr] of byEmail) {
     if (arr.length < 2) continue;
     const t1 = new Date(arr[0].created_at).getTime();
     const t2 = new Date(arr[1].created_at).getTime();
     const days = (t2 - t1) / 86400000;
-    if (days > 0 && days < 365) cyclesDays.push(days);
+    if (days > 0 && days < 730) cyclesDays.push(days); // allow up to 2 years between orders
   }
   let medianCycle = null;
   if (cyclesDays.length > 0) {
@@ -2165,7 +2188,15 @@ function renderCustomersLifetimeKPIs() {
   const dormantColor = dormantPct < 30 ? 'var(--emerald)' : (dormantPct < 60 ? 'var(--amber)' : 'var(--rose)');
 
   document.getElementById('kpi-total-customers').textContent = totalCustomers.toLocaleString();
-  document.getElementById('kpi-total-customers-sub').textContent = `unique buyers in 12 months`;
+  document.getElementById('kpi-total-customers-sub').textContent = `across ${monthsSpan} months of history`;
+
+  // Update the "Lifetime View" badge with the actual date range
+  const badge = document.getElementById('lifetime-badge');
+  if (badge && oldestMs < Infinity) {
+    const startFmt = new Date(oldestMs).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'America/New_York' });
+    const endFmt = new Date(newestMs).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'America/New_York' });
+    badge.textContent = `${startFmt} → ${endFmt}`;
+  }
   document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
   document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} total ÷ ${totalCustomers.toLocaleString()} customers`;
   document.getElementById('kpi-reorder-cycle').textContent = medianCycle !== null ? `${medianCycle} days` : '—';
@@ -2178,7 +2209,7 @@ function renderCustomersLifetimeKPIs() {
 function renderCustomerSegments() {
   const el = document.getElementById('customer-segments');
   if (!el) return;
-  const byEmail = getOrdersByEmail(getTTMOrders());
+  const byEmail = getOrdersByEmail(lifetimeOrders);
   if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
   const segs = { 'One-time (1 order)': 0, 'Repeat (2 orders)': 0, 'Loyal (3-4 orders)': 0, 'VIP (5+ orders)': 0 };
@@ -2223,7 +2254,7 @@ function renderCustomerSegments() {
 function renderLTVDistribution() {
   const el = document.getElementById('ltv-distribution');
   if (!el) return;
-  const byEmail = getOrdersByEmail(getTTMOrders());
+  const byEmail = getOrdersByEmail(lifetimeOrders);
   if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
   const buckets = [
@@ -2284,7 +2315,7 @@ function renderLTVDistribution() {
 function renderCustomerRecency() {
   const el = document.getElementById('customer-recency');
   if (!el) return;
-  const byEmail = getOrdersByEmail(getTTMOrders());
+  const byEmail = getOrdersByEmail(lifetimeOrders);
   if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
   const now = Date.now();
