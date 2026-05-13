@@ -1634,9 +1634,24 @@ function renderKPIs() {
     </div>`;
 }
 
+// Helper: compute net sales for a single order using the same formula as computeKPIs.
+// Use this anywhere you need per-order revenue (charts, channel breakdown, etc.)
+// so numbers stay consistent with the KPI cards.
+function orderNetSales(o) {
+  let gross = 0, discounts = 0;
+  for (const item of (o.line_items || [])) {
+    gross += parseFloat(item.price || 0) * parseInt(item.quantity || 1);
+    for (const d of (item.discount_allocations || [])) {
+      discounts += parseFloat(d.amount || 0);
+    }
+  }
+  const returns = parseFloat(o.total_refunded || 0);
+  return gross - discounts - returns;
+}
+
 function renderRevenueChart() {
   const byDay = {};
-  filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.subtotal_price||o.total_price||0); });
+  filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + orderNetSales(o); });
   const sorted = Object.keys(byDay).sort();
   const values = sorted.map(d => byDay[d]);
   const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
@@ -1668,11 +1683,11 @@ function renderChannelBreakdown() {
   filteredOrders.forEach(o => {
     const s = o.source_name || 'other';
     channels[s] = (channels[s]||0)+1;
-    channelRev[s] = (channelRev[s]||0) + parseFloat(o.subtotal_price||o.total_price||0);
+    channelRev[s] = (channelRev[s]||0) + orderNetSales(o);
   });
   const sorted = Object.entries(channels).sort((a,b)=>b[1]-a[1]);
   const total = filteredOrders.length;
-  const totalRev = filteredOrders.reduce((s,o) => s + parseFloat(o.subtotal_price||o.total_price||0), 0);
+  const totalRev = filteredOrders.reduce((s,o) => s + orderNetSales(o), 0);
   const colors = { tiktok: PALETTE.amber, web: PALETTE.teal, other: PALETTE.violet };
   const meaningful = sorted.filter(([src]) => {
     if (/^\d+$/.test(src)) return false;
@@ -2035,33 +2050,56 @@ function renderCustomersPeriodKPIs() {
   const orders = filteredOrders || [];
   if (orders.length === 0) return;
 
-  // Active customers = unique emails with orders in period
-  const emailsInPeriod = new Set();
+  // Group orders in period by customer email
+  const ordersByCustomer = new Map();
   let revInPeriod = 0;
   for (const o of orders) {
     const e = o.customer?.email?.toLowerCase();
-    if (e) emailsInPeriod.add(e);
     revInPeriod += parseFloat(o.total_price || 0);
+    if (!e) continue;
+    if (!ordersByCustomer.has(e)) ordersByCustomer.set(e, []);
+    ordersByCustomer.get(e).push(o);
   }
 
-  // New vs Repeat in period: a customer is "new in period" if their FIRST order
-  // across all of ttmOrders falls within the period.
+  // Definition (matches Shopify Analytics):
+  //   - "New customer" in the period = customer whose VERY FIRST order
+  //     (looking at full available history) falls within the period.
+  //   - "Returning customer" = had purchased BEFORE the period started.
+  //
+  // We use ttmOrders as the history reference. If the customer's earliest
+  // ttm order is on/after the period start, they're new; otherwise returning.
   const fromDate = document.getElementById('date-from').value;
-  const toDate = document.getElementById('date-to').value;
-  const byEmail = getOrdersByEmail(ttmOrders);
+  const byEmailHistory = getOrdersByEmail(ttmOrders);
 
   let newC = 0, repeatC = 0;
-  for (const email of emailsInPeriod) {
-    const arr = byEmail.get(email);
-    if (!arr || arr.length === 0) { newC++; continue; }
-    const firstDate = new Date(arr[0].created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    if (firstDate >= fromDate && firstDate <= toDate) newC++;
-    else repeatC++;
+  for (const [email, periodOrders] of ordersByCustomer) {
+    const history = byEmailHistory.get(email);
+    if (!history || history.length === 0) { newC++; continue; }
+    // history is sorted ascending by created_at
+    const firstOrderDate = new Date(history[0].created_at)
+      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    if (firstOrderDate < fromDate) {
+      // Their first-ever order (within our data window) predates this period
+      // → they're a returning customer
+      repeatC++;
+    } else {
+      // First-ever order falls inside this period → new customer
+      newC++;
+    }
   }
-  const activeTotal = emailsInPeriod.size;
+  const activeTotal = ordersByCustomer.size;
   const newPct = activeTotal > 0 ? Math.round(newC / activeTotal * 100) : 0;
   const repeatPct = activeTotal > 0 ? Math.round(repeatC / activeTotal * 100) : 0;
   const spendPerCustomer = activeTotal > 0 ? revInPeriod / activeTotal : 0;
+
+  // Edge case: if the date range covers our entire data window, almost all
+  // customers will be "new" by definition (we can't see their pre-window history).
+  // Detect this and warn the user.
+  const ttmStart = ttmOrders.length > 0
+    ? new Date(Math.min(...ttmOrders.map(o => new Date(o.created_at).getTime())))
+        .toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+    : fromDate;
+  const noHistoryWarning = fromDate <= ttmStart && repeatC === 0 && activeTotal > 10;
 
   document.getElementById('customers-period-kpis').innerHTML = `
     <div class="stat-cell">
@@ -2069,15 +2107,15 @@ function renderCustomersPeriodKPIs() {
       <div class="stat-cell-value">${activeTotal.toLocaleString()}</div>
       <div class="stat-cell-sub">placed at least 1 order</div>
     </div>
-    <div class="stat-cell">
+    <div class="stat-cell" title="${noHistoryWarning ? 'Date range covers your full data history, so we cannot see prior purchases. Try a shorter date range to see returning customers.' : 'Customers whose very first ever order falls within this period.'}">
       <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${newC.toLocaleString()}</div>
-      <div class="stat-cell-sub">${newPct}% of active · first-time buyers</div>
+      <div class="stat-cell-sub">${newPct}% of active${noHistoryWarning ? ' · <span style="color:var(--amber)">range = full history</span>' : ' · first-time buyers'}</div>
     </div>
-    <div class="stat-cell">
+    <div class="stat-cell" title="${noHistoryWarning ? 'We cannot detect returning customers when the date range matches our full data window. The Lifetime View below shows repeat behavior across all of TTM.' : 'Customers who had purchased before this period started.'}">
       <div class="stat-cell-label">Returning Customers</div>
       <div class="stat-cell-value">${repeatC.toLocaleString()}</div>
-      <div class="stat-cell-sub">${repeatPct}% of active · had bought before</div>
+      <div class="stat-cell-sub">${repeatPct}% of active${noHistoryWarning ? ' · <span style="color:var(--amber)">see Lifetime View ↓</span>' : ' · had bought before'}</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Spend per Customer</div>
