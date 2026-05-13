@@ -729,11 +729,11 @@ tbody tr:hover td { background: var(--s2); }
         <div class="stat-cell"><div class="stat-cell-label">Spend per Customer</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
       </div>
 
-      <!-- Lifetime metrics (TTM) -->
+      <!-- Lifetime metrics (full available history) -->
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span id="lifetime-badge" style="color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;font-size:9px">ALL HISTORY</span></div>
       <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-        <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers (by email) across the last 12 months">Total Customers (12m)</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Average revenue per customer across all their orders in the last 12 months">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers (by email) across your full available order history.">Total Customers</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Average revenue per customer across all their orders in your full history.">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Median days between a customer's 1st and 2nd purchase. Tells you the natural reorder cycle.">Reorder Cycle</div><div class="stat-cell-value" id="kpi-reorder-cycle">—</div><div class="stat-cell-sub" id="kpi-reorder-cycle-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="% of customers whose last order was more than 90 days ago. High % = customer base is going dormant.">Dormant Customers</div><div class="stat-cell-value" id="kpi-dormant">—</div><div class="stat-cell-sub" id="kpi-dormant-sub">—</div></div>
       </div>
@@ -744,7 +744,7 @@ tbody tr:hover td { background: var(--s2); }
           <div class="panel-header">
             <div>
               <div class="panel-title">Customer Segments</div>
-              <div class="panel-sub">By number of orders in the last 12 months</div>
+              <div class="panel-sub">By number of orders across your full available history</div>
             </div>
           </div>
           <div class="panel-body"><div id="customer-segments"><div class="empty-state">Loading…</div></div></div>
@@ -1495,7 +1495,7 @@ function renderExecutiveSummary() {
       <div class="stat-cell-value">${repeatRate}%</div>
       <div class="stat-cell-sub">${repeatOrders} of ${totalWithEmail} orders \u2022 ${medianCycle !== null ? 'typically reorder every ~' + medianCycle + ' days' : 'reorder cycle: not enough data'}</div>
     </div>
-    <div class="stat-cell" title="AOV (Average Order Value): the average $ amount of each order in the last 12 months.">
+    <div class="stat-cell" title="AOV (Average Order Value): the average $ amount of each order in the selected period.">
       <div class="stat-cell-label">Avg. Spend per Order (AOV)</div>
       <div class="stat-cell-value">$${fmt(aov)}</div>
       <div class="stat-cell-sub">${deltaSpan(aovDelta)} ${aovDelta !== null ? 'vs previous period' : ''}</div>
@@ -2042,7 +2042,7 @@ function renderBoughtTogether(orders) {
 // ===================================================================
 //
 // Top KPIs use the date filter (active customers in period).
-// Lifetime view uses TTM (last 12 months).
+// Lifetime view uses the full available order history (lifetimeOrders).
 let _filteredCustomersCache = null;
 function renderCustomersTable() {
   renderCustomersPeriodKPIs();
@@ -2148,8 +2148,11 @@ function renderCustomersLifetimeKPIs() {
   const totalCustomers = byEmail.size;
 
   // Avg LTV — total revenue / unique customers across all history
+  // Only count revenue from orders that have a customer email (matching what's in byEmail)
   let totalRev = 0;
-  for (const o of history) totalRev += parseFloat(o.total_price || 0);
+  for (const [, arr] of byEmail) {
+    for (const o of arr) totalRev += parseFloat(o.total_price || 0);
+  }
   const avgLTV = totalCustomers > 0 ? totalRev / totalCustomers : 0;
 
   // Date span of the available history (for the subtitle)
