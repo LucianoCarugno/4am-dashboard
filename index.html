@@ -615,84 +615,138 @@ const CHART_OPTS = {
   }
 };
 
-// Devuelve YYYY-MM-DD en Eastern Time
-function getPeriodKey(fromDate, toDate) {
-  if (!fromDate || !toDate) return null;
-  const today = todayET();
-  const year = today.split('-')[0];
-  const offset = (days) => {
-    const d = new Date(today + 'T12:00:00Z');
-    d.setDate(d.getDate() - days);
-    return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  };
-  if (fromDate === today && toDate === today) return 'today';
-  if (fromDate === offset(7) && toDate === today) return '7d';
-  if (fromDate === offset(30) && toDate === today) return '30d';
-  if (fromDate === offset(90) && toDate === today) return '90d';
-  if (fromDate === `${year}-01-01` && toDate === today) return 'ytd';
-  if (fromDate === offset(365) && toDate === today) return '1y';
-  const thisMonthStart = `${year}-${today.split('-')[1]}-01`;
-  if (fromDate === thisMonthStart && toDate === today) return 'this_month';
-  const d = new Date(today + 'T12:00:00Z');
-  const firstOfThisMonth = new Date(d.getFullYear(), d.getMonth(), 1);
-  const lastOfLastMonth = new Date(firstOfThisMonth - 1);
-  const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
-  const fmt = dt => dt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  if (fromDate === fmt(firstOfLastMonth) && toDate === fmt(lastOfLastMonth)) return 'last_month';
-  const dq = new Date(today + 'T12:00:00Z');
-  const currentQ = Math.floor(dq.getMonth() / 3);
-  const yr = dq.getFullYear();
-  let qStart, qEnd;
-  if (currentQ === 0) { qStart = new Date(yr-1,9,1); qEnd = new Date(yr-1,11,31); }
-  else { qStart = new Date(yr,(currentQ-1)*3,1); qEnd = new Date(yr,currentQ*3,0); }
-  const fmtq = dt => dt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  if (fromDate === fmtq(qStart) && toDate === fmtq(qEnd)) return 'last_quarter';
-  return null;
-}
-
+// ====== Utilidades de fechas en Eastern Time (string-based, timezone-safe) ======
 function todayET() {
   const now = new Date();
   return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
-function offsetDaysET(days) {
-  const now = new Date();
-  now.setDate(now.getDate() - days);
-  if (days === 0) now.setFullYear(2000);
-  return now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+// Parsea 'YYYY-MM-DD' en componentes [y, m, d] (m: 1-12)
+function parseYMD(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return [y, m, d];
 }
 
+// Formatea componentes a 'YYYY-MM-DD'
+function fmtYMD(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// Días en un mes (m: 1-12). Maneja años bisiestos.
+function daysInMonth(y, m) {
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+// Suma/resta días a un YMD string usando UTC (sin sesgo de TZ local)
+function addDaysYMD(ymd, days) {
+  const [y, m, d] = parseYMD(ymd);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return fmtYMD(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+}
+
+// Resta días en ET (operando sobre el string)
+function offsetDaysET(days) {
+  if (days === 0) return '2000-01-01';
+  return addDaysYMD(todayET(), -days);
+}
+
+// Primer día del mes anterior al YMD dado
+function firstDayOfPrevMonth(ymd) {
+  const [y, m] = parseYMD(ymd);
+  if (m === 1) return fmtYMD(y - 1, 12, 1);
+  return fmtYMD(y, m - 1, 1);
+}
+
+// Último día del mes anterior al YMD dado
+function lastDayOfPrevMonth(ymd) {
+  const [y, m] = parseYMD(ymd);
+  const py = m === 1 ? y - 1 : y;
+  const pm = m === 1 ? 12 : m - 1;
+  return fmtYMD(py, pm, daysInMonth(py, pm));
+}
+
+// Devuelve {start, end} del trimestre anterior al YMD dado
+function lastQuarterRange(ymd) {
+  const [y, m] = parseYMD(ymd);
+  const currentQ = Math.floor((m - 1) / 3); // 0..3
+  if (currentQ === 0) {
+    // Q4 del año anterior: Oct-Dic
+    return { start: fmtYMD(y - 1, 10, 1), end: fmtYMD(y - 1, 12, 31) };
+  }
+  const startMonth = (currentQ - 1) * 3 + 1;        // 1, 4, 7
+  const endMonth = startMonth + 2;                  // 3, 6, 9
+  return {
+    start: fmtYMD(y, startMonth, 1),
+    end:   fmtYMD(y, endMonth, daysInMonth(y, endMonth))
+  };
+}
+
+// ====== Detección del período activo ======
+function getPeriodKey(fromDate, toDate) {
+  if (!fromDate || !toDate) return null;
+  const today = todayET();
+  const [y, m] = parseYMD(today);
+
+  if (fromDate === today && toDate === today) return 'today';
+  if (fromDate === addDaysYMD(today, -7)  && toDate === today) return '7d';
+  if (fromDate === addDaysYMD(today, -30) && toDate === today) return '30d';
+  if (fromDate === addDaysYMD(today, -90) && toDate === today) return '90d';
+  if (fromDate === `${y}-01-01` && toDate === today) return 'ytd';
+  if (fromDate === addDaysYMD(today, -365) && toDate === today) return '1y';
+
+  const thisMonthStart = fmtYMD(y, m, 1);
+  if (fromDate === thisMonthStart && toDate === today) return 'this_month';
+
+  if (fromDate === firstDayOfPrevMonth(today) && toDate === lastDayOfPrevMonth(today)) return 'last_month';
+
+  const lq = lastQuarterRange(today);
+  if (fromDate === lq.start && toDate === lq.end) return 'last_quarter';
+
+  if (fromDate === `${y - 1}-01-01` && toDate === `${y - 1}-12-31`) return 'last_year';
+
+  return null;
+}
+
+// ====== Setters de botones ======
 function setPeriod(days, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('date-to').value = todayET();
-  document.getElementById('date-from').value = days === 1 ? todayET() : days === 0 ? '2000-01-01' : offsetDaysET(days);
+  const today = todayET();
+  document.getElementById('date-to').value = today;
+  if (days === 1)      document.getElementById('date-from').value = today;
+  else if (days === 0) document.getElementById('date-from').value = '2000-01-01';
+  else                 document.getElementById('date-from').value = addDaysYMD(today, -days);
   loadAll();
 }
 
 function initDates() {
-  document.getElementById('date-to').value = todayET();
-  document.getElementById('date-from').value = todayET();
+  const today = todayET();
+  document.getElementById('date-to').value = today;
+  document.getElementById('date-from').value = today;
 }
+
 function setCustomDate() {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   loadAll();
 }
+
 function setYTD(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const to = new Date();
-  const from = new Date(to.getFullYear(), 0, 1);
-  document.getElementById('date-to').value = to.toISOString().split('T')[0];
-  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  const today = todayET();
+  const [y] = parseYMD(today);
+  document.getElementById('date-from').value = `${y}-01-01`;
+  document.getElementById('date-to').value = today;
   loadAll();
 }
+
 function setThisMonth(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const today = todayET();
-  const year = today.split('-')[0];
-  const month = today.split('-')[1];
-  document.getElementById('date-from').value = `${year}-${month}-01`;
+  const [y, m] = parseYMD(today);
+  document.getElementById('date-from').value = fmtYMD(y, m, 1);
   document.getElementById('date-to').value = today;
   loadAll();
 }
@@ -700,42 +754,28 @@ function setThisMonth(btn) {
 function setLastMonth(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const today = new Date(todayET() + 'T12:00:00Z');
-  const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const lastOfLastMonth = new Date(firstOfThisMonth - 1);
-  const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
-  const fmt = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  document.getElementById('date-from').value = fmt(firstOfLastMonth);
-  document.getElementById('date-to').value = fmt(lastOfLastMonth);
+  const today = todayET();
+  document.getElementById('date-from').value = firstDayOfPrevMonth(today);
+  document.getElementById('date-to').value   = lastDayOfPrevMonth(today);
   loadAll();
 }
 
 function setLastQuarter(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const today = new Date(todayET() + 'T12:00:00Z');
-  const currentQuarter = Math.floor(today.getMonth() / 3);
-  const year = today.getFullYear();
-  let qStart, qEnd;
-  if (currentQuarter === 0) {
-    qStart = new Date(year - 1, 9, 1);
-    qEnd = new Date(year - 1, 11, 31);
-  } else {
-    qStart = new Date(year, (currentQuarter - 1) * 3, 1);
-    qEnd = new Date(year, currentQuarter * 3, 0);
-  }
-  const fmt = d => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  document.getElementById('date-from').value = fmt(qStart);
-  document.getElementById('date-to').value = fmt(qEnd);
+  const { start, end } = lastQuarterRange(todayET());
+  document.getElementById('date-from').value = start;
+  document.getElementById('date-to').value   = end;
   loadAll();
 }
 
 function setLastYear(btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const year = new Date().getFullYear() - 1;
-  document.getElementById('date-from').value = `${year}-01-01`;
-  document.getElementById('date-to').value = `${year}-12-31`;
+  const [y] = parseYMD(todayET());
+  const ly = y - 1;
+  document.getElementById('date-from').value = `${ly}-01-01`;
+  document.getElementById('date-to').value   = `${ly}-12-31`;
   loadAll();
 }
 
