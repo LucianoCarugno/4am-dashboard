@@ -869,8 +869,8 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
     } catch(e) { return []; }
   }
 
-  // ORDERS: el worker ahora sirve todo el rango desde cache particionado en una sola llamada.
-  // No hay paginación cliente. Si el cache está caliente, esto es <500ms.
+  // ORDERS: pedimos el manifest primero. Si el worker devuelve <=2 particiones
+  // ya viene todo. Si devuelve más, pedimos cada partición en paralelo.
   const params = new URLSearchParams();
   if (fromDate) params.set('created_at_min', fromDate + 'T00:00:00Z');
   if (toDate)   params.set('created_at_max', toDate   + 'T23:59:59Z');
@@ -891,16 +891,55 @@ async function fetchAllPaginated(endpoint, key, fromDate, toDate, signal) {
   }
   if (!data) return [];
 
-  const orders = data[key] || [];
-  const lastSync = data._last_sync_at;
-  let label = `loaded ${orders.length.toLocaleString()} orders`;
-  if (lastSync) {
-    const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
-    label += ` · synced ${ageMin}m ago`;
+  // Caso 1: el worker devolvió todas las órdenes directamente (rango chico, <=2 particiones)
+  if (data.orders && data.orders.length > 0) {
+    const lastSync = data._last_sync_at;
+    let label = `loaded ${data.orders.length.toLocaleString()} orders`;
+    if (lastSync) {
+      const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
+      label += ` · synced ${ageMin}m ago`;
+    }
+    setFetchStatus(label);
+    document.getElementById('loading-text').textContent = `⚡ ${label}`;
+    return data.orders;
   }
-  setFetchStatus(label);
-  document.getElementById('loading-text').textContent = `⚡ ${label}`;
-  return orders;
+
+  // Caso 2: el worker devolvió un manifest con la lista de particiones
+  if (data._partitions && data._partitions.length > 0) {
+    const parts = data._partitions;
+    setFetchStatus(`loading ${parts.length} months in parallel…`);
+    const results = await Promise.all(parts.map(async (part) => {
+      const partParams = new URLSearchParams();
+      if (fromDate) partParams.set('created_at_min', fromDate + 'T00:00:00Z');
+      if (toDate)   partParams.set('created_at_max', toDate   + 'T23:59:59Z');
+      partParams.set('partition', part);
+      try {
+        const res = await fetch(`${WORKER}/${STORE}/${endpoint}?${partParams}`, { signal });
+        if (!res.ok) return [];
+        const partData = await res.json();
+        return partData.orders || [];
+      } catch(e) {
+        return [];
+      }
+    }));
+    // Mergear y ordenar desc por created_at
+    const merged = [];
+    for (const arr of results) merged.push(...arr);
+    merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+    const lastSync = data._last_sync_at;
+    let label = `loaded ${merged.length.toLocaleString()} orders`;
+    if (lastSync) {
+      const ageMin = Math.round((Date.now() - new Date(lastSync).getTime()) / 60000);
+      label += ` · synced ${ageMin}m ago`;
+    }
+    setFetchStatus(label);
+    document.getElementById('loading-text').textContent = `⚡ ${label}`;
+    return merged;
+  }
+
+  // Caso 3: respuesta vacía (no hay órdenes en el rango)
+  return data.orders || [];
 }
 
 async function loadAll() {
