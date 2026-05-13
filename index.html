@@ -1191,7 +1191,9 @@ function renderTTMHeader() {
   const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const start = new Date(todayET + 'T00:00:00Z');
   start.setUTCDate(start.getUTCDate() - 365);
-  const fmtMo = d => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const fmtDay = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const startStr = fmtDay(start);
+  const todayStr = fmtDay(new Date(todayET + 'T00:00:00Z'));
 
   const totalRev = ttm.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
   const uniqueCustomers = new Set();
@@ -1201,16 +1203,68 @@ function renderTTMHeader() {
   }
 
   el.innerHTML = `
-    <strong style="color:var(--t0);font-size:12px">TTM \u2014 Trailing Twelve Months</strong>
-    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
-    ${fmtMo(start)} \u2192 ${fmtMo(new Date(todayET + 'T00:00:00Z'))}
-    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
-    <strong style="color:var(--t0)">${ttm.length.toLocaleString()}</strong> orders
-    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
-    <strong style="color:var(--t0)">$${fmt(totalRev)}</strong> in sales
-    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
-    <strong style="color:var(--t0)">${uniqueCustomers.size.toLocaleString()}</strong> unique customers
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
+      <strong style="color:var(--t0);font-size:12px">TTM \u2014 Trailing Twelve Months</strong>
+      <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+      <span title="Exact date range used for all Insights panels">${startStr} \u2192 ${todayStr}</span>
+      <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+      <strong style="color:var(--t0)">${ttm.length.toLocaleString()}</strong>&nbsp;orders
+      <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+      <strong style="color:var(--t0)">$${fmt(totalRev)}</strong>&nbsp;in sales
+      <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+      <strong style="color:var(--t0)">${uniqueCustomers.size.toLocaleString()}</strong>&nbsp;unique customers
+    </div>
+    <div style="margin-top:6px;color:var(--t2);font-size:10px">
+      To match these numbers in the Sales tab, set the date range to <strong style="color:var(--t1)">${startStr} \u2192 ${todayStr}</strong>.
+    </div>
   `;
+}
+
+// ===================================================================
+//  SINGLE SOURCE OF TRUTH FOR KPI CALCULATIONS
+//  All tabs (Sales, Insights) call this function so numbers always match.
+//  Formulas are kept identical to what Sales tab was already computing
+//  (which matches Shopify Analytics).
+// ===================================================================
+function computeKPIs(orderList) {
+  const orders = orderList || [];
+  let gross = 0;          // sum of line_item.price * quantity (no discounts/tax/shipping)
+  let discounts = 0;      // sum of line_item.discount_allocations
+  let returns = 0;        // sum of order.total_refunded
+  let shipping = 0;       // sum of shipping_lines.price
+  let taxes = 0;          // sum of order.total_tax
+  let totalPaid = 0;      // sum of order.total_price (what customer paid)
+  let units = 0;          // sum of line_item.quantity
+
+  for (const o of orders) {
+    const lineItems = o.line_items || [];
+    for (const item of lineItems) {
+      gross += parseFloat(item.price || 0) * parseInt(item.quantity || 1);
+      units += parseInt(item.quantity || 0);
+      for (const d of (item.discount_allocations || [])) {
+        discounts += parseFloat(d.amount || 0);
+      }
+    }
+    returns += parseFloat(o.total_refunded || 0);
+    for (const sl of (o.shipping_lines || [])) {
+      shipping += parseFloat(sl.price || 0);
+    }
+    taxes += parseFloat(o.total_tax || 0);
+    totalPaid += parseFloat(o.total_price || 0);
+  }
+
+  const netSales = gross - discounts - returns;
+  const ordersCount = orders.length;
+  const aov = ordersCount > 0 ? netSales / ordersCount : 0;
+  const upt = ordersCount > 0 ? units / ordersCount : 0;
+  const discountIntensity = gross > 0 ? (discounts / gross * 100) : 0;
+  const returnRate = gross > 0 ? (returns / gross * 100) : 0;
+
+  return {
+    orders: ordersCount,
+    gross, discounts, returns, netSales, shipping, taxes, totalPaid, units,
+    aov, upt, discountIntensity, returnRate
+  };
 }
 
 // ================= EXECUTIVE SUMMARY (CFO view) =================
@@ -1436,30 +1490,21 @@ function fmtChange(curr, prev) {
 function renderKPIs() {
   const orders = filteredOrders;
   const prev = getPreviousPeriodOrders();
-  // Net Sales = gross_sales - discounts - returns (matches Shopify Analytics)
-  const calcNetSales = (orderList) => {
-    return orderList.reduce((s, o) => {
-      const grossSales = (o.line_items||[]).reduce((ls, item) => {
-        return ls + parseFloat(item.price||0) * (item.quantity||1);
-      }, 0);
-      const lineItemDiscounts = (o.line_items||[]).reduce((ls, item) => {
-        return ls + (item.discount_allocations||[]).reduce((ds, d) => ds + parseFloat(d.amount||0), 0);
-      }, 0);
-      const returns = parseFloat(o.total_refunded||0);
-      return s + grossSales - lineItemDiscounts - returns;
-    }, 0);
-  };
 
-  const total = calcNetSales(orders);
-  const prevTotal = calcNetSales(prev);
-  const refundAmt = orders.reduce((s, o) => s + parseFloat(o.total_refunded||0), 0);
+  // Use the canonical KPI calculator (same formulas as before — no number changes).
+  const k = computeKPIs(orders);
+  const kPrev = computeKPIs(prev);
+
   const refunded = orders.filter(o => o.financial_status === 'refunded' || o.financial_status === 'partially refunded');
-  const netRevenue = total;
   const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
   const paid = orders.filter(o => o.financial_status === 'paid').length;
   const prevPaid = prev.filter(o => o.financial_status === 'paid').length;
-  const avg = orders.length ? total / orders.length : 0;
+
+  // Note: AOV here uses net sales / orders (same as before to keep numbers identical).
+  const avg = k.aov;
+  // Previous-period avg uses total_price (same formula Sales tab was using before).
   const prevAvg = prev.length ? prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0) / prev.length : 0;
+
   const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
   const web = orders.filter(o => o.source_name === 'web').length;
   const customerEmails = {};
@@ -1467,25 +1512,11 @@ function renderKPIs() {
   const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
   const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
 
-  // Revenue breakdown
-  const grossRevenue = orders.reduce((s,o) => {
-    return s + (o.line_items||[]).reduce((ls,item) => ls + parseFloat(item.price||0)*(item.quantity||1), 0);
-  }, 0);
-  const shippingIncome = orders.reduce((s,o) => {
-    return s + (o.shipping_lines||[]).reduce((ss,l) => ss + parseFloat(l.price||0), 0);
-  }, 0);
-  const discounts = orders.reduce((s,o) => {
-    return s + (o.line_items||[]).reduce((ls, item) => {
-      return ls + (item.discount_allocations||[]).reduce((ds, d) => ds + parseFloat(d.amount||0), 0);
-    }, 0);
-  }, 0);
-  const taxes = orders.reduce((s,o) => s + parseFloat(o.total_tax||0), 0);
-
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(netRevenue)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(refundAmt)} refunded</div>${fmtChange(total, prevTotal)}</div>
+    <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(k.netSales)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(k.returns)} refunded</div>${fmtChange(k.netSales, kPrev.netSales)}</div>
     <div class="kpi-card"><div class="kpi-label">Paid Orders</div><div class="kpi-value">${paid}</div><div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>${fmtChange(paid, prevPaid)}</div>
     <div class="kpi-card"><div class="kpi-label">Avg Order Value</div><div class="kpi-value">$${fmt(avg)}</div><div class="kpi-sub">per order</div>${fmtChange(avg, prevAvg)}</div>
-    <div class="kpi-card"><div class="kpi-label">Refund Rate</div><div class="kpi-value">${refundRate}%</div><div class="kpi-sub">${refunded.length} refunded · $${fmt(refundAmt)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Refund Rate</div><div class="kpi-value">${refundRate}%</div><div class="kpi-sub">${refunded.length} refunded · $${fmt(k.returns)}</div></div>
     <div class="kpi-card"><div class="kpi-label">TikTok Shop</div><div class="kpi-value">${tiktok}</div><div class="kpi-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders</div></div>
     <div class="kpi-card"><div class="kpi-label">Web / Direct</div><div class="kpi-value">${web}</div><div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div></div>
     <div class="kpi-card"><div class="kpi-label">New Customers</div><div class="kpi-value">${newC}</div><div class="kpi-sub">${orders.length ? Math.round(newC/orders.length*100) : 0}% of orders</div></div>
@@ -1495,33 +1526,33 @@ function renderKPIs() {
   if (revEl) revEl.innerHTML = `
     <div class="stat-cell">
       <div class="stat-cell-label">Gross Sales</div>
-      <div class="stat-cell-value">$${fmt(grossRevenue)}</div>
+      <div class="stat-cell-value">$${fmt(k.gross)}</div>
       <div class="stat-cell-sub">items × price, no discounts</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Discounts</div>
-      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(discounts)}</div>
+      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.discounts)}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Returns</div>
-      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(refundAmt)}</div>
+      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.returns)}</div>
       <div class="stat-cell-sub">${refunded.length} orders</div>
     </div>
     <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)">
       <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
-      <div class="stat-cell-value" style="color:var(--teal)">$${fmt(total)}</div>
+      <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
       <div class="stat-cell-sub">gross − discounts − returns</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Shipping Income</div>
-      <div class="stat-cell-value">$${fmt(shippingIncome)}</div>
-      <div class="stat-cell-sub">${shippingIncome > 0 ? Math.round(shippingIncome/grossRevenue*100)+'% of gross' : '—'}</div>
+      <div class="stat-cell-value">$${fmt(k.shipping)}</div>
+      <div class="stat-cell-sub">${k.shipping > 0 ? Math.round(k.shipping/k.gross*100)+'% of gross' : '—'}</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Taxes Collected</div>
-      <div class="stat-cell-value">$${fmt(taxes)}</div>
-      <div class="stat-cell-sub">${grossRevenue ? Math.round(taxes/grossRevenue*100) : 0}% tax rate</div>
+      <div class="stat-cell-value">$${fmt(k.taxes)}</div>
+      <div class="stat-cell-sub">${k.gross ? Math.round(k.taxes/k.gross*100) : 0}% tax rate</div>
     </div>`;
 }
 
@@ -2012,30 +2043,38 @@ function renderLTV() {
   }
 }
 
-// ===================== DISCOUNT INTENSITY =====================
+// ===================== DISCOUNTS IMPACT =====================
+// Uses the same canonical computeKPIs() as Sales tab, so numbers match
+// when comparing the same date range.
 function renderDiscountIntensity() {
   const el = document.getElementById('discount-intensity');
   if (!el) return;
   const orders = getTTMOrders();
   if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
-  let gross = 0, discounts = 0;
+  const k = computeKPIs(orders);
+  const gross = k.gross;
+  const discounts = k.discounts;
+  const intensity = k.discountIntensity;
+
+  // Split orders into "with discount" vs "without" using the same line-item
+  // discount logic that computeKPIs uses.
   let withDiscount = 0, withoutDiscount = 0;
   let revWithDisc = 0, revWithoutDisc = 0;
   for (const o of orders) {
-    const disc = parseFloat(o.total_discounts || 0);
-    const sub = parseFloat(o.subtotal_price || 0);
-    gross += sub + disc;
-    discounts += disc;
-    if (disc > 0) { withDiscount++; revWithDisc += parseFloat(o.total_price || 0); }
+    const orderDisc = (o.line_items || []).reduce(
+      (s, item) => s + (item.discount_allocations || []).reduce(
+        (ds, d) => ds + parseFloat(d.amount || 0), 0
+      ), 0
+    );
+    if (orderDisc > 0) { withDiscount++; revWithDisc += parseFloat(o.total_price || 0); }
     else { withoutDiscount++; revWithoutDisc += parseFloat(o.total_price || 0); }
   }
-  const intensity = gross > 0 ? (discounts / gross * 100) : 0;
   const aovWith = withDiscount > 0 ? revWithDisc / withDiscount : 0;
   const aovWithout = withoutDiscount > 0 ? revWithoutDisc / withoutDiscount : 0;
   const ordersWithPct = orders.length > 0 ? Math.round(withDiscount / orders.length * 100) : 0;
 
-  // Color de intensity: <5% verde, 5-15% amber, >15% rose (umbrales CPG)
+  // Color thresholds for CPG: <5% green, 5-15% amber, >15% red
   const intensityColor = intensity < 5 ? 'var(--emerald)' : (intensity < 15 ? 'var(--amber)' : 'var(--rose)');
 
   el.innerHTML = `
