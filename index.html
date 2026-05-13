@@ -661,28 +661,55 @@ tbody tr:hover td { background: var(--s2); }
     <!-- PRODUCTS -->
     <div class="tab-section" id="section-products">
       <div class="page-header">
-        <div class="page-title">Product Performance</div>
-        <div class="page-meta" id="products-meta">Based on orders in selected period</div>
+        <div class="page-title">Products</div>
+        <div class="page-meta" id="products-meta">Based on orders in the selected date range</div>
       </div>
-      <div class="kpi-grid" id="kpi-products" style="grid-template-columns:repeat(4,1fr)">
-        <div class="kpi-card"><div class="kpi-label">Products Sold</div><div class="skeleton" style="height:28px;width:50%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:40%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Units Sold</div><div class="skeleton" style="height:28px;width:45%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:35%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="skeleton" style="height:28px;width:65%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg Units/Order</div><div class="skeleton" style="height:28px;width:40%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:35%"></div></div>
+
+      <!-- KPIs: 4 cards -->
+      <div class="stats-row" id="kpi-products" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <div class="stat-cell"><div class="stat-cell-label">Units Sold</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Distinct Products</div><div class="skeleton" style="height:22px;width:45%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Avg. revenue contributed per unit sold">Revenue per Unit</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Highest-growth product compared to the previous equivalent period">Top Mover</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:55%"></div></div>
       </div>
-      <div class="row row-2" style="margin-bottom:12px">
-        <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Revenue by Product</div><div class="panel-sub">Top 10 by revenue</div></div></div>
-          <div class="panel-body"><div class="chart-wrap-tall"><canvas id="products-revenue-chart"></canvas></div></div>
+
+      <!-- Pareto / concentration -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Catalog Concentration</div>
+            <div class="panel-sub">How much of your sales is concentrated in a few products. Healthy catalogs are spread out.</div>
+          </div>
         </div>
-        <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Units Sold</div><div class="panel-sub">Top 10 by quantity</div></div></div>
-          <div class="panel-body"><div class="chart-wrap-tall"><canvas id="products-units-chart"></canvas></div></div>
+        <div class="panel-body">
+          <div id="catalog-concentration"><div class="empty-state">Loading…</div></div>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-header"><div><div class="panel-title">Revenue Share</div><div class="panel-sub">% of total revenue per product</div></div></div>
-        <div class="panel-body"><div id="products-share-list" class="breakdown-list"></div></div>
+
+      <!-- Master product table -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Product Performance</div>
+            <div class="panel-sub">All products sold in the selected period · sortable · refund rate flags quality issues</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="products-table"><div class="empty-state">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Bought together -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Frequently Bought Together</div>
+            <div class="panel-sub">Pairs of products that appear in the same order more often than expected — useful for bundling and recommendations.</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="bought-together"><div class="empty-state">Loading…</div></div>
+        </div>
       </div>
     </div>
 
@@ -690,25 +717,76 @@ tbody tr:hover td { background: var(--s2); }
     <div class="tab-section" id="section-customers">
       <div class="page-header">
         <div class="page-title">Customers</div>
-        <div class="page-meta" id="customers-meta">—</div>
+        <div class="page-meta">Top section reflects the selected date range. Lifetime metrics use the last 12 months.</div>
       </div>
-      <div class="kpi-grid" id="kpi-customers" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
-        <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="skeleton" style="height:28px;width:55%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Lifetime Value</div><div class="skeleton" style="height:28px;width:60%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:40%"></div></div>
+
+      <!-- KPIs: this period -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">In the Selected Period</div>
+      <div class="stats-row" id="customers-period-kpis" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+        <div class="stat-cell"><div class="stat-cell-label">Active Customers</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">New Customers</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Returning Customers</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Spend per Customer</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
       </div>
-      <div class="row row-2" style="margin-bottom:12px">
+
+      <!-- Lifetime metrics (TTM) -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span style="color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;font-size:9px">LAST 12 MONTHS</span></div>
+      <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+        <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers (by email) across the last 12 months">Total Customers (12m)</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Average revenue per customer across all their orders in the last 12 months">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Median days between a customer's 1st and 2nd purchase. Tells you the natural reorder cycle.">Reorder Cycle</div><div class="stat-cell-value" id="kpi-reorder-cycle">—</div><div class="stat-cell-sub" id="kpi-reorder-cycle-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="% of customers whose last order was more than 90 days ago. High % = customer base is going dormant.">Dormant Customers</div><div class="stat-cell-value" id="kpi-dormant">—</div><div class="stat-cell-sub" id="kpi-dormant-sub">—</div></div>
+      </div>
+
+      <!-- Segmentation + LTV distribution -->
+      <div class="row row-2" style="margin-bottom:14px">
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Top Cities</div><div class="panel-sub">Customers by location</div></div></div>
-          <div class="panel-body"><div class="breakdown-list" id="geo-breakdown"><div class="skeleton" style="height:36px;border-radius:6px"></div></div></div>
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Customer Segments</div>
+              <div class="panel-sub">By number of orders in the last 12 months</div>
+            </div>
+          </div>
+          <div class="panel-body"><div id="customer-segments"><div class="empty-state">Loading…</div></div></div>
         </div>
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Top Customers</div><div class="panel-sub">By lifetime value</div></div></div>
-          <div class="panel-body"><div class="product-rows" id="top-customers-list"><div class="skeleton" style="height:36px;border-radius:6px"></div></div></div>
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Lifetime Value Distribution</div>
+              <div class="panel-sub">How many customers fall into each spending bracket</div>
+            </div>
+          </div>
+          <div class="panel-body"><div id="ltv-distribution"><div class="empty-state">Loading…</div></div></div>
         </div>
       </div>
+
+      <!-- Recency + Top cities -->
+      <div class="row row-2" style="margin-bottom:14px">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Customer Recency</div>
+              <div class="panel-sub">When customers last placed an order (active = within 90 days)</div>
+            </div>
+          </div>
+          <div class="panel-body"><div id="customer-recency"><div class="empty-state">Loading…</div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Top Cities</div>
+              <div class="panel-sub">Where your buyers are concentrated</div>
+            </div>
+          </div>
+          <div class="panel-body"><div class="breakdown-list" id="geo-breakdown"><div class="empty-state">Loading…</div></div></div>
+        </div>
+      </div>
+
+      <!-- All Customers table -->
       <div class="table-panel">
         <div class="table-header">
           <div class="table-title-text">All Customers</div>
+          <input type="text" class="search-input" placeholder="Search by name or email…" oninput="filterCustomers(this.value)" id="customer-search">
           <div class="count-badge" id="customers-badge">—</div>
         </div>
         <div id="customers-wrap"><div class="empty-state">Loading…</div></div>
@@ -1515,7 +1593,7 @@ function renderKPIs() {
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(k.netSales)}</div><div class="kpi-sub">${orders.length} orders · $${fmt(k.returns)} refunded</div>${fmtChange(k.netSales, kPrev.netSales)}</div>
     <div class="kpi-card"><div class="kpi-label">Paid Orders</div><div class="kpi-value">${paid}</div><div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>${fmtChange(paid, prevPaid)}</div>
-    <div class="kpi-card"><div class="kpi-label">Avg Order Value</div><div class="kpi-value">$${fmt(avg)}</div><div class="kpi-sub">per order</div>${fmtChange(avg, prevAvg)}</div>
+    <div class="kpi-card"><div class="kpi-label">Total Refunded</div><div class="kpi-value" style="color:${k.returns > 0 ? 'var(--rose)' : 'var(--t0)'}">$${fmt(k.returns)}</div><div class="kpi-sub">${refunded.length} refunded orders</div></div>
     <div class="kpi-card"><div class="kpi-label">Refund Rate</div><div class="kpi-value">${refundRate}%</div><div class="kpi-sub">${refunded.length} refunded · $${fmt(k.returns)}</div></div>
     <div class="kpi-card"><div class="kpi-label">TikTok Shop</div><div class="kpi-value">${tiktok}</div><div class="kpi-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders</div></div>
     <div class="kpi-card"><div class="kpi-label">Web / Direct</div><div class="kpi-value">${web}</div><div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div></div>
@@ -1720,118 +1798,565 @@ function sortBy(col) { if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=-1
 function goPage(p) { currentPage=p; renderOrdersTable(); window.scrollTo({top: document.querySelector('.table-panel').offsetTop - 80, behavior:'smooth'}); }
 
 let prodRevChart=null, prodUnitsChart=null, dowChart=null;
+// ===================================================================
+//  PRODUCTS TAB
+// ===================================================================
+//
+// Respects the date filter (same as Sales tab).
+// Compares each product vs the previous equivalent period.
 function renderProductsCatalog() {
-  const productRev={}, productUnits={}, productRefunds={};
-  filteredOrders.forEach(o => (o.line_items||[]).forEach(item => {
-    const t = item.title||'Unknown';
-    productRev[t]=(productRev[t]||0)+(parseFloat(item.price||0)-parseFloat(item.discount_allocations?.reduce((s,d)=>s+parseFloat(d.amount||0),0)||0))*(item.quantity||1);
-    productUnits[t]=(productUnits[t]||0)+(item.quantity||1);
-    if (o.financial_status === 'refunded') productRefunds[t] = (productRefunds[t]||0)+1;
-  }));
-  const byRev = Object.entries(productRev).sort((a,b)=>b[1]-a[1]);
-  const byUnits = Object.entries(productUnits).sort((a,b)=>b[1]-a[1]);
-  const totalRev = byRev.reduce((s,[,v])=>s+v,0);
-  const totalUnits = byUnits.reduce((s,[,v])=>s+v,0);
-  const uniqueProducts = byRev.length;
-  const avgUnits = filteredOrders.length ? (totalUnits/filteredOrders.length).toFixed(1) : 0;
-  const topProduct = byRev[0]?.[0]||'—';
-  const topShort = topProduct.length>16 ? topProduct.substring(0,14)+'…' : topProduct;
+  const orders = filteredOrders || [];
+  const prevOrders = getPreviousPeriodOrders();
 
+  // Aggregate per-product metrics
+  function aggregate(orderList) {
+    const map = new Map();
+    for (const o of orderList) {
+      const refundedAmount = parseFloat(o.total_refunded || 0);
+      const isRefunded = refundedAmount > 0;
+      for (const item of (o.line_items || [])) {
+        const title = item.title || 'Unknown';
+        const qty = parseInt(item.quantity || 0);
+        const price = parseFloat(item.price || 0);
+        const lineDisc = (item.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+        const lineRev = price * qty - lineDisc;
+        if (!map.has(title)) map.set(title, { title, units: 0, revenue: 0, orders: 0, refunds: 0 });
+        const p = map.get(title);
+        p.units += qty;
+        p.revenue += lineRev;
+        p.orders += 1;
+        if (isRefunded) p.refunds += 1;
+      }
+    }
+    return map;
+  }
+
+  const nowMap = aggregate(orders);
+  const prevMap = aggregate(prevOrders);
+  const products = Array.from(nowMap.values()).sort((a, b) => b.revenue - a.revenue);
+
+  const totalUnits = products.reduce((s, p) => s + p.units, 0);
+  const totalRev = products.reduce((s, p) => s + p.revenue, 0);
+  const distinct = products.length;
+  const revPerUnit = totalUnits > 0 ? totalRev / totalUnits : 0;
+
+  // Top mover: largest % growth (only products with meaningful volume in both periods)
+  let topMover = null;
+  for (const p of products) {
+    if (p.revenue < totalRev * 0.005) continue; // ignore tiny products
+    const prev = prevMap.get(p.title);
+    if (!prev || prev.revenue === 0) continue;
+    const growth = (p.revenue - prev.revenue) / prev.revenue * 100;
+    if (topMover === null || growth > topMover.growth) topMover = { title: p.title, growth };
+  }
+
+  // KPIs
+  const fromD = document.getElementById('date-from').value;
+  const toD = document.getElementById('date-to').value;
+  document.getElementById('products-meta').textContent =
+    `${distinct.toLocaleString()} products · ${totalUnits.toLocaleString()} units · ${fromD} → ${toD}`;
   document.getElementById('kpi-products').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Products Sold</div><div class="kpi-value">${uniqueProducts}</div><div class="kpi-sub">unique SKUs</div></div>
-    <div class="kpi-card"><div class="kpi-label">Units Sold</div><div class="kpi-value">${totalUnits}</div><div class="kpi-sub">in period</div></div>
-    <div class="kpi-card"><div class="kpi-label">Top Product</div><div class="kpi-value" style="font-size:16px;letter-spacing:-.2px">${topShort}</div><div class="kpi-sub">$${fmt(byRev[0]?.[1]||0)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg Units / Order</div><div class="kpi-value">${avgUnits}</div><div class="kpi-sub">per order</div></div>`;
-  document.getElementById('products-meta').textContent = `${uniqueProducts} products · ${totalUnits} units · ${document.getElementById('date-from').value} → ${document.getElementById('date-to').value}`;
+    <div class="stat-cell">
+      <div class="stat-cell-label">Units Sold</div>
+      <div class="stat-cell-value">${totalUnits.toLocaleString()}</div>
+      <div class="stat-cell-sub">across ${orders.length.toLocaleString()} orders</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Distinct Products</div>
+      <div class="stat-cell-value">${distinct.toLocaleString()}</div>
+      <div class="stat-cell-sub">sold in this period</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Revenue per Unit</div>
+      <div class="stat-cell-value">$${revPerUnit.toFixed(2)}</div>
+      <div class="stat-cell-sub">avg net revenue per unit</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Top Mover</div>
+      <div class="stat-cell-value" style="font-size:14px;line-height:1.2">${topMover ? (topMover.title.length > 18 ? topMover.title.substring(0,16) + '…' : topMover.title) : '\u2014'}</div>
+      <div class="stat-cell-sub" style="color:${topMover && topMover.growth > 0 ? 'var(--emerald)' : 'var(--rose)'}">${topMover ? (topMover.growth > 0 ? '\u2191 ' : '\u2193 ') + Math.abs(Math.round(topMover.growth)) + '% vs prev period' : 'not enough history'}</div>
+    </div>
+  `;
 
-  const top10Rev = byRev.slice(0,10);
-  const top10Units = byUnits.slice(0,10);
+  // Catalog concentration (Pareto)
+  renderCatalogConcentration(products, totalRev);
 
-  const ctxR = document.getElementById('products-revenue-chart').getContext('2d');
-  if (prodRevChart) prodRevChart.destroy();
-  prodRevChart = new Chart(ctxR, {
-    type: 'bar',
-    data: { labels: top10Rev.map(([t])=>t.length>22?t.substring(0,20)+'…':t), datasets: [{data:top10Rev.map(([,v])=>v),backgroundColor:CHART_COLORS,borderRadius:4,borderSkipped:false}] },
-    options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      plugins:{ legend:{display:false}, tooltip:{...CHART_OPTS.tooltip, callbacks:{label:c=>' $'+fmt(c.raw)}} },
-      scales: { x:{grid:{color:PALETTE.grid,drawBorder:false},ticks:{color:PALETTE.axis,font:{size:9,family:'DM Mono'},callback:v=>'$'+fmt(v)}}, y:{grid:{display:false,drawBorder:false},ticks:{color:PALETTE.text,font:{size:10,family:'DM Sans',weight:'500'}}} }
+  // Master table
+  renderProductsTable(products, prevMap, totalRev);
+
+  // Frequently bought together
+  renderBoughtTogether(orders);
+}
+
+function renderCatalogConcentration(products, totalRev) {
+  const el = document.getElementById('catalog-concentration');
+  if (!el) return;
+  if (products.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  // Cumulative %
+  const top3 = products.slice(0, 3).reduce((s, p) => s + p.revenue, 0);
+  const top5 = products.slice(0, 5).reduce((s, p) => s + p.revenue, 0);
+  const top10 = products.slice(0, 10).reduce((s, p) => s + p.revenue, 0);
+  const top3Pct = totalRev > 0 ? Math.round(top3 / totalRev * 100) : 0;
+  const top5Pct = totalRev > 0 ? Math.round(top5 / totalRev * 100) : 0;
+  const top10Pct = totalRev > 0 ? Math.round(top10 / totalRev * 100) : 0;
+
+  // Color flags
+  const flag3 = top3Pct > 70 ? 'var(--rose)' : (top3Pct > 50 ? 'var(--amber)' : 'var(--emerald)');
+  const flag5 = top5Pct > 80 ? 'var(--rose)' : (top5Pct > 65 ? 'var(--amber)' : 'var(--emerald)');
+
+  let msg;
+  if (top3Pct > 70) msg = `<strong style="color:var(--rose)">Highly concentrated.</strong> Your top 3 products drive ${top3Pct}% of sales. If any one of them dips (out of stock, quality issue, trend shift), revenue takes a real hit. Consider what could become your 4th or 5th hero.`;
+  else if (top3Pct > 50) msg = `<strong style="color:var(--amber)">Moderate concentration.</strong> Top 3 products = ${top3Pct}% of sales. Healthy enough but worth diversifying — a single product issue could meaningfully impact revenue.`;
+  else msg = `<strong style="color:var(--emerald)">Well-spread catalog.</strong> No single product dominates (top 3 = ${top3Pct}%). Your revenue base is resilient.`;
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px">
+      <div title="${products.slice(0,3).map(p => p.title).join(' · ')}">
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 3 products</div>
+        <div style="font-size:24px;font-weight:700;color:${flag3};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top3Pct}%</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(top3)} of $${fmt(totalRev)}</div>
+      </div>
+      <div title="${products.slice(0,5).map(p => p.title).join(' · ')}">
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 5 products</div>
+        <div style="font-size:24px;font-weight:700;color:${flag5};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top5Pct}%</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(top5)} of $${fmt(totalRev)}</div>
+      </div>
+      <div>
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 10 products</div>
+        <div style="font-size:24px;font-weight:700;color:var(--t0);letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top10Pct}%</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(top10)} of $${fmt(totalRev)}</div>
+      </div>
+    </div>
+    <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
+      <strong style="color:var(--t0)">What this means:</strong> ${msg}
+    </div>
+  `;
+}
+
+function renderProductsTable(products, prevMap, totalRev) {
+  const el = document.getElementById('products-table');
+  if (!el) return;
+  if (products.length === 0) { el.innerHTML = '<div class="empty-state">No products sold in this period</div>'; return; }
+
+  let html = '<div style="display:grid;grid-template-columns:32px 1fr 70px 100px 70px 70px 90px;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t1)">';
+  html += '<div>#</div><div>Product</div><div style="text-align:right">Units</div><div style="text-align:right">Revenue</div><div style="text-align:right" title="% of total revenue">Share</div><div style="text-align:right" title="% of orders containing this product that were later refunded">Refund</div><div style="text-align:right" title="% revenue change vs previous equivalent period">vs Prev.</div></div>';
+
+  products.forEach((p, idx) => {
+    const share = totalRev > 0 ? (p.revenue / totalRev * 100) : 0;
+    const refundRate = p.orders > 0 ? (p.refunds / p.orders * 100) : 0;
+    const refundColor = refundRate > 5 ? 'var(--rose)' : (refundRate > 2 ? 'var(--amber)' : 'var(--t2)');
+
+    let deltaHtml = '<span style="color:var(--t2)">new</span>';
+    const prev = prevMap.get(p.title);
+    if (prev && prev.revenue > 0) {
+      const delta = Math.round((p.revenue - prev.revenue) / prev.revenue * 100);
+      const cls = delta > 5 ? 'velocity-up' : (delta < -5 ? 'velocity-down' : 'velocity-flat');
+      const arrow = delta > 0 ? '↑' : (delta < 0 ? '↓' : '→');
+      deltaHtml = `<span class="${cls}">${arrow} ${Math.abs(delta)}%</span>`;
     }
+
+    html += `
+      <div style="display:grid;grid-template-columns:32px 1fr 70px 100px 70px 70px 90px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline" title="${p.title} — ${p.units.toLocaleString()} units, $${fmt(p.revenue)} revenue (${share.toFixed(1)}%). ${p.refunds} refund-flagged orders out of ${p.orders}.">
+        <div style="color:var(--t2);font-weight:600">${idx + 1}</div>
+        <div style="color:var(--t0);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</div>
+        <div style="text-align:right;color:var(--t0);font-variant-numeric:tabular-nums">${p.units.toLocaleString()}</div>
+        <div style="text-align:right;color:var(--t0);font-variant-numeric:tabular-nums">$${fmt(p.revenue)}</div>
+        <div style="text-align:right;color:var(--t2);font-variant-numeric:tabular-nums">${share.toFixed(1)}%</div>
+        <div style="text-align:right;color:${refundColor};font-variant-numeric:tabular-nums">${refundRate.toFixed(1)}%</div>
+        <div style="text-align:right;font-variant-numeric:tabular-nums">${deltaHtml}</div>
+      </div>
+    `;
+  });
+  el.innerHTML = html;
+}
+
+function renderBoughtTogether(orders) {
+  const el = document.getElementById('bought-together');
+  if (!el) return;
+  if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  // Pairs of products in same order
+  const pairCounts = new Map();
+  for (const o of orders) {
+    const items = (o.line_items || []).map(i => i.title).filter(t => t);
+    const unique = Array.from(new Set(items));
+    if (unique.length < 2) continue;
+    for (let i = 0; i < unique.length; i++) {
+      for (let j = i + 1; j < unique.length; j++) {
+        const a = unique[i], b = unique[j];
+        const key = a < b ? `${a}\u0000${b}` : `${b}\u0000${a}`;
+        pairCounts.set(key, (pairCounts.get(key) || 0) + 1);
+      }
+    }
+  }
+  if (pairCounts.size === 0) { el.innerHTML = '<div class="empty-state">No multi-item orders in this period</div>'; return; }
+
+  const pairs = Array.from(pairCounts.entries())
+    .map(([key, count]) => { const [a, b] = key.split('\u0000'); return { a, b, count }; })
+    .sort((x, y) => y.count - x.count)
+    .slice(0, 8);
+
+  const maxCount = pairs[0].count;
+  let html = '';
+  for (const p of pairs) {
+    const widthPct = Math.round(p.count / maxCount * 100);
+    html += `
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:8px 0">
+        <div style="display:flex;align-items:baseline">
+          <div class="insight-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.a} <span style="color:var(--t3);margin:0 4px">+</span> ${p.b}</div>
+          <div class="insight-value">${p.count}×</div>
+        </div>
+        <div class="insight-bar"><div class="insight-bar-fill" style="width:${widthPct}%"></div></div>
+      </div>
+    `;
+  }
+  el.innerHTML = html;
+}
+
+// ===================================================================
+//  CUSTOMERS TAB
+// ===================================================================
+//
+// Top KPIs use the date filter (active customers in period).
+// Lifetime view uses TTM (last 12 months).
+let _filteredCustomersCache = null;
+function renderCustomersTable() {
+  renderCustomersPeriodKPIs();
+  renderCustomersLifetimeKPIs();
+  renderCustomerSegments();
+  renderLTVDistribution();
+  renderCustomerRecency();
+  renderGeoBreakdown();
+  renderCustomersTableList();
+}
+
+function renderCustomersPeriodKPIs() {
+  const orders = filteredOrders || [];
+  if (orders.length === 0) return;
+
+  // Active customers = unique emails with orders in period
+  const emailsInPeriod = new Set();
+  let revInPeriod = 0;
+  for (const o of orders) {
+    const e = o.customer?.email?.toLowerCase();
+    if (e) emailsInPeriod.add(e);
+    revInPeriod += parseFloat(o.total_price || 0);
+  }
+
+  // New vs Repeat in period: a customer is "new in period" if their FIRST order
+  // across all of ttmOrders falls within the period.
+  const fromDate = document.getElementById('date-from').value;
+  const toDate = document.getElementById('date-to').value;
+  const byEmail = getOrdersByEmail(ttmOrders);
+
+  let newC = 0, repeatC = 0;
+  for (const email of emailsInPeriod) {
+    const arr = byEmail.get(email);
+    if (!arr || arr.length === 0) { newC++; continue; }
+    const firstDate = new Date(arr[0].created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    if (firstDate >= fromDate && firstDate <= toDate) newC++;
+    else repeatC++;
+  }
+  const activeTotal = emailsInPeriod.size;
+  const newPct = activeTotal > 0 ? Math.round(newC / activeTotal * 100) : 0;
+  const repeatPct = activeTotal > 0 ? Math.round(repeatC / activeTotal * 100) : 0;
+  const spendPerCustomer = activeTotal > 0 ? revInPeriod / activeTotal : 0;
+
+  document.getElementById('customers-period-kpis').innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-cell-label">Active Customers</div>
+      <div class="stat-cell-value">${activeTotal.toLocaleString()}</div>
+      <div class="stat-cell-sub">placed at least 1 order</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">New Customers</div>
+      <div class="stat-cell-value">${newC.toLocaleString()}</div>
+      <div class="stat-cell-sub">${newPct}% of active · first-time buyers</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Returning Customers</div>
+      <div class="stat-cell-value">${repeatC.toLocaleString()}</div>
+      <div class="stat-cell-sub">${repeatPct}% of active · had bought before</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Spend per Customer</div>
+      <div class="stat-cell-value">$${fmt(spendPerCustomer)}</div>
+      <div class="stat-cell-sub">avg in this period</div>
+    </div>
+  `;
+}
+
+function renderCustomersLifetimeKPIs() {
+  const ttm = getTTMOrders();
+  if (ttm.length === 0) return;
+  const byEmail = getOrdersByEmail(ttm);
+
+  // Total customers
+  const totalCustomers = byEmail.size;
+
+  // Avg LTV (last 12 months)
+  let totalRev = 0;
+  for (const o of ttm) totalRev += parseFloat(o.total_price || 0);
+  const avgLTV = totalCustomers > 0 ? totalRev / totalCustomers : 0;
+
+  // Reorder cycle = median days between 1st and 2nd purchase
+  const cyclesDays = [];
+  for (const [, arr] of byEmail) {
+    if (arr.length < 2) continue;
+    const t1 = new Date(arr[0].created_at).getTime();
+    const t2 = new Date(arr[1].created_at).getTime();
+    const days = (t2 - t1) / 86400000;
+    if (days > 0 && days < 365) cyclesDays.push(days);
+  }
+  let medianCycle = null;
+  if (cyclesDays.length > 0) {
+    cyclesDays.sort((a, b) => a - b);
+    medianCycle = Math.round(cyclesDays[Math.floor(cyclesDays.length / 2)]);
+  }
+
+  // Dormant: last order > 90 days ago
+  const now = Date.now();
+  const ninetyDaysAgo = now - 90 * 86400000;
+  let dormant = 0;
+  for (const [, arr] of byEmail) {
+    const lastT = new Date(arr[arr.length - 1].created_at).getTime();
+    if (lastT < ninetyDaysAgo) dormant++;
+  }
+  const dormantPct = totalCustomers > 0 ? Math.round(dormant / totalCustomers * 100) : 0;
+  const dormantColor = dormantPct < 30 ? 'var(--emerald)' : (dormantPct < 60 ? 'var(--amber)' : 'var(--rose)');
+
+  document.getElementById('kpi-total-customers').textContent = totalCustomers.toLocaleString();
+  document.getElementById('kpi-total-customers-sub').textContent = `unique buyers in 12 months`;
+  document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
+  document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} total ÷ ${totalCustomers.toLocaleString()} customers`;
+  document.getElementById('kpi-reorder-cycle').textContent = medianCycle !== null ? `${medianCycle} days` : '—';
+  document.getElementById('kpi-reorder-cycle-sub').textContent = medianCycle !== null ? `between 1st and 2nd order` : 'not enough repeat buyers';
+  document.getElementById('kpi-dormant').textContent = `${dormantPct}%`;
+  document.getElementById('kpi-dormant').style.color = dormantColor;
+  document.getElementById('kpi-dormant-sub').textContent = `${dormant.toLocaleString()} customers · no order in 90+ days`;
+}
+
+function renderCustomerSegments() {
+  const el = document.getElementById('customer-segments');
+  if (!el) return;
+  const byEmail = getOrdersByEmail(getTTMOrders());
+  if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  const segs = { 'One-time (1 order)': 0, 'Repeat (2 orders)': 0, 'Loyal (3-4 orders)': 0, 'VIP (5+ orders)': 0 };
+  for (const [, arr] of byEmail) {
+    if (arr.length === 1) segs['One-time (1 order)']++;
+    else if (arr.length === 2) segs['Repeat (2 orders)']++;
+    else if (arr.length <= 4) segs['Loyal (3-4 orders)']++;
+    else segs['VIP (5+ orders)']++;
+  }
+  const total = byEmail.size;
+  const colors = ['var(--t2)', 'var(--blue)', 'var(--teal)', 'var(--emerald)'];
+  const labels = Object.keys(segs);
+
+  let html = '';
+  labels.forEach((label, i) => {
+    const count = segs[label];
+    const pct = total > 0 ? (count / total * 100) : 0;
+    html += `
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:9px 0">
+        <div style="display:flex;align-items:baseline">
+          <div class="insight-label">${label}</div>
+          <div class="insight-value">${count.toLocaleString()}</div>
+          <div class="insight-sub">${pct.toFixed(1)}%</div>
+        </div>
+        <div class="insight-bar"><div class="insight-bar-fill" style="width:${pct}%;background:${colors[i]}"></div></div>
+      </div>
+    `;
   });
 
-  const ctxU = document.getElementById('products-units-chart').getContext('2d');
-  if (prodUnitsChart) prodUnitsChart.destroy();
-  prodUnitsChart = new Chart(ctxU, {
-    type: 'bar',
-    data: { labels: top10Units.map(([t])=>t.length>22?t.substring(0,20)+'…':t), datasets: [{data:top10Units.map(([,v])=>v),backgroundColor:CHART_COLORS,borderRadius:4,borderSkipped:false}] },
-    options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      plugins:{ legend:{display:false}, tooltip:{...CHART_OPTS.tooltip, callbacks:{label:c=>' '+c.raw+' units'}} },
-      scales: { x:{grid:{color:PALETTE.grid,drawBorder:false},ticks:{color:PALETTE.axis,font:{size:9,family:'DM Mono'}}}, y:{grid:{display:false,drawBorder:false},ticks:{color:PALETTE.text,font:{size:10,family:'DM Sans',weight:'500'}}} }
+  // Insight
+  const vipPct = total > 0 ? (segs['VIP (5+ orders)'] / total * 100) : 0;
+  const oneTimePct = total > 0 ? (segs['One-time (1 order)'] / total * 100) : 0;
+  let msg;
+  if (oneTimePct > 80) msg = `<strong style="color:var(--rose)">Heavy reliance on first-time buyers.</strong> ${oneTimePct.toFixed(0)}% of customers bought just once. Acquisition is working; retention isn't. Focus on email flows, reorder reminders, and post-purchase experience.`;
+  else if (vipPct > 5) msg = `<strong style="color:var(--emerald)">Healthy loyalty.</strong> ${vipPct.toFixed(1)}% of customers are VIPs (5+ orders). These people are your goldmine — treat them well (early access, exclusive bundles).`;
+  else msg = `<strong style="color:var(--amber)">Loyalty building.</strong> Most customers fall into 1-2 orders. Push for the 3rd order — that's typically the threshold where customers become loyal.`;
+
+  html += `<div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:12px"><strong style="color:var(--t0)">What this means:</strong> ${msg}</div>`;
+  el.innerHTML = html;
+}
+
+function renderLTVDistribution() {
+  const el = document.getElementById('ltv-distribution');
+  if (!el) return;
+  const byEmail = getOrdersByEmail(getTTMOrders());
+  if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  const buckets = [
+    { label: '$0 – $50',     min: 0,    max: 50,    count: 0 },
+    { label: '$50 – $150',   min: 50,   max: 150,   count: 0 },
+    { label: '$150 – $500',  min: 150,  max: 500,   count: 0 },
+    { label: '$500 – $1,500', min: 500, max: 1500,  count: 0 },
+    { label: '$1,500+',      min: 1500, max: Infinity, count: 0 },
+  ];
+  let totalRev = 0, totalCustomers = 0;
+  const bucketRev = [0, 0, 0, 0, 0];
+  for (const [, arr] of byEmail) {
+    const spend = arr.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+    totalRev += spend;
+    totalCustomers++;
+    for (let i = 0; i < buckets.length; i++) {
+      if (spend >= buckets[i].min && spend < buckets[i].max) {
+        buckets[i].count++;
+        bucketRev[i] += spend;
+        break;
+      }
     }
+  }
+
+  let html = '';
+  const maxCount = Math.max(...buckets.map(b => b.count));
+  buckets.forEach((b, i) => {
+    const customerPct = totalCustomers > 0 ? (b.count / totalCustomers * 100) : 0;
+    const revPct = totalRev > 0 ? (bucketRev[i] / totalRev * 100) : 0;
+    const widthPct = maxCount > 0 ? (b.count / maxCount * 100) : 0;
+    html += `
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:9px 0">
+        <div style="display:flex;align-items:baseline">
+          <div class="insight-label">${b.label}</div>
+          <div class="insight-value">${b.count.toLocaleString()}</div>
+          <div class="insight-sub">${customerPct.toFixed(1)}% customers · ${revPct.toFixed(1)}% revenue</div>
+        </div>
+        <div class="insight-bar"><div class="insight-bar-fill" style="width:${widthPct}%"></div></div>
+      </div>
+    `;
   });
 
-  document.getElementById('products-share-list').innerHTML = byRev.slice(0,10).map(([title,rev],i) => {
-    const pct = totalRev ? (rev/totalRev*100).toFixed(1) : 0;
-    const units = productUnits[title]||0;
-    const refunds = productRefunds[title]||0;
-    return `<div class="breakdown-item" style="margin-bottom:14px">
-      <div class="breakdown-row"><span class="breakdown-name">${title}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${units} units${refunds>0?` · <span style="color:var(--rose)">${refunds} refunds</span>`:''} · ${pct}%</div></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${CHART_COLORS[i%CHART_COLORS.length]}"></div></div>
-    </div>`;
+  // Insight: how concentrated is revenue in top bucket?
+  const topBucketRevPct = totalRev > 0 ? (bucketRev[bucketRev.length - 1] / totalRev * 100) : 0;
+  const topBucketCustPct = totalCustomers > 0 ? (buckets[buckets.length - 1].count / totalCustomers * 100) : 0;
+  let msg;
+  if (topBucketCustPct > 0 && topBucketRevPct > 30) {
+    msg = `<strong style="color:var(--amber)">Revenue leans on big spenders.</strong> Just ${topBucketCustPct.toFixed(1)}% of customers (the $1,500+ group) generate ${topBucketRevPct.toFixed(0)}% of revenue. Protect them carefully — losing one hurts.`;
+  } else if (buckets[0].count / totalCustomers > 0.7) {
+    msg = `<strong style="color:var(--rose)">Most customers spend very little.</strong> Over 70% of your buyers are in the lowest bracket. Bundles, upsells at checkout, and product education can lift this.`;
+  } else {
+    msg = `<strong style="color:var(--emerald)">Healthy spending distribution.</strong> Your customer base spans all tiers without over-relying on any single group.`;
+  }
+  html += `<div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:12px"><strong style="color:var(--t0)">What this means:</strong> ${msg}</div>`;
+  el.innerHTML = html;
+}
+
+function renderCustomerRecency() {
+  const el = document.getElementById('customer-recency');
+  if (!el) return;
+  const byEmail = getOrdersByEmail(getTTMOrders());
+  if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  const now = Date.now();
+  const buckets = [
+    { label: 'Active — last 30 days',    min: 0,    max: 30,   count: 0, color: 'var(--emerald)' },
+    { label: 'Recent — 31-90 days ago',  min: 30,   max: 90,   count: 0, color: 'var(--teal)' },
+    { label: 'At risk — 91-180 days ago', min: 90,   max: 180,  count: 0, color: 'var(--amber)' },
+    { label: 'Dormant — 180+ days ago',  min: 180,  max: Infinity, count: 0, color: 'var(--rose)' },
+  ];
+  for (const [, arr] of byEmail) {
+    const lastT = new Date(arr[arr.length - 1].created_at).getTime();
+    const daysAgo = (now - lastT) / 86400000;
+    for (const b of buckets) {
+      if (daysAgo >= b.min && daysAgo < b.max) { b.count++; break; }
+    }
+  }
+  const total = byEmail.size;
+
+  let html = '';
+  for (const b of buckets) {
+    const pct = total > 0 ? (b.count / total * 100) : 0;
+    html += `
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:9px 0">
+        <div style="display:flex;align-items:baseline">
+          <div class="insight-label">${b.label}</div>
+          <div class="insight-value">${b.count.toLocaleString()}</div>
+          <div class="insight-sub">${pct.toFixed(1)}%</div>
+        </div>
+        <div class="insight-bar"><div class="insight-bar-fill" style="width:${pct}%;background:${b.color}"></div></div>
+      </div>
+    `;
+  }
+  el.innerHTML = html;
+}
+
+function renderGeoBreakdown() {
+  const el = document.getElementById('geo-breakdown');
+  if (!el) return;
+  const orders = filteredOrders || [];
+  const cities = new Map();
+  for (const o of orders) {
+    const city = o.shipping_address?.city;
+    if (!city) continue;
+    cities.set(city, (cities.get(city) || 0) + 1);
+  }
+  if (cities.size === 0) { el.innerHTML = '<div class="empty-state">No city data</div>'; return; }
+
+  const sorted = Array.from(cities.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0][1];
+  const total = orders.length;
+
+  el.innerHTML = sorted.map(([city, count]) => {
+    const pct = total > 0 ? Math.round(count / total * 100) : 0;
+    const width = Math.round(count / max * 100);
+    return `<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">${city}</span><div class="breakdown-meta"><span>${count}</span> orders · ${pct}%</div></div><div class="bar-track"><div class="bar-fill" style="width:${width}%;background:${PALETTE.blue}"></div></div></div>`;
   }).join('');
 }
 
-function renderCustomersTable() {
-  const customerMap = {};
-  filteredOrders.forEach(o => {
-    const email = o.customer?.email || ('guest_' + o.order_number);
-    const name = o.customer ? (o.customer.first_name + ' ' + o.customer.last_name).trim() : 'Guest';
+let _customerSearchTerm = '';
+function filterCustomers(term) {
+  _customerSearchTerm = (term || '').toLowerCase().trim();
+  renderCustomersTableList();
+}
+
+function renderCustomersTableList() {
+  const orders = filteredOrders || [];
+  const map = new Map();
+  for (const o of orders) {
+    const email = o.customer?.email?.toLowerCase() || ('guest_' + o.order_number);
+    const name = o.customer ? `${o.customer.first_name || ''} ${o.customer.last_name || ''}`.trim() : 'Guest';
     const city = o.shipping_address?.city || '—';
     const isTikTok = email.includes('tiktokw.us');
-    if (!customerMap[email]) {
-      customerMap[email] = { name, email, city, isTikTok, orders: 0, revenue: 0 };
-    }
-    customerMap[email].orders++;
-    customerMap[email].revenue += parseFloat(o.subtotal_price || o.total_price || 0);
-  });
+    if (!map.has(email)) map.set(email, { name, email, city, isTikTok, orders: 0, revenue: 0, lastOrder: '' });
+    const c = map.get(email);
+    c.orders++;
+    c.revenue += parseFloat(o.total_price || 0);
+    if (o.created_at > c.lastOrder) c.lastOrder = o.created_at;
+  }
 
-  const customers = Object.values(customerMap).sort((a,b) => b.revenue - a.revenue);
-  const totalRevenue = customers.reduce((s,c) => s+c.revenue, 0);
-  const repeatCustomers = customers.filter(c => c.orders > 1).length;
-  const repeatRate = customers.length ? (repeatCustomers/customers.length*100).toFixed(1) : 0;
-  const avgRevPerCustomer = customers.length ? totalRevenue/customers.length : 0;
+  let customers = Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
+  if (_customerSearchTerm) {
+    customers = customers.filter(c => c.name.toLowerCase().includes(_customerSearchTerm) || c.email.toLowerCase().includes(_customerSearchTerm));
+  }
 
-  document.getElementById('kpi-customers').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Unique Buyers</div><div class="kpi-value">${customers.length}</div><div class="kpi-sub">in selected period</div></div>
-    <div class="kpi-card"><div class="kpi-label">Repeat Rate</div><div class="kpi-value">${repeatRate}%</div><div class="kpi-sub">${repeatCustomers} bought 2+ times</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg Rev / Buyer</div><div class="kpi-value">$${fmt(avgRevPerCustomer)}</div><div class="kpi-sub">in period</div></div>
-    <div class="kpi-card"><div class="kpi-label">Period Revenue</div><div class="kpi-value">$${fmt(totalRevenue)}</div><div class="kpi-sub">${filteredOrders.length} orders</div></div>`;
+  document.getElementById('customers-badge').textContent = `${customers.length.toLocaleString()} customers`;
 
-  document.getElementById('customers-meta').textContent = customers.length + ' buyers · ' + repeatRate + '% repeat · avg $' + fmt(avgRevPerCustomer) + ' / buyer';
-  document.getElementById('customers-badge').textContent = customers.length + ' customers';
+  const wrap = document.getElementById('customers-wrap');
+  if (customers.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">No customers match this search.</div>';
+    return;
+  }
 
-  const cities = {};
-  customers.forEach(c => { if (c.city && c.city !== '—') cities[c.city] = (cities[c.city]||0)+1; });
-  const sortedCities = Object.entries(cities).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const maxCity = sortedCities[0]?.[1]||1;
-  const geoEl = document.getElementById('geo-breakdown');
-  if (geoEl) geoEl.innerHTML = sortedCities.map(([city,count]) => {
-    const pct = Math.round(count/customers.length*100);
-    return '<div class="breakdown-item"><div class="breakdown-row"><span class="breakdown-name">' + city + '</span><div class="breakdown-meta"><span>' + count + '</span> buyers · ' + pct + '%</div></div><div class="bar-track"><div class="bar-fill" style="width:' + Math.round(count/maxCity*100) + '%;background:' + PALETTE.blue + '"></div></div></div>';
+  const rows = customers.slice(0, 500).map(c => {
+    const isRepeat = c.orders > 1;
+    const emailDisplay = c.isTikTok
+      ? '<span style="color:var(--t3)">TikTok Customer</span>'
+      : c.email.startsWith('guest_')
+        ? '<span style="color:var(--t3)">Guest</span>'
+        : c.email;
+    const lastOrderStr = c.lastOrder ? fmtDate(c.lastOrder) : '—';
+    return `<tr><td class="customer-name">${c.name || '—'}</td><td style="font-family:var(--mono);font-size:10px;color:var(--t2)">${emailDisplay}</td><td style="font-size:11.5px;color:var(--t2);font-family:var(--sans)">${c.city}</td><td style="font-family:var(--mono);font-size:11px">${c.orders}</td><td class="price">$${fmt(c.revenue)}</td><td style="font-family:var(--mono);font-size:10px;color:var(--t2)">${lastOrderStr}</td><td><span class="status-pill ${isRepeat?'s-paid':'s-pending'}">${isRepeat?'Repeat':'New'}</span></td></tr>`;
   }).join('');
 
-  const topEl = document.getElementById('top-customers-list');
-  if (topEl) topEl.innerHTML = customers.slice(0,6).map((c,i) =>
-    '<div class="product-row"><div class="product-rank">' + (i+1) + '</div><div class="product-info"><div class="product-name">' + c.name + '</div><div class="product-units">' + c.orders + ' orders · ' + c.city + '</div></div><div class="product-rev">$' + fmt(c.revenue) + '</div></div>'
-  ).join('');
-
-  document.getElementById('customers-wrap').innerHTML = customers.length
-    ? '<table><thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Revenue</th><th>Type</th></tr></thead><tbody>' +
-      customers.map(c => {
-        const isRepeat = c.orders > 1;
-        const emailDisplay = c.isTikTok ? '<span style="color:var(--t3)">TikTok Customer</span>' : c.email.startsWith('guest_') ? '<span style="color:var(--t3)">Guest</span>' : c.email;
-        return '<tr><td class="customer-name">' + c.name + '</td><td style="font-family:var(--mono);font-size:10px;color:var(--t2)">' + emailDisplay + '</td><td style="font-size:11.5px;color:var(--t2);font-family:var(--sans)">' + c.city + '</td><td style="font-family:var(--mono);font-size:11px">' + c.orders + '</td><td class="price">$' + fmt(c.revenue) + '</td><td><span class="status-pill ' + (isRepeat?'s-paid':'s-pending') + '">' + (isRepeat?'Repeat':'New') + '</span></td></tr>';
-      }).join('') + '</tbody></table>'
-    : '<div class="empty-state">No customers found.</div>';
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>City</th><th>Orders</th><th>Revenue</th><th>Last Order</th><th>Type</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${customers.length > 500 ? `<div style="padding:14px;text-align:center;color:var(--t2);font-family:var(--mono);font-size:11px;border-top:1px solid var(--b1)">Showing top 500 of ${customers.length.toLocaleString()}. Use search to find specific customers.</div>` : ''}
+  `;
 }
 
 function fmt(n) { return parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
