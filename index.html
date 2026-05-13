@@ -477,12 +477,12 @@ tbody tr:hover td { background: var(--s2); }
       </div>
 
       <!-- EXECUTIVE SUMMARY (CFO view) -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Executive Summary</div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Quick Snapshot</div>
       <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-        <div class="stat-cell"><div class="stat-cell-label">Month Pacing</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Repeat Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:70%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Avg Order Value</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Units / Order</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="How this month is going vs the same point of last month">This Month vs Last Month</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="% of orders from customers who had already bought before">Returning Customers</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:70%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="AOV — Average Order Value: average $ spent per order">Avg. Spend per Order (AOV)</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="UPT — Units Per Transaction: average items per order">Items per Order (UPT)</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
       </div>
 
       <!-- REVENUE BREAKDOWN -->
@@ -550,42 +550,64 @@ tbody tr:hover td { background: var(--s2); }
       </div>
     </div>
 
-    <!-- INSIGHTS (CFO view) -->
+    <!-- INSIGHTS (Plain-language view) -->
     <div class="tab-section" id="section-insights">
       <div class="page-header">
         <div class="page-title">Insights</div>
-        <div class="page-meta">Cohort retention, LTV, customer concentration & SKU velocity</div>
+        <div class="page-meta">Numbers that go beyond "how much did I sell" — they tell you why and what's next.</div>
       </div>
 
-      <!-- Row 1: Cohort retention -->
+      <!-- Row 1: Customer Retention (Cohort) -->
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
-          <div><div class="panel-title">Cohort Retention</div><div class="panel-sub">% of each month's new customers who came back in subsequent months</div></div>
+          <div>
+            <div class="panel-title">Customer Retention</div>
+            <div class="panel-sub">How many first-time buyers come back to buy again in the following months</div>
+          </div>
         </div>
         <div class="panel-body">
-          <div id="cohort-retention" style="overflow-x:auto">
-            <div class="empty-state">Loading cohort data…</div>
+          <div style="background:var(--s1);border-left:3px solid var(--teal);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-bottom:14px">
+            <strong style="color:var(--t0)">How to read this:</strong> Each row groups customers by the month they made their first purchase. Each column shows what % of those people came back to buy again 1, 2, 3+ months later. <strong style="color:var(--t0)">Darker green = more loyalty.</strong> Hover any cell to see the exact numbers.
           </div>
+          <div id="cohort-retention" style="overflow-x:auto">
+            <div class="empty-state">Loading…</div>
+          </div>
+          <div id="cohort-insight" style="margin-top:14px"></div>
         </div>
       </div>
 
       <!-- Row 2: LTV + Discount intensity -->
       <div class="row row-2" style="margin-bottom:14px">
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Customer LTV</div><div class="panel-sub">Avg revenue per customer in first N days from 1st purchase</div></div></div>
-          <div class="panel-body">
-            <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
-              <div class="stat-cell"><div class="stat-cell-label">LTV 30d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">LTV 60d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">LTV 90d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">LTV 180d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Customer Value Over Time (LTV)</div>
+              <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days</div>
             </div>
+          </div>
+          <div class="panel-body">
+            <div style="background:var(--s1);border-left:3px solid var(--teal);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-bottom:14px">
+              <strong style="color:var(--t0)">LTV = Lifetime Value.</strong> The total $ an average customer spends across all their purchases in that time window. Growing numbers from 30d to 180d mean people keep buying — that's healthy.
+            </div>
+            <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
+              <div class="stat-cell"><div class="stat-cell-label">First 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">First 60 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">First 90 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">First 180 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+            </div>
+            <div id="ltv-insight" style="margin-top:14px"></div>
           </div>
         </div>
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Discount Intensity</div><div class="panel-sub">Discount load on revenue + impact</div></div></div>
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Discounts Impact</div>
+              <div class="panel-sub">How much of your sales is going to discounts — and whether they help</div>
+            </div>
+          </div>
           <div class="panel-body">
             <div id="discount-intensity"><div class="empty-state">Loading…</div></div>
+            <div id="discount-insight" style="margin-top:14px"></div>
           </div>
         </div>
       </div>
@@ -593,21 +615,43 @@ tbody tr:hover td { background: var(--s2); }
       <!-- Row 3: Customer concentration + Channel performance -->
       <div class="row row-2" style="margin-bottom:14px">
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Customer Concentration</div><div class="panel-sub">Revenue share of top customers (period)</div></div></div>
-          <div class="panel-body"><div id="customer-concentration"><div class="empty-state">Loading…</div></div></div>
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Top Customers</div>
+              <div class="panel-sub">How dependent your sales are on a small group of buyers</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="customer-concentration"><div class="empty-state">Loading…</div></div>
+            <div id="concentration-insight" style="margin-top:14px"></div>
+          </div>
         </div>
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Channel Performance</div><div class="panel-sub">Revenue & new-vs-repeat mix by source</div></div></div>
-          <div class="panel-body"><div id="channel-performance"><div class="empty-state">Loading…</div></div></div>
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Where Sales Come From</div>
+              <div class="panel-sub">Sales by channel (web, TikTok, etc.) — and whether each brings new buyers or repeat ones</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="channel-performance"><div class="empty-state">Loading…</div></div>
+            <div id="channel-insight" style="margin-top:14px"></div>
+          </div>
         </div>
       </div>
 
       <!-- Row 4: SKU velocity -->
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
-          <div><div class="panel-title">SKU Velocity</div><div class="panel-sub">Top products by revenue · acceleration vs prior period</div></div>
+          <div>
+            <div class="panel-title">Product Trends</div>
+            <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the previous period</div>
+          </div>
         </div>
-        <div class="panel-body"><div id="sku-velocity"><div class="empty-state">Loading…</div></div></div>
+        <div class="panel-body">
+          <div id="sku-velocity"><div class="empty-state">Loading…</div></div>
+          <div id="sku-insight" style="margin-top:14px"></div>
+        </div>
       </div>
     </div>
 
@@ -1226,27 +1270,27 @@ function renderExecutiveSummary() {
   }
 
   el.innerHTML = `
-    <div class="stat-cell">
-      <div class="stat-cell-label">Pacing \u2014 ${monthName}</div>
+    <div class="stat-cell" title="Compares your sales so far this month (MTD = Month-To-Date) against the same point of last month, and projects where the month will close at the current pace.">
+      <div class="stat-cell-label">${monthName} vs Last Month</div>
       <div class="stat-cell-value" style="color:${pacingColor}">${pacingArrow} ${pacingPct === null ? '\u2014' : Math.abs(pacingPct) + '%'}</div>
       <div class="stat-cell-sub">
-        $${fmt(mtdRevenue)} MTD \u2022 proj $${fmt(projectedMonth)} \u2022 prev mo $${fmt(prevMonthRevenue)}
+        $${fmt(mtdRevenue)} so far \u2022 on track for $${fmt(projectedMonth)} \u2022 last month: $${fmt(prevMonthRevenue)}
       </div>
     </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Repeat Rate</div>
+    <div class="stat-cell" title="Percentage of orders coming from customers who had bought from you before. Higher = stronger loyalty.">
+      <div class="stat-cell-label">Returning Customers</div>
       <div class="stat-cell-value">${repeatRate}%</div>
-      <div class="stat-cell-sub">${repeatOrders}/${totalWithEmail} orders \u2022 ${medianCycle !== null ? 'cycle ~' + medianCycle + 'd' : 'cycle \u2014'}</div>
+      <div class="stat-cell-sub">${repeatOrders} of ${totalWithEmail} orders \u2022 ${medianCycle !== null ? 'typically reorder every ~' + medianCycle + ' days' : 'reorder cycle: not enough data'}</div>
     </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Avg Order Value</div>
+    <div class="stat-cell" title="AOV (Average Order Value): the average $ amount of each order in this period.">
+      <div class="stat-cell-label">Avg. Spend per Order (AOV)</div>
       <div class="stat-cell-value">$${fmt(aov)}</div>
-      <div class="stat-cell-sub">${deltaSpan(aovDelta)} ${aovDelta !== null ? 'vs prev period' : ''}</div>
+      <div class="stat-cell-sub">${deltaSpan(aovDelta)} ${aovDelta !== null ? 'vs previous period' : ''}</div>
     </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Units / Order</div>
+    <div class="stat-cell" title="UPT (Units Per Transaction): the average number of items in each order.">
+      <div class="stat-cell-label">Items per Order (UPT)</div>
       <div class="stat-cell-value">${upt.toFixed(2)}</div>
-      <div class="stat-cell-sub">${deltaSpan(uptDelta)} ${uptDelta !== null ? 'vs prev period' : ''}</div>
+      <div class="stat-cell-sub">${deltaSpan(uptDelta)} ${uptDelta !== null ? 'vs previous period' : ''}</div>
     </div>
   `;
 }
@@ -1781,27 +1825,56 @@ function renderCohortRetention() {
   }
 
   let html = '<table class="cohort-table"><thead><tr>';
-  html += '<th class="cohort-name">Cohort</th><th>Size</th>';
-  for (const off of offsets) html += `<th>M+${off}</th>`;
+  html += '<th class="cohort-name">First-Order Month</th><th title="Customers whose first-ever order was that month">New Customers</th>';
+  for (const off of offsets) html += `<th title="% who came back to buy ${off} month${off>1?'s':''} after their first order">Month +${off}</th>`;
   html += '</tr></thead><tbody>';
 
   for (const k of filtered) {
     const c = cohorts.get(k);
-    html += `<tr><td class="cohort-name">${monthLabel(k)}</td><td class="cohort-size">${c.size}</td>`;
+    html += `<tr><td class="cohort-name">${monthLabel(k)}</td><td class="cohort-size">${c.size.toLocaleString()}</td>`;
     const maxMonthsAvail = monthDiff(k, `${ty}-${String(tm).padStart(2,'0')}`);
     for (const off of offsets) {
       if (off > maxMonthsAvail) {
-        html += '<td style="background:transparent;color:var(--t3)">—</td>';
+        html += '<td style="background:transparent;color:var(--t3)" title="Too early to measure">—</td>';
       } else {
         const ret = c.returns[off] || 0;
         const pct = c.size > 0 ? Math.round(ret / c.size * 100) : 0;
-        html += `<td class="${colorClass(pct)}">${pct}%</td>`;
+        const tooltip = `${ret.toLocaleString()} of ${c.size.toLocaleString()} new customers came back in month +${off}`;
+        html += `<td class="${colorClass(pct)}" title="${tooltip}">${pct}%</td>`;
       }
     }
     html += '</tr>';
   }
   html += '</tbody></table>';
   el.innerHTML = html;
+
+  // Auto insight: compare best and worst cohorts in their first 2 months
+  const insightEl = document.getElementById('cohort-insight');
+  if (insightEl && filtered.length >= 2) {
+    const scored = filtered
+      .filter(k => monthDiff(k, `${ty}-${String(tm).padStart(2,'0')}`) >= 2)
+      .map(k => {
+        const c = cohorts.get(k);
+        const m1 = c.returns[1] || 0;
+        const m2 = c.returns[2] || 0;
+        const score = c.size > 0 ? (m1 + m2) / c.size * 100 : 0;
+        return { key: k, label: monthLabel(k), score, size: c.size };
+      })
+      .filter(s => s.size >= 50); // ignore tiny cohorts
+    if (scored.length >= 2) {
+      scored.sort((a, b) => b.score - a.score);
+      const best = scored[0];
+      const worst = scored[scored.length - 1];
+      insightEl.innerHTML = `
+        <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
+          <strong style="color:var(--t0)">What this means:</strong>
+          <strong style="color:var(--emerald)">${best.label}</strong> was your best cohort — those first-time buyers came back the most in their first 2 months.
+          <strong style="color:var(--rose)">${worst.label}</strong> was the weakest — many bought once and never returned.
+          When you see a big drop, look at what was happening that month (discounts, new channel, a specific campaign) — that's where the lower-quality buyers came from.
+        </div>
+      `;
+    }
+  }
 }
 
 // ===================== LTV =====================
@@ -1833,12 +1906,37 @@ function renderLTV() {
     return { days, avg: customers > 0 ? totalRev / customers : 0, customers };
   });
   el.innerHTML = results.map(r => `
-    <div class="stat-cell">
-      <div class="stat-cell-label">LTV ${r.days}d</div>
+    <div class="stat-cell" title="Average $ spent by a customer in their first ${r.days} days. Only includes customers whose first order was at least ${r.days} days ago, to avoid skewing the number.">
+      <div class="stat-cell-label">First ${r.days} days</div>
       <div class="stat-cell-value">$${fmt(r.avg)}</div>
       <div class="stat-cell-sub">${r.customers.toLocaleString()} customers</div>
     </div>
   `).join('');
+
+  // Auto insight: how much does the customer's spend grow from 30d to 90d?
+  const insightEl = document.getElementById('ltv-insight');
+  if (insightEl) {
+    const ltv30 = results[0].avg;
+    const ltv90 = results[2].avg;
+    const ltv180 = results[3].avg;
+    if (ltv30 > 0 && ltv90 > 0) {
+      const growth = Math.round((ltv90 - ltv30) / ltv30 * 100);
+      const growth180 = ltv180 > 0 ? Math.round((ltv180 - ltv30) / ltv30 * 100) : null;
+      let msg;
+      if (growth < 10) {
+        msg = `<strong style="color:var(--rose)">Customers are not coming back.</strong> The average spend barely grows after day 30 (+${growth}% to day 90). This means most people buy once and disappear. Look at your retention table above to confirm.`;
+      } else if (growth < 40) {
+        msg = `<strong style="color:var(--amber)">Moderate repeat behavior.</strong> The average customer spends ${growth}% more by day 90${growth180 !== null ? `, ${growth180}% by day 180` : ''}. Some loyalty exists but there's room to push reorders (email reminders, subscriptions).`;
+      } else {
+        msg = `<strong style="color:var(--emerald)">Strong customer loyalty.</strong> The average customer's spend grows ${growth}% from day 30 to day 90${growth180 !== null ? ` and ${growth180}% by day 180` : ''}. Your product is sticky — invest more in acquisition because each new customer pays off well.`;
+      }
+      insightEl.innerHTML = `
+        <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
+          <strong style="color:var(--t0)">What this means:</strong> ${msg}
+        </div>
+      `;
+    }
+  }
 }
 
 // ===================== DISCOUNT INTENSITY =====================
@@ -1869,34 +1967,59 @@ function renderDiscountIntensity() {
 
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      <div>
-        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Discount Load</div>
+      <div title="Out of every $1 sold, how many cents went to discounts. <5% = healthy, 5-15% = watch it, >15% = you're competing on price.">
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">% of sales lost to discounts</div>
         <div style="font-size:24px;font-weight:700;color:${intensityColor};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${intensity.toFixed(1)}%</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(discounts)} of $${fmt(gross)} gross</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(discounts)} discounted of $${fmt(gross)} sold (before discounts)</div>
       </div>
-      <div>
-        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Orders w/ Discount</div>
+      <div title="What % of your orders used a discount code or promo.">
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">% of orders with a discount</div>
         <div style="font-size:24px;font-weight:700;color:var(--t0);letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${ordersWithPct}%</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${withDiscount} of ${orders.length} orders</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${withDiscount} of ${orders.length} orders used a promo</div>
       </div>
     </div>
     <div style="border-top:1px solid var(--b1);padding-top:12px">
-      <div class="insight-row">
-        <div class="insight-label">AOV with discount</div>
+      <div class="insight-row" title="Average order value when a discount was used.">
+        <div class="insight-label">Avg. order (with discount)</div>
         <div class="insight-value">$${fmt(aovWith)}</div>
       </div>
-      <div class="insight-row">
-        <div class="insight-label">AOV without discount</div>
+      <div class="insight-row" title="Average order value with no discount applied.">
+        <div class="insight-label">Avg. order (no discount)</div>
         <div class="insight-value">$${fmt(aovWithout)}</div>
       </div>
-      <div class="insight-row">
-        <div class="insight-label">AOV lift</div>
+      <div class="insight-row" title="How much bigger (or smaller) the discounted orders are vs full-price ones. Negative means people are mostly just getting cheaper versions of what they'd buy anyway.">
+        <div class="insight-label">Difference</div>
         <div class="insight-value" style="color:${aovWith > aovWithout ? 'var(--emerald)' : 'var(--rose)'}">
           ${aovWithout > 0 ? (aovWith > aovWithout ? '+' : '') + Math.round((aovWith - aovWithout) / aovWithout * 100) + '%' : '—'}
         </div>
       </div>
     </div>
   `;
+
+  // Auto insight
+  const insightEl = document.getElementById('discount-insight');
+  if (insightEl) {
+    let msg;
+    if (intensity < 5) {
+      msg = `<strong style="color:var(--emerald)">Healthy discount levels.</strong> You're only giving up ${intensity.toFixed(1)}% of sales to promos. Your product holds its value.`;
+    } else if (intensity < 15) {
+      msg = `<strong style="color:var(--amber)">Moderate discounting.</strong> About ${intensity.toFixed(1)}% of sales go to promos. Watch this — if it keeps growing, customers may be training themselves to wait for sales.`;
+    } else {
+      msg = `<strong style="color:var(--rose)">High discount load.</strong> ${intensity.toFixed(1)}% of sales going to promos is a lot. Customers may be expecting discounts to buy at all. Try testing a no-promo week to see what happens.`;
+    }
+    if (aovWith > 0 && aovWithout > 0 && aovWith < aovWithout) {
+      const dropPct = Math.round((aovWithout - aovWith) / aovWithout * 100);
+      msg += ` Discounted orders are <strong style="color:var(--rose)">${dropPct}% smaller</strong> than full-price ones — promos are mostly trimming margin, not bringing bigger baskets.`;
+    } else if (aovWith > aovWithout && aovWithout > 0) {
+      const liftPct = Math.round((aovWith - aovWithout) / aovWithout * 100);
+      msg += ` Good news: discounted orders are <strong style="color:var(--emerald)">${liftPct}% bigger</strong> — promos are nudging people to buy more, not just cheaper.`;
+    }
+    insightEl.innerHTML = `
+      <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
+        <strong style="color:var(--t0)">What this means:</strong> ${msg}
+      </div>
+    `;
+  }
 }
 
 // ===================== CUSTOMER CONCENTRATION =====================
@@ -1929,17 +2052,18 @@ function renderCustomerConcentration() {
   const color = top10Pct < 10 ? 'var(--emerald)' : (top10Pct < 25 ? 'var(--amber)' : 'var(--rose)');
 
   let html = `
-    <div style="margin-bottom:12px">
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 10 share</div>
+    <div style="margin-bottom:12px" title="What % of your total sales in this period comes from your top 10 customers. Below 10% = sales are spread out (healthy). 10-25% = some concentration. Above 25% = you depend on a few big buyers (risk if they leave).">
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 10 customers = % of sales</div>
       <div style="font-size:24px;font-weight:700;color:${color};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top10Pct}%</div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${byEmail.size.toLocaleString()} total customers · ${top10Pct < 10 ? 'healthy' : top10Pct < 25 ? 'moderate' : 'concentrated'}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${byEmail.size.toLocaleString()} total customers · ${top10Pct < 10 ? 'well-spread (healthy)' : top10Pct < 25 ? 'somewhat concentrated' : 'highly concentrated (risky)'}</div>
     </div>
     <div style="border-top:1px solid var(--b1);padding-top:8px">
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:8px">Top 5 customers in this period</div>
   `;
   for (const c of top5) {
     const pct = totalRev > 0 ? (c.rev / totalRev * 100) : 0;
     html += `
-      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0">
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0" title="${c.orders} orders totaling $${fmt(c.rev)} — ${pct.toFixed(1)}% of your sales this period.">
         <div style="display:flex;align-items:baseline">
           <div class="insight-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
           <div class="insight-value">$${fmt(c.rev)}</div>
@@ -1951,6 +2075,24 @@ function renderCustomerConcentration() {
   }
   html += '</div>';
   el.innerHTML = html;
+
+  // Auto insight
+  const insightEl = document.getElementById('concentration-insight');
+  if (insightEl) {
+    let msg;
+    if (top10Pct < 10) {
+      msg = `<strong style="color:var(--emerald)">Sales are well-distributed.</strong> Your top 10 buyers are only ${top10Pct}% of revenue. If any single customer disappears, you barely notice. This is the healthy spot.`;
+    } else if (top10Pct < 25) {
+      msg = `<strong style="color:var(--amber)">Some concentration.</strong> Your top 10 customers drive ${top10Pct}% of sales. Worth knowing who they are and keeping them happy — losing one would hurt.`;
+    } else {
+      msg = `<strong style="color:var(--rose)">High concentration risk.</strong> Just 10 customers = ${top10Pct}% of your sales. If your top buyer churns, that's a real revenue hit. Consider how to broaden the customer base.`;
+    }
+    insightEl.innerHTML = `
+      <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
+        <strong style="color:var(--t0)">What this means:</strong> ${msg}
+      </div>
+    `;
+  }
 }
 
 // ===================== CHANNEL PERFORMANCE =====================
@@ -1986,21 +2128,45 @@ function renderChannelPerformance() {
     const newPct = c.orders > 0 ? Math.round(c.new / c.orders * 100) : 0;
     const aov = c.orders > 0 ? c.rev / c.orders : 0;
     html += `
-      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:8px 0">
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:8px 0" title="From ${src}: $${fmt(c.rev)} in sales, ${c.orders} orders. ${newPct}% of those orders came from first-time buyers, the rest from returning customers.">
         <div style="display:flex;align-items:baseline">
           <div class="insight-label" style="text-transform:capitalize">${src}</div>
           <div class="insight-value">$${fmt(c.rev)}</div>
-          <div class="insight-sub">${pct.toFixed(1)}%</div>
+          <div class="insight-sub">${pct.toFixed(1)}% of sales</div>
         </div>
         <div class="insight-bar"><div class="insight-bar-fill" style="width:${Math.min(100, pct)}%"></div></div>
         <div style="display:flex;gap:14px;margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--t2)">
-          <span>${c.orders} orders · AOV $${fmt(aov)}</span>
-          <span style="margin-left:auto">${newPct}% new · ${100-newPct}% repeat</span>
+          <span>${c.orders} orders · avg $${fmt(aov)} each</span>
+          <span style="margin-left:auto">${newPct}% new buyers · ${100-newPct}% returning</span>
         </div>
       </div>
     `;
   }
   el.innerHTML = html;
+
+  // Auto insight: find biggest "first-time-only" channel vs most loyal channel
+  const insightEl = document.getElementById('channel-insight');
+  if (insightEl && sorted.length >= 2) {
+    const sigChannels = sorted.filter(([, c]) => c.orders >= 5);
+    if (sigChannels.length >= 2) {
+      // Highest "new" rate
+      const mostNew = [...sigChannels].sort((a, b) => (b[1].new/b[1].orders) - (a[1].new/a[1].orders))[0];
+      const mostLoyal = [...sigChannels].sort((a, b) => (b[1].repeat/b[1].orders) - (a[1].repeat/a[1].orders))[0];
+      const newPctMost = Math.round(mostNew[1].new / mostNew[1].orders * 100);
+      const loyalPctMost = Math.round(mostLoyal[1].repeat / mostLoyal[1].orders * 100);
+      let msg = '';
+      if (mostNew[0] !== mostLoyal[0]) {
+        msg = `<strong style="color:var(--emerald)">${mostNew[0]}</strong> is your best engine for finding new customers (${newPctMost}% of its orders are first-timers). <strong style="color:var(--emerald)">${mostLoyal[0]}</strong> is where loyal customers come back (${loyalPctMost}% returning). A healthy mix is having both — one to grow the base and one to keep them. If you're spending ads, do it on channels that bring new buyers; keep email/social for returning ones.`;
+      } else {
+        msg = `Your channels are similar in their new-vs-returning mix. ${mostNew[0]} is the biggest source. To grow you need either a new acquisition channel, or to convert more of your buyers into repeat customers (email flows, reorder reminders).`;
+      }
+      insightEl.innerHTML = `
+        <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
+          <strong style="color:var(--t0)">What this means:</strong> ${msg}
+        </div>
+      `;
+    }
+  }
 }
 
 // ===================== SKU VELOCITY =====================
@@ -2036,22 +2202,25 @@ function renderSKUVelocity() {
   const totalRev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
   const sorted = Array.from(now.entries()).sort((a, b) => b[1].rev - a[1].rev).slice(0, 10);
 
-  let html = '<div style="display:grid;grid-template-columns:32px 1fr 80px 80px 80px;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t1)">';
-  html += '<div>#</div><div>SKU</div><div style="text-align:right">Units / day</div><div style="text-align:right">Revenue</div><div style="text-align:right">vs prev</div></div>';
+  let html = '<div style="display:grid;grid-template-columns:32px 1fr 90px 110px 90px;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t1)">';
+  html += '<div>#</div><div>Product</div><div style="text-align:right" title="Average units sold per day in this period">Units / day</div><div style="text-align:right" title="Total sales (and % of total)">Sales</div><div style="text-align:right" title="Sales change vs the previous equivalent period">vs Prev.</div></div>';
 
+  const movers = []; // for auto-insight
   sorted.forEach(([title, s], idx) => {
     const unitsPerDay = (s.qty / days).toFixed(1);
     const prevS = prev.get(title);
-    let deltaHtml = '<span class="velocity-flat">new</span>';
+    let deltaHtml = '<span class="velocity-flat" title="No sales in the previous period">new</span>';
+    let deltaNum = null;
     if (prevS && prevS.rev > 0) {
-      const delta = Math.round((s.rev - prevS.rev) / prevS.rev * 100);
-      const cls = delta > 5 ? 'velocity-up' : (delta < -5 ? 'velocity-down' : 'velocity-flat');
-      const arrow = delta > 0 ? '↑' : (delta < 0 ? '↓' : '→');
-      deltaHtml = `<span class="${cls}">${arrow} ${Math.abs(delta)}%</span>`;
+      deltaNum = Math.round((s.rev - prevS.rev) / prevS.rev * 100);
+      const cls = deltaNum > 5 ? 'velocity-up' : (deltaNum < -5 ? 'velocity-down' : 'velocity-flat');
+      const arrow = deltaNum > 0 ? '↑' : (deltaNum < 0 ? '↓' : '→');
+      deltaHtml = `<span class="${cls}" title="${deltaNum > 0 ? 'Up' : deltaNum < 0 ? 'Down' : 'Flat'} ${Math.abs(deltaNum)}% vs previous period (was $${fmt(prevS.rev)})">${arrow} ${Math.abs(deltaNum)}%</span>`;
     }
     const pctOfTotal = totalRev > 0 ? (s.rev / totalRev * 100).toFixed(1) : 0;
+    movers.push({ title, delta: deltaNum, pctOfTotal: parseFloat(pctOfTotal), rank: idx + 1 });
     html += `
-      <div style="display:grid;grid-template-columns:32px 1fr 80px 80px 80px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline">
+      <div style="display:grid;grid-template-columns:32px 1fr 90px 110px 90px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline" title="${title} — ${s.qty.toLocaleString()} units sold this period, $${fmt(s.rev)} in sales (${pctOfTotal}% of total).">
         <div style="color:var(--t2);font-weight:600">${idx + 1}</div>
         <div style="color:var(--t0);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
         <div style="text-align:right;color:var(--t0);font-variant-numeric:tabular-nums">${unitsPerDay}</div>
@@ -2061,6 +2230,34 @@ function renderSKUVelocity() {
     `;
   });
   el.innerHTML = html;
+
+  // Auto insight: highlight winners and losers
+  const insightEl = document.getElementById('sku-insight');
+  if (insightEl) {
+    const winners = movers.filter(m => m.delta !== null && m.delta > 15 && m.pctOfTotal >= 2).sort((a, b) => b.delta - a.delta).slice(0, 2);
+    const losers = movers.filter(m => m.delta !== null && m.delta < -15 && m.pctOfTotal >= 2).sort((a, b) => a.delta - b.delta).slice(0, 2);
+    const top3Concentration = movers.slice(0, 3).reduce((s, m) => s + m.pctOfTotal, 0);
+    let msg = '';
+    if (winners.length > 0) {
+      msg += `<strong style="color:var(--emerald)">Growing fast:</strong> ${winners.map(w => `${w.title} (+${w.delta}%)`).join(', ')}. Make sure you have stock and consider featuring these.`;
+    }
+    if (losers.length > 0) {
+      if (msg) msg += ' ';
+      msg += `<strong style="color:var(--rose)">Losing steam:</strong> ${losers.map(l => `${l.title} (${l.delta}%)`).join(', ')}. Could be seasonality or saturation — worth investigating before sales drop more.`;
+    }
+    if (top3Concentration > 60) {
+      if (msg) msg += ' ';
+      msg += `<strong style="color:var(--amber)">Heavy reliance on a few products:</strong> your top 3 products are ${top3Concentration.toFixed(0)}% of sales. Healthy catalogs are more spread out — consider what could become your 4th or 5th hero.`;
+    }
+    if (!msg) {
+      msg = 'No major movers this period — your product mix is stable.';
+    }
+    insightEl.innerHTML = `
+      <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:8px">
+        <strong style="color:var(--t0)">What this means:</strong> ${msg}
+      </div>
+    `;
+  }
 }
 
 initDates();
