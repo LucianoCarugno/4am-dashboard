@@ -451,6 +451,15 @@ tbody tr:hover td { background: var(--s2); }
         <div class="page-meta" id="page-meta">Loading…</div>
       </div>
 
+      <!-- EXECUTIVE SUMMARY (CFO view) -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Executive Summary</div>
+      <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+        <div class="stat-cell"><div class="stat-cell-label">Month Pacing</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Repeat Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:70%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Avg Order Value</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Units / Order</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+      </div>
+
       <!-- REVENUE BREAKDOWN -->
       <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px">
         <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div></div>
@@ -988,9 +997,165 @@ async function loadAll() {
 }
 
 function renderAll() {
+  renderExecutiveSummary();
   renderKPIs(); renderRevenueChart(); renderChannelBreakdown();
   renderTopProducts(); renderStatusBreakdown(); renderStatsRow(); renderOrdersTable();
   renderProductsCatalog(); renderCustomersTable();
+}
+
+// ================= EXECUTIVE SUMMARY (CFO view) =================
+//
+// 4 cards:
+//  - Month Pacing: revenue MTD del mes actual vs run-rate proyectado vs mes anterior
+//  - Repeat Rate: % de orders en periodo de clientes que ya hab\u00edan comprado ANTES
+//                 + ciclo medio de reposici\u00f3n (median days to 2nd purchase)
+//  - AOV: promedio de total_price vs periodo anterior (delta %)
+//  - UPT: units per transaction vs periodo anterior
+function renderExecutiveSummary() {
+  const el = document.getElementById('executive-summary');
+  if (!el) return;
+
+  const inPeriod = filteredOrders;
+  const allOrd = allOrders || inPeriod;
+
+  // ===== Pacing del mes actual (siempre referido al mes en curso, no al rango filtrado) =====
+  // Usamos ET para que matchee la l\u00f3gica del worker.
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const daysElapsed = d;
+  const daysInThisMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+
+  function revenueOfMonth(year, month) {
+    let sum = 0;
+    for (const o of allOrd) {
+      if (!o.created_at) continue;
+      const etDate = new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+      const [oy, om] = etDate.split('-').map(Number);
+      if (oy === year && om === month) sum += parseFloat(o.total_price || 0);
+    }
+    return sum;
+  }
+  function revenueOfMonthUpToDay(year, month, day) {
+    let sum = 0;
+    for (const o of allOrd) {
+      if (!o.created_at) continue;
+      const etDate = new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+      const [oy, om, od] = etDate.split('-').map(Number);
+      if (oy === year && om === month && od <= day) sum += parseFloat(o.total_price || 0);
+    }
+    return sum;
+  }
+  const mtdRevenue = revenueOfMonthUpToDay(y, m, daysElapsed);
+  const projectedMonth = daysElapsed > 0 ? (mtdRevenue / daysElapsed) * daysInThisMonth : 0;
+  const prevY = m === 1 ? y - 1 : y;
+  const prevM = m === 1 ? 12 : m - 1;
+  const prevMonthRevenue = revenueOfMonth(prevY, prevM);
+  const prevMonthSameDay = revenueOfMonthUpToDay(prevY, prevM, daysElapsed);
+  const pacingPct = prevMonthSameDay > 0 ? Math.round((mtdRevenue - prevMonthSameDay) / prevMonthSameDay * 100) : null;
+  const pacingColor = pacingPct === null ? 'var(--t0)' : (pacingPct >= 0 ? 'var(--emerald)' : 'var(--rose)');
+  const pacingArrow = pacingPct === null ? '' : (pacingPct >= 0 ? '\u2191' : '\u2193');
+  const monthName = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+
+  // ===== Repeat Rate del per\u00edodo =====
+  // Para cada orden del periodo, verifico si el customer.email ya ten\u00eda \u00f3rdenes ANTES del periodo.
+  const fromDate = document.getElementById('date-from').value;
+  const toDate = document.getElementById('date-to').value;
+  const fromMs = new Date(fromDate + 'T00:00:00Z').getTime();
+
+  // Index: para cada email, todas sus \u00f3rdenes en allOrd ordenadas por created_at
+  const ordersByEmail = new Map();
+  for (const o of allOrd) {
+    const email = o.customer?.email?.toLowerCase();
+    if (!email || !o.created_at) continue;
+    if (!ordersByEmail.has(email)) ordersByEmail.set(email, []);
+    ordersByEmail.get(email).push(o);
+  }
+  for (const arr of ordersByEmail.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  let repeatOrders = 0;
+  let totalWithEmail = 0;
+  for (const o of inPeriod) {
+    const email = o.customer?.email?.toLowerCase();
+    if (!email) continue;
+    totalWithEmail++;
+    const customerOrders = ordersByEmail.get(email) || [];
+    const hasPrior = customerOrders.some(co => new Date(co.created_at).getTime() < new Date(o.created_at).getTime());
+    if (hasPrior) repeatOrders++;
+  }
+  const repeatRate = totalWithEmail > 0 ? Math.round(repeatOrders / totalWithEmail * 100) : 0;
+
+  // ===== Ciclo de reposici\u00f3n: median days entre 1ra y 2da compra =====
+  // Tomamos todos los clientes que tengan >=2 \u00f3rdenes en todo el cache.
+  const cyclesDays = [];
+  for (const [, arr] of ordersByEmail) {
+    if (arr.length < 2) continue;
+    const t1 = new Date(arr[0].created_at).getTime();
+    const t2 = new Date(arr[1].created_at).getTime();
+    const days = (t2 - t1) / (1000 * 60 * 60 * 24);
+    if (days > 0 && days < 365) cyclesDays.push(days);
+  }
+  let medianCycle = null;
+  if (cyclesDays.length > 0) {
+    cyclesDays.sort((a, b) => a - b);
+    medianCycle = Math.round(cyclesDays[Math.floor(cyclesDays.length / 2)]);
+  }
+
+  // ===== AOV =====
+  const totalRev = inPeriod.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  const aov = inPeriod.length > 0 ? totalRev / inPeriod.length : 0;
+
+  // AOV per\u00edodo anterior (reuso getPreviousPeriodOrders)
+  const prev = getPreviousPeriodOrders();
+  const prevTotalRev = prev.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  const prevAov = prev.length > 0 ? prevTotalRev / prev.length : 0;
+  const aovDelta = prevAov > 0 ? Math.round((aov - prevAov) / prevAov * 100) : null;
+
+  // ===== UPT (Units Per Transaction) =====
+  function unitsOf(orders) {
+    let u = 0;
+    for (const o of orders) {
+      for (const li of (o.line_items || [])) u += parseInt(li.quantity || 0);
+    }
+    return u;
+  }
+  const unitsNow = unitsOf(inPeriod);
+  const upt = inPeriod.length > 0 ? unitsNow / inPeriod.length : 0;
+  const unitsPrev = unitsOf(prev);
+  const uptPrev = prev.length > 0 ? unitsPrev / prev.length : 0;
+  const uptDelta = uptPrev > 0 ? Math.round((upt - uptPrev) / uptPrev * 100) : null;
+
+  // Helper para el delta inline
+  function deltaSpan(pct) {
+    if (pct === null || pct === undefined) return '';
+    const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    const arrow = pct >= 0 ? '\u2191' : '\u2193';
+    return `<span style="color:${color};font-weight:600">${arrow} ${Math.abs(pct)}%</span>`;
+  }
+
+  el.innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-cell-label">Pacing \u2014 ${monthName}</div>
+      <div class="stat-cell-value" style="color:${pacingColor}">${pacingArrow} ${pacingPct === null ? '\u2014' : Math.abs(pacingPct) + '%'}</div>
+      <div class="stat-cell-sub">
+        $${fmt(mtdRevenue)} MTD \u2022 proj $${fmt(projectedMonth)} \u2022 prev mo $${fmt(prevMonthRevenue)}
+      </div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Repeat Rate</div>
+      <div class="stat-cell-value">${repeatRate}%</div>
+      <div class="stat-cell-sub">${repeatOrders}/${totalWithEmail} orders \u2022 ${medianCycle !== null ? 'cycle ~' + medianCycle + 'd' : 'cycle \u2014'}</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Avg Order Value</div>
+      <div class="stat-cell-value">$${fmt(aov)}</div>
+      <div class="stat-cell-sub">${deltaSpan(aovDelta)} ${aovDelta !== null ? 'vs prev period' : ''}</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-label">Units / Order</div>
+      <div class="stat-cell-value">${upt.toFixed(2)}</div>
+      <div class="stat-cell-sub">${deltaSpan(uptDelta)} ${uptDelta !== null ? 'vs prev period' : ''}</div>
+    </div>
+  `;
 }
 
 function renderStatsRow() {
