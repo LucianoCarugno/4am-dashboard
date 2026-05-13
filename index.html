@@ -550,19 +550,22 @@ tbody tr:hover td { background: var(--s2); }
       </div>
     </div>
 
-    <!-- INSIGHTS (Plain-language view) -->
+    <!-- INSIGHTS (Plain-language view, TTM = Trailing Twelve Months) -->
     <div class="tab-section" id="section-insights">
       <div class="page-header">
         <div class="page-title">Insights</div>
-        <div class="page-meta">Numbers that go beyond "how much did I sell" — they tell you why and what's next.</div>
+        <div class="page-meta">Strategic view of the business — always covers the last 12 months, regardless of the date filter above.</div>
       </div>
+
+      <!-- TTM context header -->
+      <div id="ttm-header" style="background:linear-gradient(to right, var(--teal-dim), transparent);border-left:3px solid var(--teal);padding:12px 16px;border-radius:6px;margin-bottom:14px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55"></div>
 
       <!-- Row 1: Customer Retention (Cohort) -->
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
           <div>
-            <div class="panel-title">Customer Retention</div>
-            <div class="panel-sub">How many first-time buyers come back to buy again in the following months</div>
+            <div class="panel-title">Customer Retention <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+            <div class="panel-sub">How many first-time buyers come back to buy again in the following months.</div>
           </div>
         </div>
         <div class="panel-body">
@@ -581,8 +584,8 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Customer Value Over Time (LTV)</div>
-              <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days</div>
+              <div class="panel-title">Customer Value Over Time (LTV) <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days.</div>
             </div>
           </div>
           <div class="panel-body">
@@ -601,8 +604,8 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Discounts Impact</div>
-              <div class="panel-sub">How much of your sales is going to discounts — and whether they help</div>
+              <div class="panel-title">Discounts Impact <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-sub">How much of your sales is going to discounts — and whether they help.</div>
             </div>
           </div>
           <div class="panel-body">
@@ -617,8 +620,8 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Top Customers</div>
-              <div class="panel-sub">How dependent your sales are on a small group of buyers</div>
+              <div class="panel-title">Top Customers <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-sub">How dependent your sales are on a small group of buyers.</div>
             </div>
           </div>
           <div class="panel-body">
@@ -629,8 +632,8 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Where Sales Come From</div>
-              <div class="panel-sub">Sales by channel (web, TikTok, etc.) — and whether each brings new buyers or repeat ones</div>
+              <div class="panel-title">Where Sales Come From <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-sub">Sales by channel (web, TikTok, etc.) — and whether each brings new buyers or repeat ones.</div>
             </div>
           </div>
           <div class="panel-body">
@@ -644,8 +647,8 @@ tbody tr:hover td { background: var(--s2); }
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
           <div>
-            <div class="panel-title">Product Trends</div>
-            <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the previous period</div>
+            <div class="panel-title">Product Trends <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+            <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the prior 12 months.</div>
           </div>
         </div>
         <div class="panel-body">
@@ -1131,13 +1134,78 @@ function renderAll() {
   renderKPIs(); renderRevenueChart(); renderChannelBreakdown();
   renderTopProducts(); renderStatusBreakdown(); renderStatsRow(); renderOrdersTable();
   renderProductsCatalog(); renderCustomersTable();
-  // Insights tab
+  // Insights tab — always uses TTM (last 12 months) regardless of date filter
+  renderTTMHeader();
   renderCohortRetention();
   renderLTV();
   renderDiscountIntensity();
   renderCustomerConcentration();
   renderChannelPerformance();
   renderSKUVelocity();
+}
+
+// =============== TTM (Trailing Twelve Months) helpers ===============
+
+// Returns orders from the last 365 days from today (ET).
+let _ttmCache = null;
+let _ttmCacheKey = null;
+function getTTMOrders() {
+  const key = (allOrders || []).length + ':' + (allOrders?.[0]?.id || '');
+  if (_ttmCacheKey === key && _ttmCache) return _ttmCache;
+  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const cutoff = new Date(todayET + 'T00:00:00Z');
+  cutoff.setUTCDate(cutoff.getUTCDate() - 365);
+  const cutoffMs = cutoff.getTime();
+  _ttmCache = (allOrders || []).filter(o => o.created_at && new Date(o.created_at).getTime() >= cutoffMs);
+  _ttmCacheKey = key;
+  return _ttmCache;
+}
+
+// Returns the 12 months immediately preceding the TTM window (for trend comparison).
+function getPriorTTMOrders() {
+  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const endOfPrior = new Date(todayET + 'T00:00:00Z');
+  endOfPrior.setUTCDate(endOfPrior.getUTCDate() - 365);
+  const startOfPrior = new Date(endOfPrior);
+  startOfPrior.setUTCDate(startOfPrior.getUTCDate() - 365);
+  const endMs = endOfPrior.getTime();
+  const startMs = startOfPrior.getTime();
+  return (allOrders || []).filter(o => {
+    if (!o.created_at) return false;
+    const t = new Date(o.created_at).getTime();
+    return t >= startMs && t < endMs;
+  });
+}
+
+function renderTTMHeader() {
+  const el = document.getElementById('ttm-header');
+  if (!el) return;
+  const ttm = getTTMOrders();
+  if (ttm.length === 0) { el.innerHTML = '<em>No data yet.</em>'; return; }
+
+  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const start = new Date(todayET + 'T00:00:00Z');
+  start.setUTCDate(start.getUTCDate() - 365);
+  const fmtMo = d => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+  const totalRev = ttm.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  const uniqueCustomers = new Set();
+  for (const o of ttm) {
+    const e = o.customer?.email?.toLowerCase();
+    if (e) uniqueCustomers.add(e);
+  }
+
+  el.innerHTML = `
+    <strong style="color:var(--t0);font-size:12px">TTM \u2014 Trailing Twelve Months</strong>
+    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+    ${fmtMo(start)} \u2192 ${fmtMo(new Date(todayET + 'T00:00:00Z'))}
+    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+    <strong style="color:var(--t0)">${ttm.length.toLocaleString()}</strong> orders
+    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+    <strong style="color:var(--t0)">$${fmt(totalRev)}</strong> in sales
+    <span style="color:var(--t2);margin:0 8px">\u00b7</span>
+    <strong style="color:var(--t0)">${uniqueCustomers.size.toLocaleString()}</strong> unique customers
+  `;
 }
 
 // ================= EXECUTIVE SUMMARY (CFO view) =================
@@ -1282,7 +1350,7 @@ function renderExecutiveSummary() {
       <div class="stat-cell-value">${repeatRate}%</div>
       <div class="stat-cell-sub">${repeatOrders} of ${totalWithEmail} orders \u2022 ${medianCycle !== null ? 'typically reorder every ~' + medianCycle + ' days' : 'reorder cycle: not enough data'}</div>
     </div>
-    <div class="stat-cell" title="AOV (Average Order Value): the average $ amount of each order in this period.">
+    <div class="stat-cell" title="AOV (Average Order Value): the average $ amount of each order in the last 12 months.">
       <div class="stat-cell-label">Avg. Spend per Order (AOV)</div>
       <div class="stat-cell-value">$${fmt(aov)}</div>
       <div class="stat-cell-sub">${deltaSpan(aovDelta)} ${aovDelta !== null ? 'vs previous period' : ''}</div>
@@ -1943,7 +2011,7 @@ function renderLTV() {
 function renderDiscountIntensity() {
   const el = document.getElementById('discount-intensity');
   if (!el) return;
-  const orders = filteredOrders || [];
+  const orders = getTTMOrders();
   if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
   let gross = 0, discounts = 0;
@@ -2026,7 +2094,7 @@ function renderDiscountIntensity() {
 function renderCustomerConcentration() {
   const el = document.getElementById('customer-concentration');
   if (!el) return;
-  const orders = filteredOrders || [];
+  const orders = getTTMOrders();
   if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
   const byEmail = new Map();
@@ -2052,18 +2120,18 @@ function renderCustomerConcentration() {
   const color = top10Pct < 10 ? 'var(--emerald)' : (top10Pct < 25 ? 'var(--amber)' : 'var(--rose)');
 
   let html = `
-    <div style="margin-bottom:12px" title="What % of your total sales in this period comes from your top 10 customers. Below 10% = sales are spread out (healthy). 10-25% = some concentration. Above 25% = you depend on a few big buyers (risk if they leave).">
+    <div style="margin-bottom:12px" title="What % of your total TTM sales (last 12 months) comes from your top 10 customers. Below 10% = sales are spread out (healthy). 10-25% = some concentration. Above 25% = you depend on a few big buyers (risk if they leave).">
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 10 customers = % of sales</div>
       <div style="font-size:24px;font-weight:700;color:${color};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top10Pct}%</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${byEmail.size.toLocaleString()} total customers · ${top10Pct < 10 ? 'well-spread (healthy)' : top10Pct < 25 ? 'somewhat concentrated' : 'highly concentrated (risky)'}</div>
     </div>
     <div style="border-top:1px solid var(--b1);padding-top:8px">
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:8px">Top 5 customers in this period</div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:8px">Top 5 customers (last 12 months)</div>
   `;
   for (const c of top5) {
     const pct = totalRev > 0 ? (c.rev / totalRev * 100) : 0;
     html += `
-      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0" title="${c.orders} orders totaling $${fmt(c.rev)} — ${pct.toFixed(1)}% of your sales this period.">
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0" title="${c.orders} orders totaling $${fmt(c.rev)} — ${pct.toFixed(1)}% of your TTM sales.">
         <div style="display:flex;align-items:baseline">
           <div class="insight-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
           <div class="insight-value">$${fmt(c.rev)}</div>
@@ -2099,7 +2167,7 @@ function renderCustomerConcentration() {
 function renderChannelPerformance() {
   const el = document.getElementById('channel-performance');
   if (!el) return;
-  const orders = filteredOrders || [];
+  const orders = getTTMOrders();
   if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
   const byEmail = getOrdersByEmail();
@@ -2174,12 +2242,10 @@ function renderChannelPerformance() {
 function renderSKUVelocity() {
   const el = document.getElementById('sku-velocity');
   if (!el) return;
-  const orders = filteredOrders || [];
+  const orders = getTTMOrders();
   if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
 
-  const fromDate = document.getElementById('date-from').value;
-  const toDate = document.getElementById('date-to').value;
-  const days = Math.max(1, Math.round((new Date(toDate) - new Date(fromDate)) / 86400000) + 1);
+  const days = 365; // TTM
 
   function aggregateSKUs(orderList) {
     const map = new Map();
@@ -2197,27 +2263,31 @@ function renderSKUVelocity() {
     return map;
   }
   const now = aggregateSKUs(orders);
-  const prev = aggregateSKUs(getPreviousPeriodOrders());
+  const prev = aggregateSKUs(getPriorTTMOrders());
 
-  const totalRev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  // Use the sum of line-item revenue as the denominator so percentages add up to 100%.
+  // (Using order.total_price as denominator would be inconsistent with how we compute s.rev,
+  // because order totals include discounts/shipping/taxes that aren't in line item prices.)
+  let totalLineItemRev = 0;
+  for (const [, s] of now) totalLineItemRev += s.rev;
   const sorted = Array.from(now.entries()).sort((a, b) => b[1].rev - a[1].rev).slice(0, 10);
 
   let html = '<div style="display:grid;grid-template-columns:32px 1fr 90px 110px 90px;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t1)">';
-  html += '<div>#</div><div>Product</div><div style="text-align:right" title="Average units sold per day in this period">Units / day</div><div style="text-align:right" title="Total sales (and % of total)">Sales</div><div style="text-align:right" title="Sales change vs the previous equivalent period">vs Prev.</div></div>';
+  html += '<div>#</div><div>Product</div><div style="text-align:right" title="Average units sold per day over the last 12 months">Units / day</div><div style="text-align:right" title="Total sales (and % of total)">Sales</div><div style="text-align:right" title="Sales change vs the prior 12 months">vs Prev.</div></div>';
 
   const movers = []; // for auto-insight
   sorted.forEach(([title, s], idx) => {
     const unitsPerDay = (s.qty / days).toFixed(1);
     const prevS = prev.get(title);
-    let deltaHtml = '<span class="velocity-flat" title="No sales in the previous period">new</span>';
+    let deltaHtml = '<span class="velocity-flat" title="No sales in the prior 12 months">new</span>';
     let deltaNum = null;
     if (prevS && prevS.rev > 0) {
       deltaNum = Math.round((s.rev - prevS.rev) / prevS.rev * 100);
       const cls = deltaNum > 5 ? 'velocity-up' : (deltaNum < -5 ? 'velocity-down' : 'velocity-flat');
       const arrow = deltaNum > 0 ? '↑' : (deltaNum < 0 ? '↓' : '→');
-      deltaHtml = `<span class="${cls}" title="${deltaNum > 0 ? 'Up' : deltaNum < 0 ? 'Down' : 'Flat'} ${Math.abs(deltaNum)}% vs previous period (was $${fmt(prevS.rev)})">${arrow} ${Math.abs(deltaNum)}%</span>`;
+      deltaHtml = `<span class="${cls}" title="${deltaNum > 0 ? 'Up' : deltaNum < 0 ? 'Down' : 'Flat'} ${Math.abs(deltaNum)}% vs prior 12 months (was $${fmt(prevS.rev)})">${arrow} ${Math.abs(deltaNum)}%</span>`;
     }
-    const pctOfTotal = totalRev > 0 ? (s.rev / totalRev * 100).toFixed(1) : 0;
+    const pctOfTotal = totalLineItemRev > 0 ? (s.rev / totalLineItemRev * 100).toFixed(1) : 0;
     movers.push({ title, delta: deltaNum, pctOfTotal: parseFloat(pctOfTotal), rank: idx + 1 });
     html += `
       <div style="display:grid;grid-template-columns:32px 1fr 90px 110px 90px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline" title="${title} — ${s.qty.toLocaleString()} units sold this period, $${fmt(s.rev)} in sales (${pctOfTotal}% of total).">
