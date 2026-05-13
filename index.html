@@ -318,6 +318,30 @@ tbody tr:hover td { background: var(--s2); }
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .empty-state { text-align: center; padding: 56px; color: var(--t3); font-family: var(--mono); font-size: 11px; }
+
+/* ===== INSIGHTS ===== */
+.cohort-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-family: var(--mono); font-size: 11px; }
+.cohort-table th { font-family: var(--sans); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t1); padding: 6px 8px; text-align: center; background: var(--s1); border-radius: 4px; }
+.cohort-table th.cohort-name { text-align: left; padding-left: 10px; }
+.cohort-table td { padding: 8px 6px; text-align: center; font-variant-numeric: tabular-nums; color: var(--t0); font-weight: 500; border-radius: 4px; min-width: 48px; }
+.cohort-table td.cohort-name { text-align: left; padding-left: 10px; font-weight: 600; background: var(--s1); }
+.cohort-table td.cohort-size { color: var(--t2); font-size: 10px; background: var(--s1); }
+.cohort-cell-0 { background: #f7f8f9; color: var(--t3); }
+.cohort-cell-1 { background: #ecf6f3; color: var(--t0); }
+.cohort-cell-2 { background: #d3ece4; color: var(--t0); }
+.cohort-cell-3 { background: #a8dccc; color: #0a3a2e; }
+.cohort-cell-4 { background: #6ec3a9; color: #fff; font-weight: 700; }
+.cohort-cell-5 { background: #2d9b7a; color: #fff; font-weight: 700; }
+.insight-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--b1); font-family: var(--mono); font-size: 11px; }
+.insight-row:last-child { border-bottom: none; }
+.insight-row .insight-label { flex: 1; color: var(--t0); font-weight: 500; }
+.insight-row .insight-value { font-variant-numeric: tabular-nums; color: var(--t0); font-weight: 600; margin-left: 12px; }
+.insight-row .insight-sub { color: var(--t2); font-size: 10px; margin-left: 8px; }
+.insight-bar { height: 4px; background: var(--s1); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.insight-bar-fill { height: 100%; background: var(--teal); border-radius: 2px; }
+.velocity-up { color: var(--emerald); font-weight: 600; }
+.velocity-down { color: var(--rose); font-weight: 600; }
+.velocity-flat { color: var(--t2); }
 .kpi-change { font-family: var(--mono); font-size: 10px; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 4px; font-weight: 600; letter-spacing: .2px; }
 .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 12px; }
 .stat-cell { background: #fff; padding: 14px 16px; border: 1px solid var(--b1); border-radius: 10px; box-shadow: var(--shadow); transition: box-shadow .2s; }
@@ -401,6 +425,7 @@ tbody tr:hover td { background: var(--s2); }
   <div class="nav-group">
     <div class="nav-label">Reports</div>
     <div class="nav-item active" onclick="showSection('sales')"><span class="nav-icon">▸</span> Sales</div>
+    <div class="nav-item" onclick="showSection('insights')"><span class="nav-icon">▸</span> Insights</div>
     <div class="nav-item" onclick="showSection('products')"><span class="nav-icon">▸</span> Products</div>
     <div class="nav-item" onclick="showSection('customers')"><span class="nav-icon">▸</span> Customers</div>
   </div>
@@ -522,6 +547,67 @@ tbody tr:hover td { background: var(--s2); }
           <div class="count-badge" id="orders-badge">—</div>
         </div>
         <div id="orders-wrap"><div class="empty-state">Loading orders…</div></div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS (CFO view) -->
+    <div class="tab-section" id="section-insights">
+      <div class="page-header">
+        <div class="page-title">Insights</div>
+        <div class="page-meta">Cohort retention, LTV, customer concentration & SKU velocity</div>
+      </div>
+
+      <!-- Row 1: Cohort retention -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-header">
+          <div><div class="panel-title">Cohort Retention</div><div class="panel-sub">% of each month's new customers who came back in subsequent months</div></div>
+        </div>
+        <div class="panel-body">
+          <div id="cohort-retention" style="overflow-x:auto">
+            <div class="empty-state">Loading cohort data…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: LTV + Discount intensity -->
+      <div class="row row-2" style="margin-bottom:14px">
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Customer LTV</div><div class="panel-sub">Avg revenue per customer in first N days from 1st purchase</div></div></div>
+          <div class="panel-body">
+            <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
+              <div class="stat-cell"><div class="stat-cell-label">LTV 30d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">LTV 60d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">LTV 90d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">LTV 180d</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Discount Intensity</div><div class="panel-sub">Discount load on revenue + impact</div></div></div>
+          <div class="panel-body">
+            <div id="discount-intensity"><div class="empty-state">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Customer concentration + Channel performance -->
+      <div class="row row-2" style="margin-bottom:14px">
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Customer Concentration</div><div class="panel-sub">Revenue share of top customers (period)</div></div></div>
+          <div class="panel-body"><div id="customer-concentration"><div class="empty-state">Loading…</div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div><div class="panel-title">Channel Performance</div><div class="panel-sub">Revenue & new-vs-repeat mix by source</div></div></div>
+          <div class="panel-body"><div id="channel-performance"><div class="empty-state">Loading…</div></div></div>
+        </div>
+      </div>
+
+      <!-- Row 4: SKU velocity -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-header">
+          <div><div class="panel-title">SKU Velocity</div><div class="panel-sub">Top products by revenue · acceleration vs prior period</div></div>
+        </div>
+        <div class="panel-body"><div id="sku-velocity"><div class="empty-state">Loading…</div></div></div>
       </div>
     </div>
 
@@ -1001,6 +1087,13 @@ function renderAll() {
   renderKPIs(); renderRevenueChart(); renderChannelBreakdown();
   renderTopProducts(); renderStatusBreakdown(); renderStatsRow(); renderOrdersTable();
   renderProductsCatalog(); renderCustomersTable();
+  // Insights tab
+  renderCohortRetention();
+  renderLTV();
+  renderDiscountIntensity();
+  renderCustomerConcentration();
+  renderChannelPerformance();
+  renderSKUVelocity();
 }
 
 // ================= EXECUTIVE SUMMARY (CFO view) =================
@@ -1595,6 +1688,380 @@ function renderCustomersTable() {
 
 function fmt(n) { return parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 function fmtDate(d) { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric', timeZone:'America/New_York'}); }
+
+// ===================================================================
+//  INSIGHTS (CFO tab)
+// ===================================================================
+
+// Helper: ET-date string ("YYYY-MM-DD") from ISO datetime
+function _etDate(iso) {
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+// Helper: indexar all orders by customer email, sorted by created_at asc
+let _ordersByEmailCache = null;
+let _ordersByEmailCacheKey = null;
+function getOrdersByEmail() {
+  const key = (allOrders || []).length + ':' + (allOrders?.[0]?.id || '');
+  if (_ordersByEmailCacheKey === key) return _ordersByEmailCache;
+  const map = new Map();
+  for (const o of (allOrders || [])) {
+    const email = o.customer?.email?.toLowerCase();
+    if (!email || !o.created_at) continue;
+    if (!map.has(email)) map.set(email, []);
+    map.get(email).push(o);
+  }
+  for (const arr of map.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  _ordersByEmailCache = map;
+  _ordersByEmailCacheKey = key;
+  return map;
+}
+
+// ===================== COHORT RETENTION =====================
+// Cada cohorte = clientes cuya 1ra compra fue en un mes dado.
+// Para cada cohorte, calculamos % que volvi\u00f3 a comprar en M+1, M+2, ... hasta hoy.
+function renderCohortRetention() {
+  const el = document.getElementById('cohort-retention');
+  if (!el) return;
+  const byEmail = getOrdersByEmail();
+  if (byEmail.size === 0) { el.innerHTML = '<div class="empty-state">No customer data</div>'; return; }
+
+  // Limitar a los \u00faltimos 12 meses para que la tabla sea legible.
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const [ty, tm] = today.split('-').map(n => parseInt(n));
+  function monthKey(d) { return d.slice(0,7); }
+  function monthDiff(aKey, bKey) {
+    const [ay, am] = aKey.split('-').map(Number);
+    const [by, bm] = bKey.split('-').map(Number);
+    return (by - ay) * 12 + (bm - am);
+  }
+  function monthLabel(key) {
+    const [y, m] = key.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  }
+
+  // Construir cohortes
+  const cohorts = new Map(); // cohortKey -> { size, returns: {M+1: count, M+2: count, ...} }
+  for (const [, customerOrders] of byEmail) {
+    const firstOrder = customerOrders[0];
+    const cohortKey = monthKey(_etDate(firstOrder.created_at));
+    if (!cohorts.has(cohortKey)) cohorts.set(cohortKey, { size: 0, returns: {} });
+    const c = cohorts.get(cohortKey);
+    c.size++;
+    // Para cada compra posterior, contar al cliente como activo en ese mes (una sola vez por mes)
+    const monthsActive = new Set();
+    for (let i = 1; i < customerOrders.length; i++) {
+      const purchaseMonth = monthKey(_etDate(customerOrders[i].created_at));
+      const offset = monthDiff(cohortKey, purchaseMonth);
+      if (offset >= 1) monthsActive.add(offset);
+    }
+    for (const offset of monthsActive) c.returns[offset] = (c.returns[offset] || 0) + 1;
+  }
+
+  // Filtrar a los \u00faltimos 12 meses + ordenar
+  const cohortKeys = Array.from(cohorts.keys()).sort();
+  const cutoff = (ty * 12 + tm) - 12;
+  const filtered = cohortKeys.filter(k => {
+    const [y, m] = k.split('-').map(Number);
+    return (y * 12 + m) >= cutoff;
+  });
+
+  // Cuantas columnas mostrar: hasta M+11 o hasta hoy, lo que sea menor
+  const maxOffset = Math.min(11, monthDiff(filtered[0] || `${ty}-${String(tm).padStart(2,'0')}`, `${ty}-${String(tm).padStart(2,'0')}`));
+  const offsets = [];
+  for (let i = 1; i <= maxOffset; i++) offsets.push(i);
+
+  function colorClass(pct) {
+    if (pct === null || pct === 0) return 'cohort-cell-0';
+    if (pct < 5) return 'cohort-cell-1';
+    if (pct < 15) return 'cohort-cell-2';
+    if (pct < 30) return 'cohort-cell-3';
+    if (pct < 50) return 'cohort-cell-4';
+    return 'cohort-cell-5';
+  }
+
+  let html = '<table class="cohort-table"><thead><tr>';
+  html += '<th class="cohort-name">Cohort</th><th>Size</th>';
+  for (const off of offsets) html += `<th>M+${off}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const k of filtered) {
+    const c = cohorts.get(k);
+    html += `<tr><td class="cohort-name">${monthLabel(k)}</td><td class="cohort-size">${c.size}</td>`;
+    const maxMonthsAvail = monthDiff(k, `${ty}-${String(tm).padStart(2,'0')}`);
+    for (const off of offsets) {
+      if (off > maxMonthsAvail) {
+        html += '<td style="background:transparent;color:var(--t3)">—</td>';
+      } else {
+        const ret = c.returns[off] || 0;
+        const pct = c.size > 0 ? Math.round(ret / c.size * 100) : 0;
+        html += `<td class="${colorClass(pct)}">${pct}%</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ===================== LTV =====================
+// LTV(N) = promedio de revenue acumulado de un cliente en sus primeros N d\u00edas
+// desde su 1ra compra. Solo incluye clientes cuya 1ra compra fue hace >= N d\u00edas
+// (sino el dato est\u00e1 sesgado a la baja).
+function renderLTV() {
+  const el = document.getElementById('ltv-cards');
+  if (!el) return;
+  const byEmail = getOrdersByEmail();
+  const now = Date.now();
+  const windows = [30, 60, 90, 180];
+  const results = windows.map(days => {
+    const cutoffMs = now - days * 86400000;
+    let totalRev = 0, customers = 0;
+    for (const [, arr] of byEmail) {
+      const firstMs = new Date(arr[0].created_at).getTime();
+      if (firstMs > cutoffMs) continue; // cliente m\u00e1s nuevo que la ventana
+      const endMs = firstMs + days * 86400000;
+      let rev = 0;
+      for (const o of arr) {
+        const t = new Date(o.created_at).getTime();
+        if (t <= endMs) rev += parseFloat(o.total_price || 0);
+        else break;
+      }
+      totalRev += rev;
+      customers++;
+    }
+    return { days, avg: customers > 0 ? totalRev / customers : 0, customers };
+  });
+  el.innerHTML = results.map(r => `
+    <div class="stat-cell">
+      <div class="stat-cell-label">LTV ${r.days}d</div>
+      <div class="stat-cell-value">$${fmt(r.avg)}</div>
+      <div class="stat-cell-sub">${r.customers.toLocaleString()} customers</div>
+    </div>
+  `).join('');
+}
+
+// ===================== DISCOUNT INTENSITY =====================
+function renderDiscountIntensity() {
+  const el = document.getElementById('discount-intensity');
+  if (!el) return;
+  const orders = filteredOrders || [];
+  if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  let gross = 0, discounts = 0;
+  let withDiscount = 0, withoutDiscount = 0;
+  let revWithDisc = 0, revWithoutDisc = 0;
+  for (const o of orders) {
+    const disc = parseFloat(o.total_discounts || 0);
+    const sub = parseFloat(o.subtotal_price || 0);
+    gross += sub + disc;
+    discounts += disc;
+    if (disc > 0) { withDiscount++; revWithDisc += parseFloat(o.total_price || 0); }
+    else { withoutDiscount++; revWithoutDisc += parseFloat(o.total_price || 0); }
+  }
+  const intensity = gross > 0 ? (discounts / gross * 100) : 0;
+  const aovWith = withDiscount > 0 ? revWithDisc / withDiscount : 0;
+  const aovWithout = withoutDiscount > 0 ? revWithoutDisc / withoutDiscount : 0;
+  const ordersWithPct = orders.length > 0 ? Math.round(withDiscount / orders.length * 100) : 0;
+
+  // Color de intensity: <5% verde, 5-15% amber, >15% rose (umbrales CPG)
+  const intensityColor = intensity < 5 ? 'var(--emerald)' : (intensity < 15 ? 'var(--amber)' : 'var(--rose)');
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div>
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Discount Load</div>
+        <div style="font-size:24px;font-weight:700;color:${intensityColor};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${intensity.toFixed(1)}%</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(discounts)} of $${fmt(gross)} gross</div>
+      </div>
+      <div>
+        <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Orders w/ Discount</div>
+        <div style="font-size:24px;font-weight:700;color:var(--t0);letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${ordersWithPct}%</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${withDiscount} of ${orders.length} orders</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--b1);padding-top:12px">
+      <div class="insight-row">
+        <div class="insight-label">AOV with discount</div>
+        <div class="insight-value">$${fmt(aovWith)}</div>
+      </div>
+      <div class="insight-row">
+        <div class="insight-label">AOV without discount</div>
+        <div class="insight-value">$${fmt(aovWithout)}</div>
+      </div>
+      <div class="insight-row">
+        <div class="insight-label">AOV lift</div>
+        <div class="insight-value" style="color:${aovWith > aovWithout ? 'var(--emerald)' : 'var(--rose)'}">
+          ${aovWithout > 0 ? (aovWith > aovWithout ? '+' : '') + Math.round((aovWith - aovWithout) / aovWithout * 100) + '%' : '—'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===================== CUSTOMER CONCENTRATION =====================
+function renderCustomerConcentration() {
+  const el = document.getElementById('customer-concentration');
+  if (!el) return;
+  const orders = filteredOrders || [];
+  if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  const byEmail = new Map();
+  let totalRev = 0;
+  for (const o of orders) {
+    const email = o.customer?.email?.toLowerCase() || '(guest)';
+    const rev = parseFloat(o.total_price || 0);
+    totalRev += rev;
+    if (!byEmail.has(email)) byEmail.set(email, { rev: 0, orders: 0, name: '' });
+    const c = byEmail.get(email);
+    c.rev += rev;
+    c.orders++;
+    if (!c.name && o.customer) c.name = `${o.customer.first_name || ''} ${o.customer.last_name || ''}`.trim() || email;
+    else if (!c.name) c.name = '(guest)';
+  }
+  const sorted = Array.from(byEmail.values()).sort((a, b) => b.rev - a.rev);
+  const top5 = sorted.slice(0, 5);
+  const top10 = sorted.slice(0, 10);
+  const top10Rev = top10.reduce((s, c) => s + c.rev, 0);
+  const top10Pct = totalRev > 0 ? Math.round(top10Rev / totalRev * 100) : 0;
+
+  // Color: <10% verde (saludable), 10-25% amber, >25% rose (riesgo)
+  const color = top10Pct < 10 ? 'var(--emerald)' : (top10Pct < 25 ? 'var(--amber)' : 'var(--rose)');
+
+  let html = `
+    <div style="margin-bottom:12px">
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 10 share</div>
+      <div style="font-size:24px;font-weight:700;color:${color};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top10Pct}%</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${byEmail.size.toLocaleString()} total customers · ${top10Pct < 10 ? 'healthy' : top10Pct < 25 ? 'moderate' : 'concentrated'}</div>
+    </div>
+    <div style="border-top:1px solid var(--b1);padding-top:8px">
+  `;
+  for (const c of top5) {
+    const pct = totalRev > 0 ? (c.rev / totalRev * 100) : 0;
+    html += `
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0">
+        <div style="display:flex;align-items:baseline">
+          <div class="insight-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
+          <div class="insight-value">$${fmt(c.rev)}</div>
+          <div class="insight-sub">${pct.toFixed(1)}% · ${c.orders} orders</div>
+        </div>
+        <div class="insight-bar"><div class="insight-bar-fill" style="width:${Math.min(100, pct * 4)}%"></div></div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ===================== CHANNEL PERFORMANCE =====================
+function renderChannelPerformance() {
+  const el = document.getElementById('channel-performance');
+  if (!el) return;
+  const orders = filteredOrders || [];
+  if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  const byEmail = getOrdersByEmail();
+  const channels = new Map();
+  for (const o of orders) {
+    const src = (o.source_name || 'unknown').toLowerCase();
+    if (!channels.has(src)) channels.set(src, { rev: 0, orders: 0, new: 0, repeat: 0 });
+    const c = channels.get(src);
+    c.rev += parseFloat(o.total_price || 0);
+    c.orders++;
+    // ¿Es nuevo o repeat?
+    const email = o.customer?.email?.toLowerCase();
+    if (email) {
+      const arr = byEmail.get(email) || [];
+      const hasPrior = arr.some(co => new Date(co.created_at).getTime() < new Date(o.created_at).getTime());
+      if (hasPrior) c.repeat++;
+      else c.new++;
+    }
+  }
+  const totalRev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  const sorted = Array.from(channels.entries()).sort((a, b) => b[1].rev - a[1].rev);
+
+  let html = '';
+  for (const [src, c] of sorted) {
+    const pct = totalRev > 0 ? (c.rev / totalRev * 100) : 0;
+    const newPct = c.orders > 0 ? Math.round(c.new / c.orders * 100) : 0;
+    const aov = c.orders > 0 ? c.rev / c.orders : 0;
+    html += `
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:8px 0">
+        <div style="display:flex;align-items:baseline">
+          <div class="insight-label" style="text-transform:capitalize">${src}</div>
+          <div class="insight-value">$${fmt(c.rev)}</div>
+          <div class="insight-sub">${pct.toFixed(1)}%</div>
+        </div>
+        <div class="insight-bar"><div class="insight-bar-fill" style="width:${Math.min(100, pct)}%"></div></div>
+        <div style="display:flex;gap:14px;margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--t2)">
+          <span>${c.orders} orders · AOV $${fmt(aov)}</span>
+          <span style="margin-left:auto">${newPct}% new · ${100-newPct}% repeat</span>
+        </div>
+      </div>
+    `;
+  }
+  el.innerHTML = html;
+}
+
+// ===================== SKU VELOCITY =====================
+// Top SKUs by revenue in the period + comparison vs prior equivalent period.
+function renderSKUVelocity() {
+  const el = document.getElementById('sku-velocity');
+  if (!el) return;
+  const orders = filteredOrders || [];
+  if (orders.length === 0) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+
+  const fromDate = document.getElementById('date-from').value;
+  const toDate = document.getElementById('date-to').value;
+  const days = Math.max(1, Math.round((new Date(toDate) - new Date(fromDate)) / 86400000) + 1);
+
+  function aggregateSKUs(orderList) {
+    const map = new Map();
+    for (const o of orderList) {
+      for (const li of (o.line_items || [])) {
+        const title = li.title || '(unknown)';
+        const qty = parseInt(li.quantity || 0);
+        const rev = qty * parseFloat(li.price || 0);
+        if (!map.has(title)) map.set(title, { qty: 0, rev: 0 });
+        const s = map.get(title);
+        s.qty += qty;
+        s.rev += rev;
+      }
+    }
+    return map;
+  }
+  const now = aggregateSKUs(orders);
+  const prev = aggregateSKUs(getPreviousPeriodOrders());
+
+  const totalRev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  const sorted = Array.from(now.entries()).sort((a, b) => b[1].rev - a[1].rev).slice(0, 10);
+
+  let html = '<div style="display:grid;grid-template-columns:32px 1fr 80px 80px 80px;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t1)">';
+  html += '<div>#</div><div>SKU</div><div style="text-align:right">Units / day</div><div style="text-align:right">Revenue</div><div style="text-align:right">vs prev</div></div>';
+
+  sorted.forEach(([title, s], idx) => {
+    const unitsPerDay = (s.qty / days).toFixed(1);
+    const prevS = prev.get(title);
+    let deltaHtml = '<span class="velocity-flat">new</span>';
+    if (prevS && prevS.rev > 0) {
+      const delta = Math.round((s.rev - prevS.rev) / prevS.rev * 100);
+      const cls = delta > 5 ? 'velocity-up' : (delta < -5 ? 'velocity-down' : 'velocity-flat');
+      const arrow = delta > 0 ? '↑' : (delta < 0 ? '↓' : '→');
+      deltaHtml = `<span class="${cls}">${arrow} ${Math.abs(delta)}%</span>`;
+    }
+    const pctOfTotal = totalRev > 0 ? (s.rev / totalRev * 100).toFixed(1) : 0;
+    html += `
+      <div style="display:grid;grid-template-columns:32px 1fr 80px 80px 80px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline">
+        <div style="color:var(--t2);font-weight:600">${idx + 1}</div>
+        <div style="color:var(--t0);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
+        <div style="text-align:right;color:var(--t0);font-variant-numeric:tabular-nums">${unitsPerDay}</div>
+        <div style="text-align:right;color:var(--t0);font-variant-numeric:tabular-nums">$${fmt(s.rev)} <span style="color:var(--t3);font-size:10px">${pctOfTotal}%</span></div>
+        <div style="text-align:right;font-variant-numeric:tabular-nums">${deltaHtml}</div>
+      </div>
+    `;
+  });
+  el.innerHTML = html;
+}
 
 initDates();
 loadAll();
