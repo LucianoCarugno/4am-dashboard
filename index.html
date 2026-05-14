@@ -479,10 +479,10 @@ tbody tr:hover td { background: var(--s2); }
       <!-- HEALTH PULSE (works with any date filter) -->
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse</div>
       <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-        <div class="stat-cell"><div class="stat-cell-label" title="Net sales for the selected period, with comparison vs the immediately previous period of equal length and vs the same period last year.">Period Performance</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period. Shows trend within the period (last 7 days vs earlier).">Daily Run Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Order volume, AOV (average order value), and UPT (units per transaction) for this period.">Orders & Mix</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="% of orders coming from customers who had bought from you before. Higher = stronger loyalty.">Customer Loyalty</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Net sales (gross minus discounts and refunds) for the selected period.">Net Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period.">Average per Day</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Number of orders placed in this period.">Orders Placed</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Percentage of orders from customers who had bought before.">Returning Customer Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
       </div>
 
       <!-- REVENUE BREAKDOWN -->
@@ -1376,10 +1376,10 @@ function renderExecutiveSummary() {
   const inPeriod = filteredOrders || [];
   if (inPeriod.length === 0) {
     el.innerHTML = `
-      <div class="stat-cell"><div class="stat-cell-label">Period Performance</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
-      <div class="stat-cell"><div class="stat-cell-label">Daily Run Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
-      <div class="stat-cell"><div class="stat-cell-label">Orders & Mix</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
-      <div class="stat-cell"><div class="stat-cell-label">Customer Loyalty</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Average per Day</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Orders Placed</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Returning Customer Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
     `;
     return;
   }
@@ -1413,8 +1413,12 @@ function renderExecutiveSummary() {
   const vsPrevPct = kPrev.netSales > 0 ? Math.round((k.netSales - kPrev.netSales) / kPrev.netSales * 100) : null;
   const vsYearPct = kYearAgo.netSales > 0 ? Math.round((k.netSales - kYearAgo.netSales) / kYearAgo.netSales * 100) : null;
 
-  function pillFor(pct, label) {
-    if (pct === null) return `<div style="color:var(--t3);font-size:10px;line-height:1.4">${label}: n/a</div>`;
+  function pillFor(pct, label, currVal, prevVal) {
+    if (pct === null) return '';  // hide line entirely if no comparison data
+    // If % is extreme (>1000% or <-95%), show absolute $ comparison instead — clearer
+    if (Math.abs(pct) > 1000 || pct < -95) {
+      return `<div style="font-size:10px;line-height:1.4;color:var(--t2)">${label}: <span style="color:var(--t1)">$${fmt(prevVal)}</span></div>`;
+    }
     const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
     const arrow = pct >= 0 ? '\u2191' : '\u2193';
     return `<div style="font-size:10px;line-height:1.4"><span style="color:${color};font-weight:600">${arrow} ${Math.abs(pct)}%</span> <span style="color:var(--t2)">${label}</span></div>`;
@@ -1482,28 +1486,28 @@ function renderExecutiveSummary() {
   const loyaltyColor = repeatRate >= 40 ? 'var(--emerald)' : (repeatRate >= 20 ? 'var(--amber)' : 'var(--rose)');
 
   el.innerHTML = `
-    <div class="stat-cell" title="Net sales for the selected period vs previous equivalent period and vs same period last year.">
-      <div class="stat-cell-label">Period Performance</div>
+    <div class="stat-cell" title="Net sales (gross minus discounts and refunds) for the selected period, compared with the previous period of equal length and the same period last year.">
+      <div class="stat-cell-label">Net Sales</div>
       <div class="stat-cell-value">$${fmt(k.netSales)}</div>
       <div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">
-        ${pillFor(vsPrevPct, 'vs prev period')}
-        ${pillFor(vsYearPct, 'vs same period last year')}
+        ${pillFor(vsPrevPct, 'vs prior period', k.netSales, kPrev.netSales)}
+        ${pillFor(vsYearPct, 'vs same period last year', k.netSales, kYearAgo.netSales)}
       </div>
     </div>
     <div class="stat-cell" title="Average net sales per day in this period. The trend shows whether the last 7 days are above or below the earlier part of the period.">
-      <div class="stat-cell-label">Daily Run Rate</div>
+      <div class="stat-cell-label">Average per Day</div>
       <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400">/day</span></div>
       <div class="stat-cell-sub">${trendHtml}</div>
     </div>
-    <div class="stat-cell" title="Order volume in the selected period, plus AOV (Average Order Value) and UPT (Units Per Transaction).">
-      <div class="stat-cell-label">Orders & Mix</div>
-      <div class="stat-cell-value">${orderCount.toLocaleString()}<span style="font-size:11px;color:var(--t2);font-weight:400"> orders</span></div>
-      <div class="stat-cell-sub">AOV $${fmt(aov)} \u2022 UPT ${upt.toFixed(2)}</div>
+    <div class="stat-cell" title="Number of orders in the selected period, with average order value and average items per order.">
+      <div class="stat-cell-label">Orders Placed</div>
+      <div class="stat-cell-value">${orderCount.toLocaleString()}</div>
+      <div class="stat-cell-sub">$${fmt(aov)} average order \u2022 ${upt.toFixed(2)} items per order</div>
     </div>
-    <div class="stat-cell" title="Percentage of orders in this period from customers who had purchased before. Higher = more loyal customer base.">
-      <div class="stat-cell-label">Customer Loyalty</div>
-      <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%<span style="font-size:11px;color:var(--t2);font-weight:400"> repeat orders</span></div>
-      <div class="stat-cell-sub">${repeatOrders.toLocaleString()} of ${totalWithEmail.toLocaleString()} orders${medianCycle ? ' \u2022 ~' + medianCycle + ' day cycle' : ''}</div>
+    <div class="stat-cell" title="Percentage of orders in this period from customers who had purchased before. Higher = customers come back.">
+      <div class="stat-cell-label">Returning Customer Rate</div>
+      <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%</div>
+      <div class="stat-cell-sub">${repeatOrders.toLocaleString()} of ${totalWithEmail.toLocaleString()} orders from repeat buyers${medianCycle ? ' \u2022 typically reorder every ~' + medianCycle + ' days' : ''}</div>
     </div>
   `;
 }
