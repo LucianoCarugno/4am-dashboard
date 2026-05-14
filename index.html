@@ -1451,9 +1451,9 @@ function renderExecutiveSummary() {
       else if (trendPct < -95) { displayPct = -95; suffix = '+'; }
       const trendColor = trendPct >= 0 ? 'var(--emerald)' : 'var(--rose)';
       const trendArrow = trendPct >= 0 ? '\u2191' : '\u2193';
-      trendHtml = `last 7 days <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(displayPct)}%${suffix}</span> vs earlier in period`;
+      trendHtml = `last 7 days: <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong> <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(displayPct)}%${suffix}</span>`;
     } else {
-      trendHtml = `last 7 days: $${fmt(avg7)}/day`;
+      trendHtml = `last 7 days: <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong>`;
     }
   }
 
