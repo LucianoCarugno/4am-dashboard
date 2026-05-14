@@ -476,13 +476,13 @@ tbody tr:hover td { background: var(--s2); }
         <div class="page-meta" id="page-meta">Loading…</div>
       </div>
 
-      <!-- EXECUTIVE SUMMARY (CFO view) -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Quick Snapshot</div>
+      <!-- HEALTH PULSE (works with any date filter) -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse</div>
       <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-        <div class="stat-cell"><div class="stat-cell-label" title="How this month is going vs the same point of last month">This Month vs Last Month</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="% of orders from customers who had already bought before">Returning Customers</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:70%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="AOV — Average Order Value: average $ spent per order">Avg. Spend per Order (AOV)</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="UPT — Units Per Transaction: average items per order">Items per Order (UPT)</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Net sales for the selected period, with comparison vs the immediately previous period of equal length and vs the same period last year.">Period Performance</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period. Shows trend within the period (last 7 days vs earlier).">Daily Run Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Order volume, AOV (average order value), and UPT (units per transaction) for this period.">Orders & Mix</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="% of orders coming from customers who had bought from you before. Higher = stronger loyalty.">Customer Loyalty</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
       </div>
 
       <!-- REVENUE BREAKDOWN -->
@@ -1361,88 +1361,116 @@ function computeKPIs(orderList) {
 //                 + ciclo medio de reposici\u00f3n (median days to 2nd purchase)
 //  - AOV: promedio de total_price vs periodo anterior (delta %)
 //  - UPT: units per transaction vs periodo anterior
+// ===================================================================
+//  HEALTH PULSE
+//  4 cards that work with ANY date filter (today, week, month, year, custom):
+//    1. Period Performance: net sales + vs prev period + vs same period last year
+//    2. Daily Run Rate: avg net $/day + last 7 days trend
+//    3. Orders & Mix: order count + AOV + UPT
+//    4. Customer Loyalty: % repeat orders in this period + median reorder cycle
+// ===================================================================
 function renderExecutiveSummary() {
   const el = document.getElementById('executive-summary');
   if (!el) return;
 
-  const inPeriod = filteredOrders;
-  const allOrd = allOrders || inPeriod;
-
-  // ===== Pacing del mes actual (siempre referido al mes en curso, no al rango filtrado) =====
-  // Usamos ET para que matchee la l\u00f3gica del worker.
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  const [y, m, d] = todayStr.split('-').map(Number);
-  const daysElapsed = d;
-  const daysInThisMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
-
-  function revenueOfMonth(year, month) {
-    let sum = 0;
-    for (const o of allOrd) {
-      if (!o.created_at) continue;
-      const etDate = new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-      const [oy, om] = etDate.split('-').map(Number);
-      if (oy === year && om === month) sum += parseFloat(o.total_price || 0);
-    }
-    return sum;
+  const inPeriod = filteredOrders || [];
+  if (inPeriod.length === 0) {
+    el.innerHTML = `
+      <div class="stat-cell"><div class="stat-cell-label">Period Performance</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Daily Run Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Orders & Mix</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Customer Loyalty</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+    `;
+    return;
   }
-  function revenueOfMonthUpToDay(year, month, day) {
-    let sum = 0;
-    for (const o of allOrd) {
-      if (!o.created_at) continue;
-      const etDate = new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-      const [oy, om, od] = etDate.split('-').map(Number);
-      if (oy === year && om === month && od <= day) sum += parseFloat(o.total_price || 0);
-    }
-    return sum;
-  }
-  const mtdRevenue = revenueOfMonthUpToDay(y, m, daysElapsed);
-  const projectedMonth = daysElapsed > 0 ? (mtdRevenue / daysElapsed) * daysInThisMonth : 0;
-  const prevY = m === 1 ? y - 1 : y;
-  const prevM = m === 1 ? 12 : m - 1;
-  const prevMonthRevenue = revenueOfMonth(prevY, prevM);
-  const prevMonthSameDay = revenueOfMonthUpToDay(prevY, prevM, daysElapsed);
-  const pacingPct = prevMonthSameDay > 0 ? Math.round((mtdRevenue - prevMonthSameDay) / prevMonthSameDay * 100) : null;
-  const pacingColor = pacingPct === null ? 'var(--t0)' : (pacingPct >= 0 ? 'var(--emerald)' : 'var(--rose)');
-  const pacingArrow = pacingPct === null ? '' : (pacingPct >= 0 ? '\u2191' : '\u2193');
-  const monthName = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short' });
 
-  // ===== Repeat Rate del per\u00edodo =====
-  // Para cada orden del periodo, verifico si el customer.email ya ten\u00eda \u00f3rdenes ANTES del periodo.
+  // ===== Period length & boundaries =====
   const fromDate = document.getElementById('date-from').value;
   const toDate = document.getElementById('date-to').value;
   const fromMs = new Date(fromDate + 'T00:00:00Z').getTime();
+  const toMs = new Date(toDate + 'T23:59:59Z').getTime();
+  const periodDays = Math.max(1, Math.round((toMs - fromMs) / 86400000) + 1);
 
-  // Index: para cada email, todas sus \u00f3rdenes en allOrd ordenadas por created_at
-  const ordersByEmail = new Map();
-  for (const o of allOrd) {
-    const email = o.customer?.email?.toLowerCase();
-    if (!email || !o.created_at) continue;
-    if (!ordersByEmail.has(email)) ordersByEmail.set(email, []);
-    ordersByEmail.get(email).push(o);
+  // ===== Card 1: Period Performance (net sales) =====
+  const k = computeKPIs(inPeriod);
+  const prevOrders = getPreviousPeriodOrders();
+  const kPrev = computeKPIs(prevOrders);
+
+  // Same period last year (1 year earlier in lifetimeOrders)
+  function ordersInYearAgoRange() {
+    if (!lifetimeOrders.length) return [];
+    const yaFromMs = fromMs - 365 * 86400000;
+    const yaToMs = toMs - 365 * 86400000;
+    return lifetimeOrders.filter(o => {
+      if (!o.created_at) return false;
+      const t = new Date(o.created_at).getTime();
+      return t >= yaFromMs && t <= yaToMs;
+    });
   }
-  for (const arr of ordersByEmail.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const yaOrders = ordersInYearAgoRange();
+  const kYearAgo = computeKPIs(yaOrders);
 
-  let repeatOrders = 0;
-  let totalWithEmail = 0;
+  const vsPrevPct = kPrev.netSales > 0 ? Math.round((k.netSales - kPrev.netSales) / kPrev.netSales * 100) : null;
+  const vsYearPct = kYearAgo.netSales > 0 ? Math.round((k.netSales - kYearAgo.netSales) / kYearAgo.netSales * 100) : null;
+
+  function pillFor(pct, label) {
+    if (pct === null) return `<div style="color:var(--t3);font-size:10px;line-height:1.4">${label}: n/a</div>`;
+    const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    const arrow = pct >= 0 ? '\u2191' : '\u2193';
+    return `<div style="font-size:10px;line-height:1.4"><span style="color:${color};font-weight:600">${arrow} ${Math.abs(pct)}%</span> <span style="color:var(--t2)">${label}</span></div>`;
+  }
+
+  // ===== Card 2: Daily Run Rate =====
+  const dailyAvg = k.netSales / periodDays;
+
+  // Last 7 days vs earlier (only meaningful if period >= 14 days)
+  let trendHtml = `${periodDays} day${periodDays > 1 ? 's' : ''} in selection`;
+  if (periodDays >= 14) {
+    const splitMs = toMs - 7 * 86400000;
+    const last7 = inPeriod.filter(o => new Date(o.created_at).getTime() >= splitMs);
+    const earlier = inPeriod.filter(o => new Date(o.created_at).getTime() < splitMs);
+    const k7 = computeKPIs(last7);
+    const kEarlier = computeKPIs(earlier);
+    const avg7 = k7.netSales / 7;
+    const avgEarlier = kEarlier.netSales / Math.max(1, periodDays - 7);
+    if (avgEarlier > 0) {
+      const trendPct = Math.round((avg7 - avgEarlier) / avgEarlier * 100);
+      const trendColor = trendPct >= 0 ? 'var(--emerald)' : 'var(--rose)';
+      const trendArrow = trendPct >= 0 ? '\u2191' : '\u2193';
+      trendHtml = `last 7 days: $${fmt(avg7)}/day <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(trendPct)}%</span>`;
+    } else {
+      trendHtml = `last 7 days: $${fmt(avg7)}/day`;
+    }
+  }
+
+  // ===== Card 3: Orders & Mix =====
+  const orderCount = k.orders;
+  const aov = k.aov;
+  const upt = k.upt;
+
+  // ===== Card 4: Customer Loyalty (% repeat in period, requires lifetime data) =====
+  // For each order in period: did this customer buy BEFORE this period?
+  // Counts orders, not customers (so volume-weighted).
+  const byEmailLife = getOrdersByEmail(lifetimeOrders);
+  let repeatOrders = 0, totalWithEmail = 0;
   for (const o of inPeriod) {
     const email = o.customer?.email?.toLowerCase();
     if (!email) continue;
     totalWithEmail++;
-    const customerOrders = ordersByEmail.get(email) || [];
-    const hasPrior = customerOrders.some(co => new Date(co.created_at).getTime() < new Date(o.created_at).getTime());
+    const history = byEmailLife.get(email);
+    if (!history) continue;
+    const thisMs = new Date(o.created_at).getTime();
+    const hasPrior = history.some(co => new Date(co.created_at).getTime() < thisMs);
     if (hasPrior) repeatOrders++;
   }
   const repeatRate = totalWithEmail > 0 ? Math.round(repeatOrders / totalWithEmail * 100) : 0;
 
-  // ===== Ciclo de reposici\u00f3n: median days entre 1ra y 2da compra =====
-  // Tomamos todos los clientes que tengan >=2 \u00f3rdenes en todo el cache.
+  // Median reorder cycle (from lifetimeOrders, period-independent context)
   const cyclesDays = [];
-  for (const [, arr] of ordersByEmail) {
+  for (const [, arr] of byEmailLife) {
     if (arr.length < 2) continue;
-    const t1 = new Date(arr[0].created_at).getTime();
-    const t2 = new Date(arr[1].created_at).getTime();
-    const days = (t2 - t1) / (1000 * 60 * 60 * 24);
-    if (days > 0 && days < 365) cyclesDays.push(days);
+    const days = (new Date(arr[1].created_at).getTime() - new Date(arr[0].created_at).getTime()) / 86400000;
+    if (days > 0 && days < 730) cyclesDays.push(days);
   }
   let medianCycle = null;
   if (cyclesDays.length > 0) {
@@ -1450,60 +1478,32 @@ function renderExecutiveSummary() {
     medianCycle = Math.round(cyclesDays[Math.floor(cyclesDays.length / 2)]);
   }
 
-  // ===== AOV =====
-  const totalRev = inPeriod.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
-  const aov = inPeriod.length > 0 ? totalRev / inPeriod.length : 0;
-
-  // AOV per\u00edodo anterior (reuso getPreviousPeriodOrders)
-  const prev = getPreviousPeriodOrders();
-  const prevTotalRev = prev.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
-  const prevAov = prev.length > 0 ? prevTotalRev / prev.length : 0;
-  const aovDelta = prevAov > 0 ? Math.round((aov - prevAov) / prevAov * 100) : null;
-
-  // ===== UPT (Units Per Transaction) =====
-  function unitsOf(orders) {
-    let u = 0;
-    for (const o of orders) {
-      for (const li of (o.line_items || [])) u += parseInt(li.quantity || 0);
-    }
-    return u;
-  }
-  const unitsNow = unitsOf(inPeriod);
-  const upt = inPeriod.length > 0 ? unitsNow / inPeriod.length : 0;
-  const unitsPrev = unitsOf(prev);
-  const uptPrev = prev.length > 0 ? unitsPrev / prev.length : 0;
-  const uptDelta = uptPrev > 0 ? Math.round((upt - uptPrev) / uptPrev * 100) : null;
-
-  // Helper para el delta inline
-  function deltaSpan(pct) {
-    if (pct === null || pct === undefined) return '';
-    const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
-    const arrow = pct >= 0 ? '\u2191' : '\u2193';
-    return `<span style="color:${color};font-weight:600">${arrow} ${Math.abs(pct)}%</span>`;
-  }
+  // Loyalty color: <20% rose, 20-40% amber, >40% emerald
+  const loyaltyColor = repeatRate >= 40 ? 'var(--emerald)' : (repeatRate >= 20 ? 'var(--amber)' : 'var(--rose)');
 
   el.innerHTML = `
-    <div class="stat-cell" title="Compares your sales so far this month (MTD = Month-To-Date) against the same point of last month, and projects where the month will close at the current pace.">
-      <div class="stat-cell-label">${monthName} vs Last Month</div>
-      <div class="stat-cell-value" style="color:${pacingColor}">${pacingArrow} ${pacingPct === null ? '\u2014' : Math.abs(pacingPct) + '%'}</div>
-      <div class="stat-cell-sub">
-        $${fmt(mtdRevenue)} so far \u2022 on track for $${fmt(projectedMonth)} \u2022 last month: $${fmt(prevMonthRevenue)}
+    <div class="stat-cell" title="Net sales for the selected period vs previous equivalent period and vs same period last year.">
+      <div class="stat-cell-label">Period Performance</div>
+      <div class="stat-cell-value">$${fmt(k.netSales)}</div>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">
+        ${pillFor(vsPrevPct, 'vs prev period')}
+        ${pillFor(vsYearPct, 'vs same period last year')}
       </div>
     </div>
-    <div class="stat-cell" title="Percentage of orders coming from customers who had bought from you before. Higher = stronger loyalty.">
-      <div class="stat-cell-label">Returning Customers</div>
-      <div class="stat-cell-value">${repeatRate}%</div>
-      <div class="stat-cell-sub">${repeatOrders} of ${totalWithEmail} orders \u2022 ${medianCycle !== null ? 'typically reorder every ~' + medianCycle + ' days' : 'reorder cycle: not enough data'}</div>
+    <div class="stat-cell" title="Average net sales per day in this period. The trend shows whether the last 7 days are above or below the earlier part of the period.">
+      <div class="stat-cell-label">Daily Run Rate</div>
+      <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400">/day</span></div>
+      <div class="stat-cell-sub">${trendHtml}</div>
     </div>
-    <div class="stat-cell" title="AOV (Average Order Value): the average $ amount of each order in the selected period.">
-      <div class="stat-cell-label">Avg. Spend per Order (AOV)</div>
-      <div class="stat-cell-value">$${fmt(aov)}</div>
-      <div class="stat-cell-sub">${deltaSpan(aovDelta)} ${aovDelta !== null ? 'vs previous period' : ''}</div>
+    <div class="stat-cell" title="Order volume in the selected period, plus AOV (Average Order Value) and UPT (Units Per Transaction).">
+      <div class="stat-cell-label">Orders & Mix</div>
+      <div class="stat-cell-value">${orderCount.toLocaleString()}<span style="font-size:11px;color:var(--t2);font-weight:400"> orders</span></div>
+      <div class="stat-cell-sub">AOV $${fmt(aov)} \u2022 UPT ${upt.toFixed(2)}</div>
     </div>
-    <div class="stat-cell" title="UPT (Units Per Transaction): the average number of items in each order.">
-      <div class="stat-cell-label">Items per Order (UPT)</div>
-      <div class="stat-cell-value">${upt.toFixed(2)}</div>
-      <div class="stat-cell-sub">${deltaSpan(uptDelta)} ${uptDelta !== null ? 'vs previous period' : ''}</div>
+    <div class="stat-cell" title="Percentage of orders in this period from customers who had purchased before. Higher = more loyal customer base.">
+      <div class="stat-cell-label">Customer Loyalty</div>
+      <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%<span style="font-size:11px;color:var(--t2);font-weight:400"> repeat orders</span></div>
+      <div class="stat-cell-sub">${repeatOrders.toLocaleString()} of ${totalWithEmail.toLocaleString()} orders${medianCycle ? ' \u2022 ~' + medianCycle + ' day cycle' : ''}</div>
     </div>
   `;
 }
