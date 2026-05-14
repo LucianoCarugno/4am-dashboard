@@ -2165,22 +2165,17 @@ function renderCustomersPeriodKPIs() {
 
 function renderCustomersLifetimeKPIs() {
   // Use the FULL available history (5 years back), not just TTM.
-  // This way, businesses with multiple years of data see their true lifetime metrics.
   const history = lifetimeOrders || [];
   if (history.length === 0) return;
   const byEmail = getOrdersByEmail(history);
 
-  // Total customers
+  // Total customers = unique identifiable customers (by email)
   const totalCustomers = byEmail.size;
 
-  // Avg LTV — sum of NET SALES per customer / unique customers.
-  // We use computeKPIs to keep this consistent with Net Sales shown in Sales tab.
-  // Only include orders that have a customer email (matching the denominator).
-  const ordersWithEmail = [];
-  for (const [, arr] of byEmail) {
-    for (const o of arr) ordersWithEmail.push(o);
-  }
-  const lifetimeKPIs = computeKPIs(ordersWithEmail);
+  // Total revenue = NET SALES of ALL orders in history (matches Sales tab exactly).
+  // We divide this by identifiable customers — guest/anonymous orders contribute
+  // to total revenue but not to the customer count.
+  const lifetimeKPIs = computeKPIs(history);
   const totalRev = lifetimeKPIs.netSales;
   const avgLTV = totalCustomers > 0 ? totalRev / totalCustomers : 0;
 
@@ -2220,7 +2215,9 @@ function renderCustomersLifetimeKPIs() {
   const dormantColor = dormantPct < 30 ? 'var(--emerald)' : (dormantPct < 60 ? 'var(--amber)' : 'var(--rose)');
 
   document.getElementById('kpi-total-customers').textContent = fmtNum(totalCustomers);
-  document.getElementById('kpi-total-customers-sub').textContent = `across ${monthsSpan} months of history`;
+  document.getElementById('kpi-total-customers-sub').textContent = `identifiable customers · ${monthsSpan} months of history`;
+  document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
+  document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} net sales ÷ ${fmtNum(totalCustomers)} customers`;
 
   // Update the "Lifetime View" badge with the actual date range
   const badge = document.getElementById('lifetime-badge');
@@ -2229,8 +2226,6 @@ function renderCustomersLifetimeKPIs() {
     const endFmt = new Date(newestMs).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'America/New_York' });
     badge.textContent = `${startFmt} → ${endFmt}`;
   }
-  document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
-  document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} net sales ÷ ${fmtNum(totalCustomers)} customers`;
   document.getElementById('kpi-reorder-cycle').textContent = medianCycle !== null ? `${medianCycle} days` : '—';
   document.getElementById('kpi-reorder-cycle-sub').textContent = medianCycle !== null ? `between 1st and 2nd order` : 'not enough repeat buyers';
   document.getElementById('kpi-dormant').textContent = `${dormantPct}%`;
