@@ -1567,7 +1567,10 @@ function getPreviousPeriodOrders() {
   const days = Math.round((to - from) / (1000*60*60*24)) || 1;
   const prevTo = new Date(from); prevTo.setDate(prevTo.getDate() - 1);
   const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate() - days);
-  return allOrders.filter(o => { const d = new Date(o.created_at); return d >= prevFrom && d <= prevTo; });
+  // Use lifetimeOrders (5-year history) instead of allOrders, so the previous
+  // period is available even when the current filter covers all of allOrders.
+  const source = (lifetimeOrders && lifetimeOrders.length > 0) ? lifetimeOrders : allOrders;
+  return source.filter(o => { const d = new Date(o.created_at); return d >= prevFrom && d <= prevTo; });
 }
 
 function fmtChange(curr, prev) {
