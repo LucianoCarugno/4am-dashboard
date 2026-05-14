@@ -1411,17 +1411,24 @@ function renderExecutiveSummary() {
   const kYearAgo = computeKPIs(yaOrders);
 
   const vsPrevPct = kPrev.netSales > 0 ? Math.round((k.netSales - kPrev.netSales) / kPrev.netSales * 100) : null;
-  const vsYearPct = kYearAgo.netSales > 0 ? Math.round((k.netSales - kYearAgo.netSales) / kYearAgo.netSales * 100) : null;
+  // For very long ranges (>=350 days), "vs prior period" and "vs same period last year"
+  // are basically the same thing. Hide the year-ago line to avoid redundancy.
+  const showYearComparison = periodDays < 350;
+  const vsYearPct = (showYearComparison && kYearAgo.netSales > 0)
+    ? Math.round((k.netSales - kYearAgo.netSales) / kYearAgo.netSales * 100)
+    : null;
 
   function pillFor(pct, label, currVal, prevVal) {
     if (pct === null) return '';  // hide line entirely if no comparison data
-    // If % is extreme (>1000% or <-95%), show absolute $ comparison instead — clearer
-    if (Math.abs(pct) > 1000 || pct < -95) {
-      return `<div style="font-size:10px;line-height:1.4;color:var(--t2)">${label}: <span style="color:var(--t1)">$${fmt(prevVal)}</span></div>`;
-    }
+    // Cap extreme percentages so the display stays readable.
+    // Going from $50 to $5000 reads as "500%+" instead of "9900%".
+    let displayPct = pct;
+    let suffix = '';
+    if (pct > 500) { displayPct = 500; suffix = '+'; }
+    else if (pct < -95) { displayPct = -95; suffix = '+'; }
     const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
     const arrow = pct >= 0 ? '\u2191' : '\u2193';
-    return `<div style="font-size:10px;line-height:1.4"><span style="color:${color};font-weight:600">${arrow} ${Math.abs(pct)}%</span> <span style="color:var(--t2)">${label}</span></div>`;
+    return `<div style="font-size:10px;line-height:1.4"><span style="color:${color};font-weight:600">${arrow} ${Math.abs(displayPct)}%${suffix}</span> <span style="color:var(--t2)">${label}</span></div>`;
   }
 
   // ===== Card 2: Daily Run Rate =====
@@ -1439,9 +1446,12 @@ function renderExecutiveSummary() {
     const avgEarlier = kEarlier.netSales / Math.max(1, periodDays - 7);
     if (avgEarlier > 0) {
       const trendPct = Math.round((avg7 - avgEarlier) / avgEarlier * 100);
+      let displayPct = trendPct, suffix = '';
+      if (trendPct > 500) { displayPct = 500; suffix = '+'; }
+      else if (trendPct < -95) { displayPct = -95; suffix = '+'; }
       const trendColor = trendPct >= 0 ? 'var(--emerald)' : 'var(--rose)';
       const trendArrow = trendPct >= 0 ? '\u2191' : '\u2193';
-      trendHtml = `last 7 days: $${fmt(avg7)}/day <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(trendPct)}%</span>`;
+      trendHtml = `last 7 days <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(displayPct)}%${suffix}</span> vs earlier in period`;
     } else {
       trendHtml = `last 7 days: $${fmt(avg7)}/day`;
     }
@@ -1486,7 +1496,7 @@ function renderExecutiveSummary() {
   const loyaltyColor = repeatRate >= 40 ? 'var(--emerald)' : (repeatRate >= 20 ? 'var(--amber)' : 'var(--rose)');
 
   el.innerHTML = `
-    <div class="stat-cell" title="Net sales (gross minus discounts and refunds) for the selected period, compared with the previous period of equal length and the same period last year.">
+    <div class="stat-cell" title="Net sales (gross minus discounts and refunds) for the selected period. 'Prior period' = same length right before this range. 'Same period last year' = same calendar range, one year earlier.">
       <div class="stat-cell-label">Net Sales</div>
       <div class="stat-cell-value">$${fmt(k.netSales)}</div>
       <div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">
@@ -1494,7 +1504,7 @@ function renderExecutiveSummary() {
         ${pillFor(vsYearPct, 'vs same period last year', k.netSales, kYearAgo.netSales)}
       </div>
     </div>
-    <div class="stat-cell" title="Average net sales per day in this period. The trend shows whether the last 7 days are above or below the earlier part of the period.">
+    <div class="stat-cell" title="Average net sales per day in the selected period. The trend below compares the average of the last 7 days vs the average of the earlier days in the same period — to see if sales are accelerating or decelerating.">
       <div class="stat-cell-label">Average per Day</div>
       <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400">/day</span></div>
       <div class="stat-cell-sub">${trendHtml}</div>
