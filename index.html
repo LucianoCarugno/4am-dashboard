@@ -489,17 +489,19 @@ tbody tr:hover td { background: var(--s2); }
       <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px">
         <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Returns</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Refunds</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Shipping Income</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Taxes</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div></div>
       </div>
 
-      <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="skeleton" style="height:28px;width:65%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Orders</div><div class="skeleton" style="height:28px;width:50%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:40%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg Order</div><div class="skeleton" style="height:28px;width:55%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:35%"></div></div>
-        <div class="kpi-card"><div class="kpi-label">TikTok</div><div class="skeleton" style="height:28px;width:45%;margin:6px 0 5px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
+      <!-- CHANNEL MIX & ACQUISITION -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix & Acquisition</div>
+      <div class="stats-row" id="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+        <div class="stat-cell"><div class="stat-cell-label">TikTok Shop</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Web / Direct</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">New Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Returning Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
       </div>
 
       <div class="row row-3" style="margin-bottom:12px">
@@ -1610,52 +1612,68 @@ function renderKPIs() {
 
   const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
   const web = orders.filter(o => o.source_name === 'web').length;
+  const tiktokRev = orders.filter(o => o.source_name === 'tiktok').reduce((s,o) => s + orderNetSales(o), 0);
+  const webRev = orders.filter(o => o.source_name === 'web').reduce((s,o) => s + orderNetSales(o), 0);
+
   const customerEmails = {};
   allOrders.forEach(o => { if (o.customer?.email) customerEmails[o.customer.email] = (customerEmails[o.customer.email]||0)+1; });
   const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
   const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
+  const totalIdentified = newC + returning;
 
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value">$${fmt(k.netSales)}</div><div class="kpi-sub">${fmtNum(orders.length)} orders · $${fmt(k.returns)} refunded</div>${fmtChange(k.netSales, kPrev.netSales)}</div>
-    <div class="kpi-card"><div class="kpi-label">Paid Orders</div><div class="kpi-value">${paid}</div><div class="kpi-sub">${orders.length ? Math.round(paid/orders.length*100) : 0}% of total</div>${fmtChange(paid, prevPaid)}</div>
-    <div class="kpi-card"><div class="kpi-label">Total Refunded</div><div class="kpi-value" style="color:${k.returns > 0 ? 'var(--rose)' : 'var(--t0)'}">$${fmt(k.returns)}</div><div class="kpi-sub">${refunded.length} refunded orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">Refund Rate</div><div class="kpi-value">${refundRate}%</div><div class="kpi-sub">${refunded.length} refunded · $${fmt(k.returns)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">TikTok Shop</div><div class="kpi-value">${tiktok}</div><div class="kpi-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">Web / Direct</div><div class="kpi-value">${web}</div><div class="kpi-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">New Customers</div><div class="kpi-value">${newC}</div><div class="kpi-sub">${orders.length ? Math.round(newC/orders.length*100) : 0}% of orders</div></div>
-    <div class="kpi-card"><div class="kpi-label">Returning Customers</div><div class="kpi-value">${returning}</div><div class="kpi-sub">${orders.length ? Math.round(returning/orders.length*100) : 0}% of orders</div></div>`;
+    <div class="stat-cell" title="Orders placed through the TikTok Shop sales channel.">
+      <div class="stat-cell-label">TikTok Shop</div>
+      <div class="stat-cell-value">${fmtNum(tiktok)}</div>
+      <div class="stat-cell-sub">${orders.length ? Math.round(tiktok/orders.length*100) : 0}% of orders · $${fmt(tiktokRev)}</div>
+    </div>
+    <div class="stat-cell" title="Orders placed directly through your Shopify website.">
+      <div class="stat-cell-label">Web / Direct</div>
+      <div class="stat-cell-value">${fmtNum(web)}</div>
+      <div class="stat-cell-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders · $${fmt(webRev)}</div>
+    </div>
+    <div class="stat-cell" title="Orders from customers buying for the first time (across all available history).">
+      <div class="stat-cell-label">New Customers</div>
+      <div class="stat-cell-value">${fmtNum(newC)}</div>
+      <div class="stat-cell-sub">${totalIdentified ? Math.round(newC/totalIdentified*100) : 0}% of identified orders</div>
+    </div>
+    <div class="stat-cell" title="Orders from customers who had purchased before this period.">
+      <div class="stat-cell-label">Returning Customers</div>
+      <div class="stat-cell-value">${fmtNum(returning)}</div>
+      <div class="stat-cell-sub">${totalIdentified ? Math.round(returning/totalIdentified*100) : 0}% of identified orders</div>
+    </div>`;
 
   const revEl = document.getElementById('revenue-breakdown');
   if (revEl) revEl.innerHTML = `
-    <div class="stat-cell">
+    <div class="stat-cell" title="Total billed before any discounts, refunds, taxes or shipping. The pure top-line gross merchandise volume.">
       <div class="stat-cell-label">Gross Sales</div>
       <div class="stat-cell-value">$${fmt(k.gross)}</div>
-      <div class="stat-cell-sub">items × price, no discounts</div>
+      <div class="stat-cell-sub">items × price · before discounts</div>
     </div>
-    <div class="stat-cell">
+    <div class="stat-cell" title="Promotional discounts applied to line items. % shown is the share of orders that received at least one discount.">
       <div class="stat-cell-label">Discounts</div>
       <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.discounts)}</div>
-      <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders</div>
+      <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders received one</div>
     </div>
-    <div class="stat-cell">
-      <div class="stat-cell-label">Returns</div>
+    <div class="stat-cell" title="Refunds processed during the period — post-sale revenue reversals.">
+      <div class="stat-cell-label">Refunds</div>
       <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.returns)}</div>
-      <div class="stat-cell-sub">${refunded.length} orders</div>
+      <div class="stat-cell-sub">${fmtNum(refunded.length)} order${refunded.length === 1 ? '' : 's'} refunded</div>
     </div>
-    <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)">
+    <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)" title="Revenue retained after discounts and refunds. This is the operative top-line metric and should reconcile with Shopify Analytics.">
       <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
       <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
-      <div class="stat-cell-sub">gross − discounts − returns</div>
+      <div class="stat-cell-sub">gross − discounts − refunds</div>
     </div>
-    <div class="stat-cell">
+    <div class="stat-cell" title="Shipping revenue collected from customers. Separate from product revenue and excluded from Net Sales.">
       <div class="stat-cell-label">Shipping Income</div>
       <div class="stat-cell-value">$${fmt(k.shipping)}</div>
       <div class="stat-cell-sub">${k.shipping > 0 ? Math.round(k.shipping/k.gross*100)+'% of gross' : '—'}</div>
     </div>
-    <div class="stat-cell">
+    <div class="stat-cell" title="Sales tax collected — a pass-through to government, not retained revenue.">
       <div class="stat-cell-label">Taxes Collected</div>
       <div class="stat-cell-value">$${fmt(k.taxes)}</div>
-      <div class="stat-cell-sub">${k.gross ? Math.round(k.taxes/k.gross*100) : 0}% tax rate</div>
+      <div class="stat-cell-sub">${k.gross ? (k.taxes/k.gross*100).toFixed(1) : 0}% effective rate</div>
     </div>`;
 }
 
@@ -1952,9 +1970,9 @@ function renderCatalogConcentration(products, totalRev) {
   const flag5 = top5Pct > 80 ? 'var(--rose)' : (top5Pct > 65 ? 'var(--amber)' : 'var(--emerald)');
 
   let msg;
-  if (top3Pct > 70) msg = `<strong style="color:var(--rose)">Highly concentrated.</strong> Your top 3 products drive ${top3Pct}% of sales. If any one of them dips (out of stock, quality issue, trend shift), revenue takes a real hit. Consider what could become your 4th or 5th hero.`;
-  else if (top3Pct > 50) msg = `<strong style="color:var(--amber)">Moderate concentration.</strong> Top 3 products = ${top3Pct}% of sales. Healthy enough but worth diversifying — a single product issue could meaningfully impact revenue.`;
-  else msg = `<strong style="color:var(--emerald)">Well-spread catalog.</strong> No single product dominates (top 3 = ${top3Pct}%). Your revenue base is resilient.`;
+  if (top3Pct > 70) msg = `<strong style="color:var(--rose)">High concentration risk.</strong> Your top 3 SKUs account for ${top3Pct}% of revenue. A stock-out, quality issue, or shift in consumer preference on any one of these would materially impact the business. Strategic priority: invest in developing the next tier of hero products.`;
+  else if (top3Pct > 50) msg = `<strong style="color:var(--amber)">Moderate concentration.</strong> Top 3 SKUs represent ${top3Pct}% of revenue. Healthy but worth monitoring — single-product disruptions would still be felt at the P&L level.`;
+  else msg = `<strong style="color:var(--emerald)">Diversified catalog.</strong> No single SKU dominates the revenue base (top 3 = ${top3Pct}%). Resilient revenue profile with limited single-point-of-failure risk.`;
 
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px">
@@ -2270,9 +2288,9 @@ function renderCustomerSegments() {
   const vipPct = total > 0 ? (segs['VIP (5+ orders)'] / total * 100) : 0;
   const oneTimePct = total > 0 ? (segs['One-time (1 order)'] / total * 100) : 0;
   let msg;
-  if (oneTimePct > 80) msg = `<strong style="color:var(--rose)">Heavy reliance on first-time buyers.</strong> ${oneTimePct.toFixed(0)}% of customers bought just once. Acquisition is working; retention isn't. Focus on email flows, reorder reminders, and post-purchase experience.`;
-  else if (vipPct > 5) msg = `<strong style="color:var(--emerald)">Healthy loyalty.</strong> ${vipPct.toFixed(1)}% of customers are VIPs (5+ orders). These people are your goldmine — treat them well (early access, exclusive bundles).`;
-  else msg = `<strong style="color:var(--amber)">Loyalty building.</strong> Most customers fall into 1-2 orders. Push for the 3rd order — that's typically the threshold where customers become loyal.`;
+  if (oneTimePct > 80) msg = `<strong style="color:var(--rose)">Acquisition-dependent model.</strong> ${oneTimePct.toFixed(0)}% of customers are one-time buyers. Customer acquisition is functioning, but retention is the strategic gap. Priority initiatives: post-purchase email flows, reorder triggers, and improvements to first-order experience.`;
+  else if (vipPct > 5) msg = `<strong style="color:var(--emerald)">Healthy loyalty profile.</strong> ${vipPct.toFixed(1)}% of customers are VIPs with 5+ orders. This cohort drives disproportionate lifetime value and should be cultivated with early access, exclusive offers, and direct outreach.`;
+  else msg = `<strong style="color:var(--amber)">Loyalty in formation.</strong> Customer base is concentrated in 1–2 order brackets. The conversion from 2nd to 3rd order is the critical retention threshold — focus retention investment here.`;
 
   html += `<div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:12px"><strong style="color:var(--t0)">What this means:</strong> ${msg}</div>`;
   el.innerHTML = html;
@@ -2329,11 +2347,11 @@ function renderLTVDistribution() {
   const topBucketCustPct = totalCustomers > 0 ? (buckets[buckets.length - 1].count / totalCustomers * 100) : 0;
   let msg;
   if (topBucketCustPct > 0 && topBucketRevPct > 30) {
-    msg = `<strong style="color:var(--amber)">Revenue leans on big spenders.</strong> Just ${topBucketCustPct.toFixed(1)}% of customers (the $1,500+ group) generate ${topBucketRevPct.toFixed(0)}% of revenue. Protect them carefully — losing one hurts.`;
+    msg = `<strong style="color:var(--amber)">Revenue concentrated in high-value customers.</strong> ${topBucketCustPct.toFixed(1)}% of customers (the $1,500+ cohort) generate ${topBucketRevPct.toFixed(0)}% of revenue. This group is strategically critical — churn in this segment has disproportionate P&L impact.`;
   } else if (buckets[0].count / totalCustomers > 0.7) {
-    msg = `<strong style="color:var(--rose)">Most customers spend very little.</strong> Over 70% of your buyers are in the lowest bracket. Bundles, upsells at checkout, and product education can lift this.`;
+    msg = `<strong style="color:var(--rose)">Low-spend dominant base.</strong> Over 70% of customers fall in the lowest LTV bracket. Bundle strategies, checkout upsells, and product education are the standard levers to lift this distribution.`;
   } else {
-    msg = `<strong style="color:var(--emerald)">Healthy spending distribution.</strong> Your customer base spans all tiers without over-relying on any single group.`;
+    msg = `<strong style="color:var(--emerald)">Balanced LTV distribution.</strong> Customer base spans all spending tiers without over-reliance on any single bracket — a structurally healthy revenue mix.`;
   }
   html += `<div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:12px"><strong style="color:var(--t0)">What this means:</strong> ${msg}</div>`;
   el.innerHTML = html;
@@ -2594,9 +2612,9 @@ function renderCohortRetention() {
       insightEl.innerHTML = `
         <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
           <strong style="color:var(--t0)">What this means:</strong>
-          <strong style="color:var(--emerald)">${best.label}</strong> was your best cohort — those first-time buyers came back the most in their first 2 months.
-          <strong style="color:var(--rose)">${worst.label}</strong> was the weakest — many bought once and never returned.
-          When you see a big drop, look at what was happening that month (discounts, new channel, a specific campaign) — that's where the lower-quality buyers came from.
+          The <strong style="color:var(--emerald)">${best.label}</strong> cohort delivered the strongest retention performance — these customers returned at the highest rate in their first two months.
+          The <strong style="color:var(--rose)">${worst.label}</strong> cohort underperformed, with most buyers not returning.
+          Significant retention drops typically indicate lower-quality acquisition that month — review the channel mix, discount activity, and campaigns that drove that intake.
         </div>
       `;
     }
@@ -2650,11 +2668,11 @@ function renderLTV() {
       const growth180 = ltv180 > 0 ? Math.round((ltv180 - ltv30) / ltv30 * 100) : null;
       let msg;
       if (growth < 10) {
-        msg = `<strong style="color:var(--rose)">Customers are not coming back.</strong> The average spend barely grows after day 30 (+${growth}% to day 90). This means most people buy once and disappear. Look at your retention table above to confirm.`;
+        msg = `<strong style="color:var(--rose)">Limited customer retention.</strong> Average customer spend grows only +${growth}% from day 30 to day 90 — indicating most buyers are single-purchase. Retention should be the primary strategic focus before increasing acquisition investment.`;
       } else if (growth < 40) {
-        msg = `<strong style="color:var(--amber)">Moderate repeat behavior.</strong> The average customer spends ${growth}% more by day 90${growth180 !== null ? `, ${growth180}% by day 180` : ''}. Some loyalty exists but there's room to push reorders (email reminders, subscriptions).`;
+        msg = `<strong style="color:var(--amber)">Moderate repurchase behavior.</strong> Average customer spend grows +${growth}% by day 90${growth180 !== null ? `, +${growth180}% by day 180` : ''}. There is loyalty signal, but meaningful upside from improved retention mechanics (lifecycle email, subscription offerings).`;
       } else {
-        msg = `<strong style="color:var(--emerald)">Strong customer loyalty.</strong> The average customer's spend grows ${growth}% from day 30 to day 90${growth180 !== null ? ` and ${growth180}% by day 180` : ''}. Your product is sticky — invest more in acquisition because each new customer pays off well.`;
+        msg = `<strong style="color:var(--emerald)">Strong unit economics.</strong> Average customer spend grows +${growth}% from day 30 to day 90${growth180 !== null ? ` and +${growth180}% by day 180` : ''}. Product-market fit is reflected in repeat behavior — incremental acquisition investment is justified by predictable lifetime returns.`;
       }
       insightEl.innerHTML = `
         <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
@@ -2743,10 +2761,16 @@ function renderDiscountIntensity() {
     }
     if (aovWith > 0 && aovWithout > 0 && aovWith < aovWithout) {
       const dropPct = Math.round((aovWithout - aovWith) / aovWithout * 100);
-      msg += ` Discounted orders are <strong style="color:var(--rose)">${dropPct}% smaller</strong> than full-price ones — promos are mostly trimming margin, not bringing bigger baskets.`;
+      msg += ` Discounted orders are <strong style="color:var(--rose)">${dropPct}% smaller</strong> than full-price ones — promos are trimming margin without driving basket size. Consider tightening promotional cadence.`;
     } else if (aovWith > aovWithout && aovWithout > 0) {
       const liftPct = Math.round((aovWith - aovWithout) / aovWithout * 100);
-      msg += ` Good news: discounted orders are <strong style="color:var(--emerald)">${liftPct}% bigger</strong> — promos are nudging people to buy more, not just cheaper.`;
+      msg += ` Discounted orders are <strong style="color:var(--emerald)">${liftPct}% larger</strong> than full-price orders — promotions are working as intended, lifting basket size rather than just shifting volume.`;
+    }
+    // Discount Efficiency: revenue generated per dollar of discount granted.
+    // Formula: net sales from discounted orders / total discount $.
+    if (discounts > 0 && revWithDisc > 0) {
+      const efficiency = revWithDisc / discounts;
+      msg += ` <strong style="color:var(--t0)">Discount Efficiency:</strong> every $1 in discount generated <strong style="color:var(--t0)">$${efficiency.toFixed(2)}</strong> in net sales from those orders.`;
     }
     insightEl.innerHTML = `
       <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
@@ -2815,11 +2839,11 @@ function renderCustomerConcentration() {
   if (insightEl) {
     let msg;
     if (top10Pct < 10) {
-      msg = `<strong style="color:var(--emerald)">Sales are well-distributed.</strong> Your top 10 buyers are only ${top10Pct}% of revenue. If any single customer disappears, you barely notice. This is the healthy spot.`;
+      msg = `<strong style="color:var(--emerald)">Highly distributed revenue base.</strong> Top 10 customers represent only ${top10Pct}% of total sales. Single-customer churn risk is negligible — this is a structurally resilient revenue profile.`;
     } else if (top10Pct < 25) {
-      msg = `<strong style="color:var(--amber)">Some concentration.</strong> Your top 10 customers drive ${top10Pct}% of sales. Worth knowing who they are and keeping them happy — losing one would hurt.`;
+      msg = `<strong style="color:var(--amber)">Moderate customer concentration.</strong> Top 10 customers drive ${top10Pct}% of sales. Worth identifying and actively managing these accounts — churn within this group would produce measurable revenue impact.`;
     } else {
-      msg = `<strong style="color:var(--rose)">High concentration risk.</strong> Just 10 customers = ${top10Pct}% of your sales. If your top buyer churns, that's a real revenue hit. Consider how to broaden the customer base.`;
+      msg = `<strong style="color:var(--rose)">Concentration risk.</strong> Just 10 customers account for ${top10Pct}% of sales. Loss of any top-tier account would have material P&L impact. Strategic priority: broaden the customer base and reduce dependency on top accounts.`;
     }
     insightEl.innerHTML = `
       <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
@@ -2890,9 +2914,9 @@ function renderChannelPerformance() {
       const loyalPctMost = Math.round(mostLoyal[1].repeat / mostLoyal[1].orders * 100);
       let msg = '';
       if (mostNew[0] !== mostLoyal[0]) {
-        msg = `<strong style="color:var(--emerald)">${mostNew[0]}</strong> is your best engine for finding new customers (${newPctMost}% of its orders are first-timers). <strong style="color:var(--emerald)">${mostLoyal[0]}</strong> is where loyal customers come back (${loyalPctMost}% returning). A healthy mix is having both — one to grow the base and one to keep them. If you're spending ads, do it on channels that bring new buyers; keep email/social for returning ones.`;
+        msg = `<strong style="color:var(--emerald)">${mostNew[0]}</strong> is the strongest acquisition channel (${newPctMost}% first-time buyers), while <strong style="color:var(--emerald)">${mostLoyal[0]}</strong> drives repeat purchase behavior (${loyalPctMost}% returning customers). The optimal allocation: paid acquisition spend toward ${mostNew[0]}, and CRM/email investment toward channels with established returning customers.`;
       } else {
-        msg = `Your channels are similar in their new-vs-returning mix. ${mostNew[0]} is the biggest source. To grow you need either a new acquisition channel, or to convert more of your buyers into repeat customers (email flows, reorder reminders).`;
+        msg = `Channels exhibit similar new-vs-returning composition, with ${mostNew[0]} as the primary volume source. Two growth paths: (1) develop a second acquisition channel to reduce dependency, or (2) increase retention conversion through email automation and post-purchase flows.`;
       }
       insightEl.innerHTML = `
         <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
@@ -2978,18 +3002,18 @@ function renderSKUVelocity() {
     const top3Concentration = movers.slice(0, 3).reduce((s, m) => s + m.pctOfTotal, 0);
     let msg = '';
     if (winners.length > 0) {
-      msg += `<strong style="color:var(--emerald)">Growing fast:</strong> ${winners.map(w => `${w.title} (+${w.delta}%)`).join(', ')}. Make sure you have stock and consider featuring these.`;
+      msg += `<strong style="color:var(--emerald)">Accelerating SKUs:</strong> ${winners.map(w => `${w.title} (+${w.delta}%)`).join(', ')}. Ensure inventory availability and consider increased merchandising or media support.`;
     }
     if (losers.length > 0) {
       if (msg) msg += ' ';
-      msg += `<strong style="color:var(--rose)">Losing steam:</strong> ${losers.map(l => `${l.title} (${l.delta}%)`).join(', ')}. Could be seasonality or saturation — worth investigating before sales drop more.`;
+      msg += `<strong style="color:var(--rose)">Decelerating SKUs:</strong> ${losers.map(l => `${l.title} (${l.delta}%)`).join(', ')}. Investigate root cause — seasonality, demand saturation, or competitive displacement — before declines compound.`;
     }
     if (top3Concentration > 60) {
       if (msg) msg += ' ';
-      msg += `<strong style="color:var(--amber)">Heavy reliance on a few products:</strong> your top 3 products are ${top3Concentration.toFixed(0)}% of sales. Healthy catalogs are more spread out — consider what could become your 4th or 5th hero.`;
+      msg += `<strong style="color:var(--amber)">Catalog concentration:</strong> top 3 SKUs represent ${top3Concentration.toFixed(0)}% of revenue. Catalog diversification reduces single-product dependency risk — develop the next tier of revenue-driving SKUs.`;
     }
     if (!msg) {
-      msg = 'No major movers this period — your product mix is stable.';
+      msg = 'Product mix is stable — no significant velocity shifts in the period.';
     }
     insightEl.innerHTML = `
       <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:8px">
