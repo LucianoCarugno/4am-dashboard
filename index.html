@@ -1444,6 +1444,10 @@ function renderExecutiveSummary() {
   }
   const yaOrders = ordersInYearAgoRange();
   const kYearAgo = computeKPIs(yaOrders);
+  // Expose for renderKPIs (called right after) so the Net Sales card can show
+  // both vs-prior-period and vs-same-period-last-year context consistently.
+  window.__kYearAgo = kYearAgo;
+  window.__showYearAgo = periodDays < 350;
 
   const vsPrevPct = kPrev.netSales > 0 ? Math.round((k.netSales - kPrev.netSales) / kPrev.netSales * 100) : null;
   // For very long ranges (>=350 days), "vs prior period" and "vs same period last year"
@@ -1547,9 +1551,6 @@ function renderExecutiveSummary() {
       <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} identified orders${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
     </div>
   `;
-
-  // Store the period-comparison pills so the Net Sales card (in the revenue breakdown row) can render them.
-  window.__netSalesPills = `${pillFor(vsPrevPct, 'vs prior period', k.netSales, kPrev.netSales)}${pillFor(vsYearPct, 'vs same period last year', k.netSales, kYearAgo.netSales)}`;
 }
 
 function renderStatsRow() {
@@ -1682,38 +1683,74 @@ function renderKPIs() {
     </div>`;
 
   const revEl = document.getElementById('revenue-breakdown');
-  if (revEl) revEl.innerHTML = `
+  if (revEl) {
+    // Per-card comparison block. Renders up to two pills:
+    //   ↑/↓ X% vs prior period
+    //   ↑/↓ X% vs same period last year (only when window.__showYearAgo and we have data)
+    // direction='positive' means up = good (green); 'negative' means up = bad (red), e.g. Discounts/Refunds.
+    const pill = (curr, prev, label, direction) => {
+      if (prev === null || prev === undefined || prev === 0) {
+        if (!curr) return `<div style="font-size:10px;color:var(--t2);margin-top:3px">no data ${label}</div>`;
+        return `<div style="font-size:10px;color:var(--t2);margin-top:3px">new ${label}</div>`;
+      }
+      let pct = Math.round((curr - prev) / prev * 100);
+      let displayPct = pct, suffix = '';
+      if (pct > 500) { displayPct = 500; suffix = '+'; }
+      else if (pct < -95) { displayPct = -95; suffix = '+'; }
+      const isUp = pct > 0, isDown = pct < 0;
+      const good = direction === 'positive' ? isUp : isDown;
+      const bad  = direction === 'positive' ? isDown : isUp;
+      const color = good ? 'var(--emerald)' : (bad ? 'var(--rose)' : 'var(--t2)');
+      const arrow = isUp ? '↑' : (isDown ? '↓' : '→');
+      return `<div style="font-size:10px;color:${color};margin-top:3px;font-weight:600">${arrow} ${Math.abs(displayPct)}%${suffix} <span style="color:var(--t2);font-weight:400">${label}</span></div>`;
+    };
+
+    const ya = window.__kYearAgo;
+    const showYa = !!window.__showYearAgo;
+    const cmp = (currVal, prevVal, yaVal, direction = 'positive') => {
+      const prevPill = pill(currVal, prevVal, 'vs prior period', direction);
+      const yaPill = showYa ? pill(currVal, yaVal, 'vs same period last year', direction) : '';
+      return prevPill + yaPill;
+    };
+
+    revEl.innerHTML = `
     <div class="stat-cell" title="Total billed before any discounts, refunds, taxes or shipping. The pure top-line gross merchandise volume.">
       <div class="stat-cell-label">Gross Sales</div>
       <div class="stat-cell-value">$${fmt(k.gross)}</div>
       <div class="stat-cell-sub">items × price · before discounts</div>
+      ${cmp(k.gross, kPrev.gross, ya?.gross, 'positive')}
     </div>
     <div class="stat-cell" title="Promotional discounts applied to line items. % shown is the share of orders that received at least one discount.">
       <div class="stat-cell-label">Discounts</div>
       <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.discounts)}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders received one</div>
+      ${cmp(k.discounts, kPrev.discounts, ya?.discounts, 'negative')}
     </div>
     <div class="stat-cell" title="Refunds processed during the period — post-sale revenue reversals.">
       <div class="stat-cell-label">Refunds</div>
       <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.returns)}</div>
       <div class="stat-cell-sub">${fmtNum(refunded.length)} order${refunded.length === 1 ? '' : 's'} refunded</div>
+      ${cmp(k.returns, kPrev.returns, ya?.returns, 'negative')}
     </div>
     <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)" title="Revenue retained after discounts and refunds. This is the operative top-line metric and should reconcile with Shopify Analytics.">
       <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
       <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
       <div class="stat-cell-sub">gross − discounts − refunds</div>
-      ${window.__netSalesPills ? `<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">${window.__netSalesPills}</div>` : ''}
+      ${cmp(k.netSales, kPrev.netSales, ya?.netSales, 'positive')}
     </div>
     <div class="stat-cell" title="Shipping revenue collected from customers. Separate from product revenue and excluded from Net Sales.">
       <div class="stat-cell-label">Shipping Income</div>
       <div class="stat-cell-value">$${fmt(k.shipping)}</div>
       <div class="stat-cell-sub">${k.shipping > 0 ? Math.round(k.shipping/k.gross*100)+'% of gross' : '—'}</div>
+      ${cmp(k.shipping, kPrev.shipping, ya?.shipping, 'positive')}
     </div>
     <div class="stat-cell" title="Sales tax collected — a pass-through to government, not retained revenue.">
       <div class="stat-cell-label">Taxes Collected</div>
       <div class="stat-cell-value">$${fmt(k.taxes)}</div>
       <div class="stat-cell-sub">${k.gross ? (k.taxes/k.gross*100).toFixed(1) : 0}% effective rate</div>
+      ${cmp(k.taxes, kPrev.taxes, ya?.taxes, 'positive')}
     </div>`;
+  }
 }
 
 // Helper: compute net sales for a single order using the same formula as computeKPIs.
