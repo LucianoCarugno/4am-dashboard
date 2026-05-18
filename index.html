@@ -507,15 +507,15 @@ tbody tr:hover td { background: var(--s2); }
       </div>
 
       <!-- HEALTH PULSE (works with any date filter) -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse</div>
-      <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-        <div class="stat-cell"><div class="stat-cell-label" title="Net sales (gross minus discounts and refunds) for the selected period.">Net Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
+      <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period.">Average per Day</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Number of orders placed in this period.">Orders Placed</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Percentage of orders from customers who had bought before.">Returning Customer Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Of the orders placed in this period that have a customer email, what % came from someone who had purchased before the period started.">Returning Customer Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
       </div>
 
       <!-- REVENUE BREAKDOWN -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Revenue Breakdown <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
       <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px">
         <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
@@ -526,7 +526,7 @@ tbody tr:hover td { background: var(--s2); }
       </div>
 
       <!-- CHANNEL MIX & ACQUISITION -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix & Acquisition</div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix & Acquisition <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
       <div class="stats-row" id="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label">TikTok Shop</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Web / Direct</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
@@ -1412,7 +1412,6 @@ function renderExecutiveSummary() {
   const inPeriod = filteredOrders || [];
   if (inPeriod.length === 0) {
     el.innerHTML = `
-      <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Average per Day</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Orders Placed</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Returning Customer Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
@@ -1532,14 +1531,6 @@ function renderExecutiveSummary() {
   const loyaltyColor = repeatRate >= 40 ? 'var(--emerald)' : (repeatRate >= 20 ? 'var(--amber)' : 'var(--rose)');
 
   el.innerHTML = `
-    <div class="stat-cell" title="Net sales (gross minus discounts and refunds) for the selected period. 'Prior period' = same length right before this range. 'Same period last year' = same calendar range, one year earlier.">
-      <div class="stat-cell-label">Net Sales</div>
-      <div class="stat-cell-value">$${fmt(k.netSales)}</div>
-      <div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">
-        ${pillFor(vsPrevPct, 'vs prior period', k.netSales, kPrev.netSales)}
-        ${pillFor(vsYearPct, 'vs same period last year', k.netSales, kYearAgo.netSales)}
-      </div>
-    </div>
     <div class="stat-cell" title="Average net sales per day in the selected period. The trend below compares the average of the last 7 days vs the average of the earlier days in the same period — to see if sales are accelerating or decelerating.">
       <div class="stat-cell-label">Average per Day</div>
       <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400">/day overall</span></div>
@@ -1550,12 +1541,15 @@ function renderExecutiveSummary() {
       <div class="stat-cell-value">${fmtNum(orderCount)}</div>
       <div class="stat-cell-sub">$${fmt(aov)} average order \u2022 ${upt.toFixed(2)} items per order</div>
     </div>
-    <div class="stat-cell" title="Of the orders placed in this period that have a customer email attached, what % came from someone who had purchased before. Higher = stronger repeat business.">
+    <div class="stat-cell" title="Of the orders placed in this period that have a customer email attached, what % came from someone who had purchased at least once before this period started.">
       <div class="stat-cell-label">Returning Customer Rate</div>
       <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%</div>
       <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} identified orders${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
     </div>
   `;
+
+  // Store the period-comparison pills so the Net Sales card (in the revenue breakdown row) can render them.
+  window.__netSalesPills = `${pillFor(vsPrevPct, 'vs prior period', k.netSales, kPrev.netSales)}${pillFor(vsYearPct, 'vs same period last year', k.netSales, kYearAgo.netSales)}`;
 }
 
 function renderStatsRow() {
@@ -1649,10 +1643,20 @@ function renderKPIs() {
   const tiktokRev = orders.filter(o => o.source_name === 'tiktok').reduce((s,o) => s + orderNetSales(o), 0);
   const webRev = orders.filter(o => o.source_name === 'web').reduce((s,o) => s + orderNetSales(o), 0);
 
-  const customerEmails = {};
-  allOrders.forEach(o => { if (o.customer?.email) customerEmails[o.customer.email] = (customerEmails[o.customer.email]||0)+1; });
-  const newC = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] === 1).length;
-  const returning = orders.filter(o => o.customer?.email && customerEmails[o.customer.email] > 1).length;
+  // New vs Returning — using the SAME definition as "Returning Customer Rate" above:
+  // an order is "returning" if that customer's email has at least one order BEFORE this period
+  // (anywhere in lifetime history). Otherwise "new". This keeps the two cards consistent.
+  const fromDateStr = document.getElementById('date-from').value;
+  const periodStartMs = fromDateStr ? new Date(fromDateStr + 'T00:00:00').getTime() : 0;
+  const byEmailLifeKpi = getOrdersByEmail(lifetimeOrders);
+  let newC = 0, returning = 0;
+  for (const o of orders) {
+    const email = o.customer?.email?.toLowerCase();
+    if (!email) continue;
+    const history = byEmailLifeKpi.get(email);
+    const hasPrior = history && history.some(co => new Date(co.created_at).getTime() < periodStartMs);
+    if (hasPrior) returning++; else newC++;
+  }
   const totalIdentified = newC + returning;
 
   document.getElementById('kpi-grid').innerHTML = `
@@ -1666,12 +1670,12 @@ function renderKPIs() {
       <div class="stat-cell-value">${fmtNum(web)}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders · $${fmt(webRev)}</div>
     </div>
-    <div class="stat-cell" title="Orders from customers buying for the first time (across all available history).">
+    <div class="stat-cell" title="Orders in this period from customers whose first purchase ever (in available history) was during this period.">
       <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${fmtNum(newC)}</div>
       <div class="stat-cell-sub">${totalIdentified ? Math.round(newC/totalIdentified*100) : 0}% of identified orders</div>
     </div>
-    <div class="stat-cell" title="Orders from customers who had purchased before this period.">
+    <div class="stat-cell" title="Orders in this period from customers who had already purchased at least once before the period started.">
       <div class="stat-cell-label">Returning Customers</div>
       <div class="stat-cell-value">${fmtNum(returning)}</div>
       <div class="stat-cell-sub">${totalIdentified ? Math.round(returning/totalIdentified*100) : 0}% of identified orders</div>
@@ -1698,6 +1702,7 @@ function renderKPIs() {
       <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
       <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
       <div class="stat-cell-sub">gross − discounts − refunds</div>
+      ${window.__netSalesPills ? `<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">${window.__netSalesPills}</div>` : ''}
     </div>
     <div class="stat-cell" title="Shipping revenue collected from customers. Separate from product revenue and excluded from Net Sales.">
       <div class="stat-cell-label">Shipping Income</div>
@@ -3002,48 +3007,7 @@ function renderSKUVelocity() {
     return map;
   }
   const now = aggregateSKUs(orders);
-  const priorOrders = getPriorTTMOrders();
-  const prev = aggregateSKUs(priorOrders);
-
-  // ===== DIAGNOSTIC (temporary): detect renamed SKUs between TTM and prior TTM =====
-  // If a top SKU shows "new" in vs-Prev, the title likely changed. This logs the
-  // top SKUs in the current period, whether they exist in the prior period, and
-  // the closest-matching prior titles (by lowercased substring) so you can spot
-  // renames like "CLEAN SHEETS" -> "Clean Sheets" or "Clean Sheets v2".
-  try {
-    console.group('[Product Trends] SKU continuity check');
-    console.log('TTM orders:', orders.length, '| Prior TTM orders:', priorOrders.length);
-    console.log('Distinct SKUs — TTM:', now.size, '| Prior TTM:', prev.size);
-    const priorTitles = Array.from(prev.keys());
-    const topNow = Array.from(now.entries()).sort((a, b) => b[1].rev - a[1].rev).slice(0, 10);
-    for (const [title, s] of topNow) {
-      const exact = prev.get(title);
-      if (exact && exact.rev > 0) {
-        console.log(`✓ ${title} — $${Math.round(s.rev)} now vs $${Math.round(exact.rev)} prior`);
-      } else {
-        // Look for close matches in the prior period
-        const needle = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-        const words = needle.split(/\s+/).filter(w => w.length > 2);
-        const candidates = priorTitles
-          .map(pt => {
-            const hay = pt.toLowerCase().replace(/[^a-z0-9 ]/g, '');
-            const hits = words.filter(w => hay.includes(w)).length;
-            return { pt, hits, rev: prev.get(pt).rev };
-          })
-          .filter(c => c.hits > 0)
-          .sort((a, b) => b.hits - a.hits || b.rev - a.rev)
-          .slice(0, 3);
-        if (candidates.length > 0) {
-          console.warn(`⚠ ${title} — $${Math.round(s.rev)} now, marked "new". Possible prior matches:`,
-            candidates.map(c => `"${c.pt}" ($${Math.round(c.rev)})`).join(', '));
-        } else {
-          console.log(`• ${title} — $${Math.round(s.rev)} now, truly new (no similar SKU in prior 12mo).`);
-        }
-      }
-    }
-    console.groupEnd();
-  } catch (e) { console.warn('SKU diagnostic failed:', e); }
-  // ===== END DIAGNOSTIC =====
+  const prev = aggregateSKUs(getPriorTTMOrders());
 
   // Use the sum of line-item revenue as the denominator so percentages add up to 100%.
   // (Using order.total_price as denominator would be inconsistent with how we compute s.rev,
