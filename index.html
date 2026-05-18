@@ -1317,7 +1317,10 @@ function renderTTMHeader() {
   const startStr = fmtDay(start);
   const todayStr = fmtDay(new Date(todayET + 'T00:00:00Z'));
 
-  const totalRev = ttm.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  // Use the SAME netSales formula as the Sales tab (gross - discounts - refunds)
+  // so the TTM "in sales" number cross-references exactly with what the user sees
+  // in Sales when they set the date range to this TTM window.
+  const totalRev = computeKPIs(ttm).netSales;
   const uniqueCustomers = new Set();
   for (const o of ttm) {
     const e = o.customer?.email?.toLowerCase();
@@ -1449,21 +1452,6 @@ function renderExecutiveSummary() {
   window.__kYearAgo = kYearAgo;
   window.__showYearAgo = periodDays < 350;
 
-  const vsPrevPct = kPrev.netSales > 0 ? Math.round((k.netSales - kPrev.netSales) / kPrev.netSales * 100) : null;
-  // For very long ranges (>=350 days), "vs prior period" and "vs same period last year"
-  // are basically the same thing. Hide the year-ago line to avoid redundancy.
-  const showYearComparison = periodDays < 350;
-  const vsYearPct = (showYearComparison && kYearAgo.netSales > 0)
-    ? Math.round((k.netSales - kYearAgo.netSales) / kYearAgo.netSales * 100)
-    : null;
-
-  function pillFor(pct, label, currVal, prevVal) {
-    if (pct === null) return '';  // hide line entirely if no comparison data
-    const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
-    const arrow = pct >= 0 ? '\u2191' : '\u2193';
-    return `<div style="font-size:10px;line-height:1.4"><span style="color:${color};font-weight:600">${arrow} ${Math.abs(pct)}%</span> <span style="color:var(--t2)">${label}</span></div>`;
-  }
-
   // ===== Card 2: Daily Run Rate =====
   const dailyAvg = k.netSales / periodDays;
 
@@ -1549,22 +1537,23 @@ function renderStatsRow() {
   if (!orders.length) return;
 
   const byDay = {};
-  orders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + parseFloat(o.total_price||0); });
+  orders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + orderNetSales(o); });
   const bestDay = Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
   const bestDayLabel = bestDay ? new Date(bestDay[0]+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
 
   const byDow = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
   const byDowCount = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-  orders.forEach(o => { const dow = new Date(o.created_at).getDay(); byDow[dow] += parseFloat(o.total_price||0); byDowCount[dow]++; });
+  orders.forEach(o => { const dow = new Date(o.created_at).getDay(); byDow[dow] += orderNetSales(o); byDowCount[dow]++; });
   const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const bestDow = Object.entries(byDow).sort((a,b)=>b[1]-a[1])[0];
 
+  // 'Pending' = cash still to collect, so we use total_price (what customer owes).
   const pending = orders.filter(o => o.financial_status === 'pending').length;
   const pendingRev = orders.filter(o => o.financial_status === 'pending').reduce((s,o) => s+parseFloat(o.total_price||0),0);
 
   const days = Object.keys(byDay).length || 1;
   const ordersPerDay = (orders.length / days).toFixed(1);
-  const revenuePerDay = (orders.reduce((s,o)=>s+parseFloat(o.total_price||0),0) / days).toFixed(0);
+  const revenuePerDay = (orders.reduce((s,o)=>s+orderNetSales(o),0) / days).toFixed(0);
 
   const el = document.getElementById('stats-row');
   if (!el) return;
@@ -1605,13 +1594,6 @@ function getPreviousPeriodOrders() {
   return source.filter(o => { const d = new Date(o.created_at); return d >= prevFrom && d <= prevTo; });
 }
 
-function fmtChange(curr, prev) {
-  if (!prev) return '';
-  const pct = Math.round((curr - prev) / prev * 100);
-  const cls = pct >= 0 ? 'kpi-change up' : 'kpi-change down';
-  return `<div class="${cls}">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}% vs prev</div>`;
-}
-
 function renderKPIs() {
   const orders = filteredOrders;
   const prev = getPreviousPeriodOrders();
@@ -1621,14 +1603,6 @@ function renderKPIs() {
   const kPrev = computeKPIs(prev);
 
   const refunded = orders.filter(o => o.financial_status === 'refunded' || o.financial_status === 'partially refunded');
-  const refundRate = orders.length ? (refunded.length / orders.length * 100).toFixed(1) : 0;
-  const paid = orders.filter(o => o.financial_status === 'paid').length;
-  const prevPaid = prev.filter(o => o.financial_status === 'paid').length;
-
-  // Note: AOV here uses net sales / orders (same as before to keep numbers identical).
-  const avg = k.aov;
-  // Previous-period avg uses total_price (same formula Sales tab was using before).
-  const prevAvg = prev.length ? prev.reduce((s,o) => s + parseFloat(o.total_price||0), 0) / prev.length : 0;
 
   const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
   const web = orders.filter(o => o.source_name === 'web').length;
@@ -1857,7 +1831,7 @@ function renderStatusBreakdown() {
 
   // Day of week revenue chart
   const dowRev = [0,0,0,0,0,0,0];
-  filteredOrders.forEach(o => { const dow = new Date(o.created_at).getDay(); dowRev[dow] += parseFloat(o.total_price||0); });
+  filteredOrders.forEach(o => { const dow = new Date(o.created_at).getDay(); dowRev[dow] += orderNetSales(o); });
   const dowEl = document.getElementById('dow-chart');
   if (!dowEl) return;
   const ctx = dowEl.getContext('2d');
@@ -2181,7 +2155,7 @@ function renderCustomersPeriodKPIs() {
   let revInPeriod = 0;
   for (const o of orders) {
     const e = o.customer?.email?.toLowerCase();
-    revInPeriod += parseFloat(o.total_price || 0);
+    revInPeriod += orderNetSales(o);
     if (!e) continue;
     if (!ordersByCustomer.has(e)) ordersByCustomer.set(e, []);
     ordersByCustomer.get(e).push(o);
@@ -2389,7 +2363,7 @@ function renderLTVDistribution() {
   let totalRev = 0, totalCustomers = 0;
   const bucketRev = [0, 0, 0, 0, 0];
   for (const [, arr] of byEmail) {
-    const spend = arr.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+    const spend = arr.reduce((s, o) => s + orderNetSales(o), 0);
     totalRev += spend;
     totalCustomers++;
     for (let i = 0; i < buckets.length; i++) {
@@ -2516,7 +2490,7 @@ function renderCustomersTableList() {
     if (!map.has(email)) map.set(email, { name, email, city, isTikTok, orders: 0, revenue: 0, lastOrder: '' });
     const c = map.get(email);
     c.orders++;
-    c.revenue += parseFloat(o.total_price || 0);
+    c.revenue += orderNetSales(o);
     if (o.created_at > c.lastOrder) c.lastOrder = o.created_at;
   }
 
@@ -2721,7 +2695,7 @@ function renderLTV() {
       let rev = 0;
       for (const o of arr) {
         const t = new Date(o.created_at).getTime();
-        if (t <= endMs) rev += parseFloat(o.total_price || 0);
+        if (t <= endMs) rev += orderNetSales(o);
         else break;
       }
       totalRev += rev;
@@ -2873,7 +2847,7 @@ function renderCustomerConcentration() {
   let totalRev = 0;
   for (const o of orders) {
     const email = o.customer?.email?.toLowerCase() || '(guest)';
-    const rev = parseFloat(o.total_price || 0);
+    const rev = orderNetSales(o);
     totalRev += rev;
     if (!byEmail.has(email)) byEmail.set(email, { rev: 0, orders: 0, name: '' });
     const c = byEmail.get(email);
@@ -2949,7 +2923,7 @@ function renderChannelPerformance() {
     const src = (o.source_name || 'unknown').toLowerCase();
     if (!channels.has(src)) channels.set(src, { rev: 0, orders: 0, new: 0, repeat: 0 });
     const c = channels.get(src);
-    c.rev += parseFloat(o.total_price || 0);
+    c.rev += orderNetSales(o);
     c.orders++;
     // ¿Es nuevo o repeat?
     const email = o.customer?.email?.toLowerCase();
@@ -2960,7 +2934,7 @@ function renderChannelPerformance() {
       else c.new++;
     }
   }
-  const totalRev = orders.reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+  const totalRev = orders.reduce((s, o) => s + orderNetSales(o), 0);
   const sorted = Array.from(channels.entries()).sort((a, b) => b[1].rev - a[1].rev);
 
   let html = '';
