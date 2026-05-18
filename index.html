@@ -3002,7 +3002,48 @@ function renderSKUVelocity() {
     return map;
   }
   const now = aggregateSKUs(orders);
-  const prev = aggregateSKUs(getPriorTTMOrders());
+  const priorOrders = getPriorTTMOrders();
+  const prev = aggregateSKUs(priorOrders);
+
+  // ===== DIAGNOSTIC (temporary): detect renamed SKUs between TTM and prior TTM =====
+  // If a top SKU shows "new" in vs-Prev, the title likely changed. This logs the
+  // top SKUs in the current period, whether they exist in the prior period, and
+  // the closest-matching prior titles (by lowercased substring) so you can spot
+  // renames like "CLEAN SHEETS" -> "Clean Sheets" or "Clean Sheets v2".
+  try {
+    console.group('[Product Trends] SKU continuity check');
+    console.log('TTM orders:', orders.length, '| Prior TTM orders:', priorOrders.length);
+    console.log('Distinct SKUs — TTM:', now.size, '| Prior TTM:', prev.size);
+    const priorTitles = Array.from(prev.keys());
+    const topNow = Array.from(now.entries()).sort((a, b) => b[1].rev - a[1].rev).slice(0, 10);
+    for (const [title, s] of topNow) {
+      const exact = prev.get(title);
+      if (exact && exact.rev > 0) {
+        console.log(`✓ ${title} — $${Math.round(s.rev)} now vs $${Math.round(exact.rev)} prior`);
+      } else {
+        // Look for close matches in the prior period
+        const needle = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+        const words = needle.split(/\s+/).filter(w => w.length > 2);
+        const candidates = priorTitles
+          .map(pt => {
+            const hay = pt.toLowerCase().replace(/[^a-z0-9 ]/g, '');
+            const hits = words.filter(w => hay.includes(w)).length;
+            return { pt, hits, rev: prev.get(pt).rev };
+          })
+          .filter(c => c.hits > 0)
+          .sort((a, b) => b.hits - a.hits || b.rev - a.rev)
+          .slice(0, 3);
+        if (candidates.length > 0) {
+          console.warn(`⚠ ${title} — $${Math.round(s.rev)} now, marked "new". Possible prior matches:`,
+            candidates.map(c => `"${c.pt}" ($${Math.round(c.rev)})`).join(', '));
+        } else {
+          console.log(`• ${title} — $${Math.round(s.rev)} now, truly new (no similar SKU in prior 12mo).`);
+        }
+      }
+    }
+    console.groupEnd();
+  } catch (e) { console.warn('SKU diagnostic failed:', e); }
+  // ===== END DIAGNOSTIC =====
 
   // Use the sum of line-item revenue as the denominator so percentages add up to 100%.
   // (Using order.total_price as denominator would be inconsistent with how we compute s.rev,
