@@ -502,12 +502,12 @@ tbody tr:hover td { background: var(--s2); }
     <!-- SALES -->
     <div class="tab-section active" id="section-sales">
       <div class="page-header">
-        <div class="page-title">Sales Overview</div>
+        <div class="page-title">Sales Overview <span style="font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 8px;border-radius:4px;margin-left:10px;vertical-align:middle;position:relative;top:-3px">Selected period</span></div>
         <div class="page-meta" id="page-meta">Loading…</div>
       </div>
 
       <!-- HEALTH PULSE (works with any date filter) -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse</div>
       <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label" title="Net sales (gross minus discounts and refunds) for the selected period — the headline number.">Net Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period.">Average per Day</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
@@ -583,10 +583,10 @@ tbody tr:hover td { background: var(--s2); }
       </div>
     </div>
 
-    <!-- INSIGHTS (Plain-language view, TTM = Trailing Twelve Months) -->
+    <!-- INSIGHTS (Plain-language view) -->
     <div class="tab-section" id="section-insights">
       <div class="page-header">
-        <div class="page-title">Insights</div>
+        <div class="page-title">Insights <span style="font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 8px;border-radius:4px;margin-left:10px;vertical-align:middle;position:relative;top:-3px">Last 12 months</span></div>
         <div class="page-meta">Strategic view of the business — always covers the last 12 months, regardless of the date filter above.</div>
       </div>
 
@@ -597,7 +597,7 @@ tbody tr:hover td { background: var(--s2); }
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
           <div>
-            <div class="panel-title">Customer Retention <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+            <div class="panel-title">Customer Retention</div>
             <div class="panel-sub">How many first-time buyers come back to buy again in the following months.</div>
           </div>
         </div>
@@ -618,7 +618,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Customer Value Over Time (LTV) <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Customer Value Over Time (LTV)</div>
               <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days.</div>
             </div>
           </div>
@@ -639,7 +639,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Discounts Impact <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Discounts Impact</div>
               <div class="panel-sub">How much of your sales is going to discounts — and whether they help.</div>
             </div>
           </div>
@@ -655,7 +655,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Top Customers <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Top Customers</div>
               <div class="panel-sub">How dependent your sales are on a small group of buyers.</div>
             </div>
           </div>
@@ -667,7 +667,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Where Sales Come From <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Where Sales Come From</div>
               <div class="panel-sub">Sales by channel (web, TikTok, etc.) — and whether each brings new buyers or repeat ones.</div>
             </div>
           </div>
@@ -682,7 +682,7 @@ tbody tr:hover td { background: var(--s2); }
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
           <div>
-            <div class="panel-title">Product Trends <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+            <div class="panel-title">Product Trends</div>
             <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the prior 12 months. <em style="color:var(--t2)">"new" = product had no sales 12-24 months ago.</em></div>
           </div>
         </div>
