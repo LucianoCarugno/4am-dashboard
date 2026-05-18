@@ -33,6 +33,29 @@
 html { font-size: 13px; -webkit-font-smoothing: antialiased; color-scheme: light; }
 body { background: var(--bg); color: var(--t0); font-family: var(--sans); min-height: 100vh; line-height: 1.55; }
 
+
+/* ── NOTES (how-to-read / insight) ── */
+.note {
+  background:#FFFFFF; border:1px solid var(--b1); border-radius:10px;
+  padding:14px 18px 15px; font-family:var(--sans); font-size:12.5px;
+  line-height:1.65; color:var(--t1); box-shadow:var(--shadow);
+  position:relative;
+}
+.note-eyebrow {
+  font-family:var(--sans); font-size:10px; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--t2); margin-bottom:7px;
+  display:inline-flex; align-items:center; gap:8px;
+}
+.note-eyebrow::before {
+  content:''; width:5px; height:5px; border-radius:50%;
+  background:currentColor; display:inline-block; flex-shrink:0;
+}
+.note-explainer .note-eyebrow { color:var(--teal); }
+.note-insight   .note-eyebrow { color:var(--amber); }
+.note .note-lead { color:var(--t0); font-weight:600; }
+.note strong { color:var(--t0); font-weight:600; }
+
 /* ── SIDEBAR ── */
 .sidebar {
   position: fixed; left:0; top:0; bottom:0; width: var(--sidebar);
@@ -211,7 +234,7 @@ body { background: var(--bg); color: var(--t0); font-family: var(--sans); min-he
   background: var(--s2);
 }
 .panel-title { font-size: 13px; font-weight: 700; color: var(--t0); letter-spacing: -.1px; }
-.panel-sub { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; letter-spacing: .2px; }
+.panel-sub { font-family: var(--sans); font-size: 11.5px; color: var(--t2); margin-top: 3px; letter-spacing: 0; line-height: 1.5; }
 .panel-body { padding: 18px 20px; }
 .chart-wrap { height: 180px; position: relative; }
 .chart-wrap-tall { height: 240px; position: relative; }
@@ -566,14 +589,15 @@ tbody tr:hover td { background: var(--s2); }
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
           <div>
-            <div class="panel-title">Customer Retention <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+            <div class="panel-title">Customer Retention <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
             <div class="panel-sub">How many first-time buyers come back to buy again in the following months.</div>
           </div>
         </div>
         <div class="panel-body">
-          <div style="background:var(--s1);border-left:3px solid var(--teal);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-bottom:14px">
-            <strong style="color:var(--t0)">How to read this:</strong> Each row groups customers by the month they made their first purchase. Each column shows what % of those people came back to buy again 1, 2, 3+ months later. <strong style="color:var(--t0)">Darker green = more loyalty.</strong> Hover any cell to see the exact numbers.
-          </div>
+          <div class="note note-explainer" style="margin-bottom:14px">
+              <div class="note-eyebrow">How to read</div>
+              Each row groups customers by the month they made their first purchase. Each column shows what % of those people came back to buy again 1, 2, 3+ months later. <strong style="color:var(--t0)">Darker green = more loyalty.</strong> Hover any cell to see the exact numbers.
+            </div>
           <div id="cohort-retention" style="overflow-x:auto">
             <div class="empty-state">Loading…</div>
           </div>
@@ -586,13 +610,14 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Customer Value Over Time (LTV) <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Customer Value Over Time (LTV) <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
               <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days.</div>
             </div>
           </div>
           <div class="panel-body">
-            <div style="background:var(--s1);border-left:3px solid var(--teal);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-bottom:14px">
-              <strong style="color:var(--t0)">LTV = Lifetime Value.</strong> The total $ an average customer spends across all their purchases in that time window. Growing numbers from 30d to 180d mean people keep buying — that's healthy.
+            <div class="note note-explainer" style="margin-bottom:14px">
+              <div class="note-eyebrow">How to read</div>
+              <strong class="note-lead">LTV = Lifetime Value.</strong> The total $ an average customer spends across all their purchases in that time window. Growing numbers from 30d to 180d mean people keep buying — that's healthy.
             </div>
             <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
               <div class="stat-cell"><div class="stat-cell-label">First 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
@@ -606,7 +631,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Discounts Impact <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Discounts Impact <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
               <div class="panel-sub">How much of your sales is going to discounts — and whether they help.</div>
             </div>
           </div>
@@ -622,7 +647,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Top Customers <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Top Customers <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
               <div class="panel-sub">How dependent your sales are on a small group of buyers.</div>
             </div>
           </div>
@@ -634,7 +659,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Where Sales Come From <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+              <div class="panel-title">Where Sales Come From <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
               <div class="panel-sub">Sales by channel (web, TikTok, etc.) — and whether each brings new buyers or repeat ones.</div>
             </div>
           </div>
@@ -649,7 +674,7 @@ tbody tr:hover td { background: var(--s2); }
       <div class="panel" style="margin-bottom:14px">
         <div class="panel-header">
           <div>
-            <div class="panel-title">Product Trends <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
+            <div class="panel-title">Product Trends <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
             <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the prior 12 months.</div>
           </div>
         </div>
@@ -1992,9 +2017,10 @@ function renderCatalogConcentration(products, totalRev) {
         <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">$${fmt(top10)} of $${fmt(totalRev)}</div>
       </div>
     </div>
-    <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
-      <strong style="color:var(--t0)">What this means:</strong> ${msg}
-    </div>
+    <div class="note note-insight">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>
   `;
 }
 
@@ -2292,7 +2318,10 @@ function renderCustomerSegments() {
   else if (vipPct > 5) msg = `<strong style="color:var(--emerald)">Healthy loyalty profile.</strong> ${vipPct.toFixed(1)}% of customers are VIPs with 5+ orders. This cohort drives disproportionate lifetime value and should be cultivated with early access, exclusive offers, and direct outreach.`;
   else msg = `<strong style="color:var(--amber)">Loyalty in formation.</strong> Customer base is concentrated in 1–2 order brackets. The conversion from 2nd to 3rd order is the critical retention threshold — focus retention investment here.`;
 
-  html += `<div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:12px"><strong style="color:var(--t0)">What this means:</strong> ${msg}</div>`;
+  html += `<div class="note note-insight" style="margin-top:12px">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>`;
   el.innerHTML = html;
 }
 
@@ -2353,7 +2382,10 @@ function renderLTVDistribution() {
   } else {
     msg = `<strong style="color:var(--emerald)">Balanced LTV distribution.</strong> Customer base spans all spending tiers without over-reliance on any single bracket — a structurally healthy revenue mix.`;
   }
-  html += `<div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:12px"><strong style="color:var(--t0)">What this means:</strong> ${msg}</div>`;
+  html += `<div class="note note-insight" style="margin-top:12px">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>`;
   el.innerHTML = html;
 }
 
@@ -2610,12 +2642,12 @@ function renderCohortRetention() {
       const best = scored[0];
       const worst = scored[scored.length - 1];
       insightEl.innerHTML = `
-        <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
-          <strong style="color:var(--t0)">What this means:</strong>
-          The <strong style="color:var(--emerald)">${best.label}</strong> cohort delivered the strongest retention performance — these customers returned at the highest rate in their first two months.
+        <div class="note note-insight">
+              <div class="note-eyebrow">Insight</div>
+              The <strong style="color:var(--emerald)">${best.label}</strong> cohort delivered the strongest retention performance — these customers returned at the highest rate in their first two months.
           The <strong style="color:var(--rose)">${worst.label}</strong> cohort underperformed, with most buyers not returning.
           Significant retention drops typically indicate lower-quality acquisition that month — review the channel mix, discount activity, and campaigns that drove that intake.
-        </div>
+            </div>
       `;
     }
   }
@@ -2675,9 +2707,10 @@ function renderLTV() {
         msg = `<strong style="color:var(--emerald)">Strong unit economics.</strong> Average customer spend grows +${growth}% from day 30 to day 90${growth180 !== null ? ` and +${growth180}% by day 180` : ''}. Product-market fit is reflected in repeat behavior — incremental acquisition investment is justified by predictable lifetime returns.`;
       }
       insightEl.innerHTML = `
-        <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
-          <strong style="color:var(--t0)">What this means:</strong> ${msg}
-        </div>
+        <div class="note note-insight">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>
       `;
     }
   }
@@ -2773,9 +2806,10 @@ function renderDiscountIntensity() {
       msg += ` <strong style="color:var(--t0)">Discount Efficiency:</strong> every $1 in discount generated <strong style="color:var(--t0)">$${efficiency.toFixed(2)}</strong> in net sales from those orders.`;
     }
     insightEl.innerHTML = `
-      <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
-        <strong style="color:var(--t0)">What this means:</strong> ${msg}
-      </div>
+      <div class="note note-insight">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>
     `;
   }
 }
@@ -2846,9 +2880,10 @@ function renderCustomerConcentration() {
       msg = `<strong style="color:var(--rose)">Concentration risk.</strong> Just 10 customers account for ${top10Pct}% of sales. Loss of any top-tier account would have material P&L impact. Strategic priority: broaden the customer base and reduce dependency on top accounts.`;
     }
     insightEl.innerHTML = `
-      <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
-        <strong style="color:var(--t0)">What this means:</strong> ${msg}
-      </div>
+      <div class="note note-insight">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>
     `;
   }
 }
@@ -2919,9 +2954,10 @@ function renderChannelPerformance() {
         msg = `Channels exhibit similar new-vs-returning composition, with ${mostNew[0]} as the primary volume source. Two growth paths: (1) develop a second acquisition channel to reduce dependency, or (2) increase retention conversion through email automation and post-purchase flows.`;
       }
       insightEl.innerHTML = `
-        <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55">
-          <strong style="color:var(--t0)">What this means:</strong> ${msg}
-        </div>
+        <div class="note note-insight">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>
       `;
     }
   }
@@ -3016,9 +3052,10 @@ function renderSKUVelocity() {
       msg = 'Product mix is stable — no significant velocity shifts in the period.';
     }
     insightEl.innerHTML = `
-      <div style="background:#fffbeb;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--t1);line-height:1.55;margin-top:8px">
-        <strong style="color:var(--t0)">What this means:</strong> ${msg}
-      </div>
+      <div class="note note-insight" style="margin-top:8px">
+              <div class="note-eyebrow">Insight</div>
+              ${msg}
+            </div>
     `;
   }
 }
