@@ -508,14 +508,15 @@ tbody tr:hover td { background: var(--s2); }
 
       <!-- HEALTH PULSE (works with any date filter) -->
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Health Pulse <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
-      <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+      <div class="stats-row" id="executive-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+        <div class="stat-cell"><div class="stat-cell-label" title="Net sales (gross minus discounts and refunds) for the selected period — the headline number.">Net Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period.">Average per Day</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Number of orders placed in this period.">Orders Placed</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Of the orders placed in this period that have a customer email, what % came from someone who had purchased before the period started.">Returning Customer Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
       </div>
 
       <!-- REVENUE BREAKDOWN -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Revenue Breakdown <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Revenue Breakdown</div>
       <div class="stats-row" id="revenue-breakdown" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px">
         <div class="stat-cell"><div class="stat-cell-label">Gross Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Discounts</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div></div>
@@ -526,7 +527,7 @@ tbody tr:hover td { background: var(--s2); }
       </div>
 
       <!-- CHANNEL MIX & ACQUISITION -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix & Acquisition <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:2px 6px;border-radius:3px;margin-left:6px">Selected period</span></div>
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix & Acquisition</div>
       <div class="stats-row" id="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label">TikTok Shop</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Web / Direct</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
@@ -682,7 +683,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel-header">
           <div>
             <div class="panel-title">Product Trends <span style="font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-dim);padding:3px 7px;border-radius:4px;margin-left:6px;letter-spacing:0.5px;text-transform:uppercase">Last 12 months</span></div>
-            <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the prior 12 months.</div>
+            <div class="panel-sub">Your best-selling products — and which are growing or losing steam vs the prior 12 months. <em style="color:var(--t2)">"new" = product had no sales 12-24 months ago.</em></div>
           </div>
         </div>
         <div class="panel-body">
@@ -1329,7 +1330,7 @@ function renderTTMHeader() {
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
-      <strong style="color:var(--t0);font-size:12px">TTM \u2014 Trailing Twelve Months</strong>
+      <strong style="color:var(--t0);font-size:12px">Last 12 Months</strong>
       <span style="color:var(--t2);margin:0 8px">\u00b7</span>
       <span title="Exact date range used for all Insights panels">${startStr} \u2192 ${todayStr}</span>
       <span style="color:var(--t2);margin:0 8px">\u00b7</span>
@@ -1415,6 +1416,7 @@ function renderExecutiveSummary() {
   const inPeriod = filteredOrders || [];
   if (inPeriod.length === 0) {
     el.innerHTML = `
+      <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Average per Day</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Orders Placed</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Returning Customer Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
@@ -1449,8 +1451,12 @@ function renderExecutiveSummary() {
   const kYearAgo = computeKPIs(yaOrders);
   // Expose for renderKPIs (called right after) so the Net Sales card can show
   // both vs-prior-period and vs-same-period-last-year context consistently.
+  // For very short windows (1-2 days) we suppress YoY because a single day vs
+  // the same calendar day a year ago is dominated by random day-to-day noise
+  // (and often shows 0 prior → meaningless "↑ from $0").
+  // For windows ≥ 350 days, YoY ≈ vs prior period (redundant).
   window.__kYearAgo = kYearAgo;
-  window.__showYearAgo = periodDays < 350;
+  window.__showYearAgo = periodDays >= 7 && periodDays < 350;
 
   // ===== Card 2: Daily Run Rate =====
   const dailyAvg = k.netSales / periodDays;
@@ -1513,7 +1519,36 @@ function renderExecutiveSummary() {
   // Loyalty color: <20% rose, 20-40% amber, >40% emerald
   const loyaltyColor = repeatRate >= 40 ? 'var(--emerald)' : (repeatRate >= 20 ? 'var(--amber)' : 'var(--rose)');
 
+  // Build a small "vs prior period" / "vs YoY" pill for the hero card.
+  // We reuse the same look-and-feel as the Revenue Breakdown row.
+  const heroPill = (curr, prev, label, periodExists) => {
+    if (!periodExists) {
+      return `<div style="font-size:10px;color:var(--t2);margin-top:3px">no comparable data ${label}</div>`;
+    }
+    if (!prev || prev === 0) {
+      if (!curr) return `<div style="font-size:10px;color:var(--t2);margin-top:3px">— ${label} (both zero)</div>`;
+      // Match the rest of the dashboard: show the absolute delta, not "from $0".
+      return `<div style="font-size:10px;color:var(--emerald);margin-top:3px;font-weight:600">↑ +$${fmt(curr)} <span style="color:var(--t2);font-weight:400">${label}</span></div>`;
+    }
+    const pct = Math.round((curr - prev) / prev * 100);
+    const color = pct >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    const arrow = pct > 0 ? '↑' : (pct < 0 ? '↓' : '→');
+    return `<div style="font-size:10px;color:${color};margin-top:3px;font-weight:600">${arrow} ${Math.abs(pct)}% <span style="color:var(--t2);font-weight:400">${label}</span></div>`;
+  };
+  const heroPrevPill = heroPill(k.netSales, kPrev.netSales, 'vs prior period', prevOrders.length > 0);
+  const heroYaPill = window.__showYearAgo
+    ? heroPill(k.netSales, kYearAgo.netSales, 'vs same period last year', kYearAgo.orders > 0)
+    : '';
+
   el.innerHTML = `
+    <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)" title="Net sales for the selected period (gross minus discounts and refunds). This is the headline number — it matches Shopify Analytics.">
+      <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
+      <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
+      <div style="margin-top:4px">
+        ${heroPrevPill}
+        ${heroYaPill}
+      </div>
+    </div>
     <div class="stat-cell" title="Average net sales per day in the selected period. The trend below compares the average of the last 7 days vs the average of the earlier days in the same period — to see if sales are accelerating or decelerating.">
       <div class="stat-cell-label">Average per Day</div>
       <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400">/day overall</span></div>
@@ -1671,9 +1706,9 @@ function renderKPIs() {
           // Both zero — no change.
           return `<div style="font-size:10px;color:var(--t2);margin-top:3px">→ 0% ${label}</div>`;
         }
-        // Went from $0 to something. Up by definition; color depends on whether that's good or bad.
+        // Went from $0 to something. % is undefined; show the absolute delta instead.
         const color = direction === 'negative' ? 'var(--rose)' : 'var(--emerald)';
-        return `<div style="font-size:10px;color:${color};margin-top:3px;font-weight:600">↑ from $0 <span style="color:var(--t2);font-weight:400">${label}</span></div>`;
+        return `<div style="font-size:10px;color:${color};margin-top:3px;font-weight:600">↑ +$${fmt(curr)} <span style="color:var(--t2);font-weight:400">${label}</span></div>`;
       }
       let pct = Math.round((curr - prev) / prev * 100);
       const isUp = pct > 0, isDown = pct < 0;
@@ -1699,13 +1734,13 @@ function renderKPIs() {
     </div>
     <div class="stat-cell" title="Promotional discounts applied to line items. % shown is the share of orders that received at least one discount.">
       <div class="stat-cell-label">Discounts</div>
-      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.discounts)}</div>
+      <div class="stat-cell-value" style="color:${k.discounts > 0 ? 'var(--rose)' : 'var(--t0)'}">${k.discounts > 0 ? '-$' + fmt(k.discounts) : '$0'}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(orders.filter(o=>parseFloat(o.total_discounts||0)>0).length/orders.length*100) : 0}% of orders received one</div>
       ${cmp(k.discounts, kPrev.discounts, ya?.discounts, 'negative')}
     </div>
     <div class="stat-cell" title="Refunds processed during the period — post-sale revenue reversals.">
       <div class="stat-cell-label">Refunds</div>
-      <div class="stat-cell-value" style="color:var(--rose)">-$${fmt(k.returns)}</div>
+      <div class="stat-cell-value" style="color:${k.returns > 0 ? 'var(--rose)' : 'var(--t0)'}">${k.returns > 0 ? '-$' + fmt(k.returns) : '$0'}</div>
       <div class="stat-cell-sub">${fmtNum(refunded.length)} order${refunded.length === 1 ? '' : 's'} refunded</div>
       ${cmp(k.returns, kPrev.returns, ya?.returns, 'negative')}
     </div>
@@ -2866,7 +2901,7 @@ function renderCustomerConcentration() {
   const color = top10Pct < 10 ? 'var(--emerald)' : (top10Pct < 25 ? 'var(--amber)' : 'var(--rose)');
 
   let html = `
-    <div style="margin-bottom:12px" title="What % of your total TTM sales (last 12 months) comes from your top 10 customers. Below 10% = sales are spread out (healthy). 10-25% = some concentration. Above 25% = you depend on a few big buyers (risk if they leave).">
+    <div style="margin-bottom:12px" title="What % of your total sales over the last 12 months comes from your top 10 customers. Below 10% = sales are spread out (healthy). 10-25% = some concentration. Above 25% = you depend on a few big buyers (risk if they leave).">
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:6px">Top 10 customers = % of sales</div>
       <div style="font-size:24px;font-weight:700;color:${color};letter-spacing:-0.5px;font-variant-numeric:tabular-nums">${top10Pct}%</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--t2);margin-top:4px">${fmtNum(byEmail.size)} total customers · ${top10Pct < 10 ? 'well-spread (healthy)' : top10Pct < 25 ? 'somewhat concentrated' : 'highly concentrated (risky)'}</div>
@@ -2877,7 +2912,7 @@ function renderCustomerConcentration() {
   for (const c of top5) {
     const pct = totalRev > 0 ? (c.rev / totalRev * 100) : 0;
     html += `
-      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0" title="${c.orders} orders totaling $${fmt(c.rev)} — ${pct.toFixed(1)}% of your TTM sales.">
+      <div class="insight-row" style="flex-direction:column;align-items:stretch;padding:6px 0" title="${c.orders} orders totaling $${fmt(c.rev)} — ${pct.toFixed(1)}% of sales over the last 12 months.">
         <div style="display:flex;align-items:baseline">
           <div class="insight-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
           <div class="insight-value">$${fmt(c.rev)}</div>
