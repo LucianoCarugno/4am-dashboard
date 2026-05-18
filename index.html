@@ -1286,7 +1286,9 @@ function getTTMOrders() {
 }
 
 // Returns the 12 months immediately preceding TTM — for trend comparison.
-// This data may or may not be available (depends on how much history is backfilled).
+// Must filter from `lifetimeOrders` (5-year window), NOT `ttmOrders` (which is
+// itself only the last 365 days — filtering it for orders older than 365 days
+// ago would always return empty, breaking every vs-prior comparison).
 function getPriorTTMOrders() {
   const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const endOfPrior = new Date(todayET + 'T00:00:00Z');
@@ -1295,7 +1297,7 @@ function getPriorTTMOrders() {
   startOfPrior.setUTCDate(startOfPrior.getUTCDate() - 365);
   const endMs = endOfPrior.getTime();
   const startMs = startOfPrior.getTime();
-  return (ttmOrders || []).filter(o => {  // ttm is what we have; will be empty for this if backfill is only 12mo
+  return (lifetimeOrders || []).filter(o => {
     if (!o.created_at) return false;
     const t = new Date(o.created_at).getTime();
     return t >= startMs && t < endMs;
@@ -2986,7 +2988,11 @@ function renderSKUVelocity() {
       for (const li of (o.line_items || [])) {
         const title = li.title || '(unknown)';
         const qty = parseInt(li.quantity || 0);
-        const rev = qty * parseFloat(li.price || 0);
+        // Match the Products tab revenue formula: price × qty minus line-item
+        // discount allocations. Without this subtraction, percentages here
+        // diverge from the Products tab's catalog-concentration card.
+        const lineDisc = (li.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+        const rev = qty * parseFloat(li.price || 0) - lineDisc;
         if (!map.has(title)) map.set(title, { qty: 0, rev: 0 });
         const s = map.get(title);
         s.qty += qty;
@@ -3042,7 +3048,11 @@ function renderSKUVelocity() {
   if (insightEl) {
     const winners = movers.filter(m => m.delta !== null && m.delta > 15 && m.pctOfTotal >= 2).sort((a, b) => b.delta - a.delta).slice(0, 2);
     const losers = movers.filter(m => m.delta !== null && m.delta < -15 && m.pctOfTotal >= 2).sort((a, b) => a.delta - b.delta).slice(0, 2);
-    const top3Concentration = movers.slice(0, 3).reduce((s, m) => s + m.pctOfTotal, 0);
+    // Compute top-3 concentration from raw revenue (matches the Products tab's
+    // catalog-concentration card). Summing already-rounded display percentages
+    // drifts by a percent or two and causes cross-tab mismatches like 92% vs 95%.
+    const top3RevSum = sorted.slice(0, 3).reduce((s, [, v]) => s + v.rev, 0);
+    const top3Concentration = totalLineItemRev > 0 ? (top3RevSum / totalLineItemRev * 100) : 0;
     let msg = '';
     if (winners.length > 0) {
       msg += `<strong style="color:var(--emerald)">Accelerating SKUs:</strong> ${winners.map(w => `${w.title} (+${w.delta}%)`).join(', ')}. Ensure inventory availability and consider increased merchandising or media support.`;
@@ -3053,7 +3063,7 @@ function renderSKUVelocity() {
     }
     if (top3Concentration > 60) {
       if (msg) msg += ' ';
-      msg += `<strong style="color:var(--amber)">Catalog concentration:</strong> top 3 SKUs represent ${top3Concentration.toFixed(0)}% of revenue. Catalog diversification reduces single-product dependency risk — develop the next tier of revenue-driving SKUs.`;
+      msg += `<strong style="color:var(--amber)">Catalog concentration:</strong> top 3 SKUs represent ${Math.round(top3Concentration)}% of revenue. Catalog diversification reduces single-product dependency risk — develop the next tier of revenue-driving SKUs.`;
     }
     if (!msg) {
       msg = 'Product mix is stable — no significant velocity shifts in the period.';
