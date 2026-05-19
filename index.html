@@ -536,7 +536,8 @@ tbody tr:hover td { background: var(--s2); }
 
       <!-- CUSTOMER ACQUISITION -->
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Customer Acquisition</div>
-      <div class="stats-row" id="kpi-acquisition" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
+      <div class="stats-row" id="kpi-acquisition" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+        <div class="stat-cell"><div class="stat-cell-label">Total Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">New Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Repeat Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
       </div>
@@ -570,7 +571,7 @@ tbody tr:hover td { background: var(--s2); }
           <div class="panel-header"><div><div class="panel-title">Order Insights</div><div class="panel-sub">Status & weekly patterns</div></div></div>
           <div class="panel-body">
             <div class="breakdown-list" id="status-breakdown" style="margin-bottom:18px"></div>
-            <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:10px">Revenue by day of week</div>
+            <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin-bottom:10px">Net sales by day of week</div>
             <div style="height:90px"><canvas id="dow-chart"></canvas></div>
           </div>
         </div>
@@ -624,20 +625,20 @@ tbody tr:hover td { background: var(--s2); }
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Early Customer Value</div>
-              <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days from their first order.</div>
+              <div class="panel-title">Lifetime Value by Tenure</div>
+              <div class="panel-sub">Average lifetime net sales of customers grouped by how long they've been customers.</div>
             </div>
           </div>
           <div class="panel-body">
             <div class="note note-explainer" style="margin-bottom:14px">
               <div class="note-eyebrow">How to read</div>
-              <strong class="note-lead">Early monetization curve.</strong> These figures show the average net revenue captured from a customer over their first 30, 60, 90 and 180 days as a buyer. A meaningful uplift between the 30-day and 90-day windows indicates customers are returning beyond the first purchase. To avoid distorting averages with new customers, each window only includes buyers whose first order is at least that old.
+              <strong class="note-lead">How much is a customer worth, by tenure?</strong> Each card groups customers by how long they've been buyers (30, 60, 90 or 180+ days since their first order) and shows their average lifetime net sales — total spend across all their orders to date. Rising values to the right are expected: longer tenure = more time to buy again.
             </div>
             <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
-              <div class="stat-cell"><div class="stat-cell-label">First 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">First 60 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">First 90 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">First 180 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 60 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 90 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
+              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 180 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
             </div>
             <div id="ltv-insight" style="margin-top:14px"></div>
           </div>
@@ -710,7 +711,7 @@ tbody tr:hover td { background: var(--s2); }
       <div class="stats-row" id="kpi-products" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
         <div class="stat-cell"><div class="stat-cell-label">Units Sold</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Distinct Products</div><div class="skeleton" style="height:22px;width:45%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Avg. revenue contributed per unit sold">Revenue per Unit</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Avg net revenue (net sales) contributed per unit sold">Net Revenue per Unit</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Highest-growth product compared to the previous equivalent period">Top Mover</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:55%"></div></div>
       </div>
 
@@ -1469,23 +1470,16 @@ function renderExecutiveSummary() {
   const dailyAvg = k.netSales / periodDays;
 
   // Last 7 days vs earlier (only meaningful if period >= 14 days)
+  // Comparison: prior period of the same length (e.g. last 30d vs the 30d before that).
+  // Same-length comparison is the only fair one — comparing the period vs its own
+  // last 7 days mixes period definitions and confuses the reader.
   let trendHtml = `${periodDays} day${periodDays > 1 ? 's' : ''} in selection`;
-  if (periodDays >= 14) {
-    const splitMs = toMs - 7 * 86400000;
-    const last7 = inPeriod.filter(o => new Date(o.created_at).getTime() >= splitMs);
-    const earlier = inPeriod.filter(o => new Date(o.created_at).getTime() < splitMs);
-    const k7 = computeKPIs(last7);
-    const kEarlier = computeKPIs(earlier);
-    const avg7 = k7.netSales / 7;
-    const avgEarlier = kEarlier.netSales / Math.max(1, periodDays - 7);
-    if (avgEarlier > 0) {
-      const trendPct = Math.round((avg7 - avgEarlier) / avgEarlier * 100);
-      const trendColor = trendPct >= 0 ? 'var(--emerald)' : 'var(--rose)';
-      const trendArrow = trendPct >= 0 ? '\u2191' : '\u2193';
-      trendHtml = `recent trend (last 7 days): <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong> <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(trendPct)}%</span>`;
-    } else {
-      trendHtml = `recent trend (last 7 days): <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong>`;
-    }
+  const prevDailyAvg = prevOrders.length > 0 ? kPrev.netSales / periodDays : 0;
+  if (prevDailyAvg > 0) {
+    const trendPct = Math.round((dailyAvg - prevDailyAvg) / prevDailyAvg * 100);
+    const trendColor = trendPct >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    const trendArrow = trendPct >= 0 ? '\u2191' : '\u2193';
+    trendHtml = `prior period: <strong style="color:var(--t0)">$${fmt(prevDailyAvg)}/day</strong> <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(trendPct)}%</span>`;
   }
 
   // ===== Card 3: Orders & Mix =====
@@ -1607,7 +1601,7 @@ function renderStatsRow() {
     <div class="stat-cell">
       <div class="stat-cell-label">Best Day</div>
       <div class="stat-cell-value">${bestDayLabel}</div>
-      <div class="stat-cell-sub">$${fmt(bestDay?.[1]||0)} revenue</div>
+      <div class="stat-cell-sub">$${fmt(bestDay?.[1]||0)} net sales</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Best Weekday</div>
@@ -1617,7 +1611,7 @@ function renderStatsRow() {
     <div class="stat-cell">
       <div class="stat-cell-label">Avg / Day</div>
       <div class="stat-cell-value">${ordersPerDay} orders</div>
-      <div class="stat-cell-sub">$${fmt(revenuePerDay)} revenue / day</div>
+      <div class="stat-cell-sub">$${fmt(revenuePerDay)} net sales / day</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Pending</div>
@@ -1712,17 +1706,22 @@ function renderKPIs() {
       <div class="stat-cell-sub">${orders.length ? Math.round(others/orders.length*100) : 0}% of orders · $${fmt(othersRev)}</div>
     </div>`;
 
-  // Customer Acquisition row (New + Repeat = Active Customers)
+  // Customer Acquisition row: Total + breakdown (New + Repeat)
   document.getElementById('kpi-acquisition').innerHTML = `
+    <div class="stat-cell" style="border:2px solid var(--t0)" title="Unique customers who placed at least one order in this period. Equals New + Repeat. Matches Active Customers in the Customers tab.">
+      <div class="stat-cell-label">Total Customers</div>
+      <div class="stat-cell-value">${fmtNum(totalActiveCustomers)}</div>
+      <div class="stat-cell-sub">= new + repeat</div>
+    </div>
     <div class="stat-cell" title="Customers whose first-ever purchase falls in this period (no prior order history). Guests are always counted as new — without an email we cannot check whether they had purchased before.">
       <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${fmtNum(newC)}</div>
-      <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(newC/totalActiveCustomers*100) : 0}% of active customers</div>
+      <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(newC/totalActiveCustomers*100) : 0}% of total</div>
     </div>
-    <div class="stat-cell" title="Customers who either (a) had purchased before this period, or (b) placed 2+ orders within this period. Only identifiable customers (with email) can be classified — guests are excluded from repeat by definition.">
+    <div class="stat-cell" title="Customers (counted once each, no matter how many times they bought in the period) who either (a) had purchased before this period, or (b) placed 2+ orders within this period.">
       <div class="stat-cell-label">Repeat Customers</div>
       <div class="stat-cell-value">${fmtNum(returning)}</div>
-      <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(returning/totalActiveCustomers*100) : 0}% of active customers</div>
+      <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(returning/totalActiveCustomers*100) : 0}% of total</div>
     </div>`;
 
   const revEl = document.getElementById('revenue-breakdown');
@@ -2072,14 +2071,23 @@ function renderProductsCatalog() {
   const distinct = products.length;
   const revPerUnit = totalUnits > 0 ? totalRev / totalUnits : 0;
 
-  // Top mover: largest % growth (only products with meaningful volume in both periods)
+  // Top mover: largest % growth among products with meaningful volume in both periods.
+  // If no prior period exists (e.g. user filtered "All time"), fall back to the
+  // top product by revenue so the card always has useful information.
   let topMover = null;
-  for (const p of products) {
-    if (p.revenue < totalRev * 0.005) continue; // ignore tiny products
-    const prev = prevMap.get(p.title);
-    if (!prev || prev.revenue === 0) continue;
-    const growth = (p.revenue - prev.revenue) / prev.revenue * 100;
-    if (topMover === null || growth > topMover.growth) topMover = { title: p.title, growth };
+  const hasPrior = prevOrders && prevOrders.length > 0;
+  if (hasPrior) {
+    for (const p of products) {
+      if (p.revenue < totalRev * 0.005) continue; // ignore tiny products
+      const prev = prevMap.get(p.title);
+      if (!prev || prev.revenue === 0) continue;
+      const growth = (p.revenue - prev.revenue) / prev.revenue * 100;
+      if (topMover === null || growth > topMover.growth) topMover = { title: p.title, growth, fallback: false };
+    }
+  }
+  // Fallback: top product by revenue
+  if (!topMover && products.length > 0) {
+    topMover = { title: products[0].title, growth: null, fallback: true };
   }
 
   // KPIs
@@ -2099,17 +2107,18 @@ function renderProductsCatalog() {
       <div class="stat-cell-sub">sold in this period</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-label">Revenue per Unit</div>
+      <div class="stat-cell-label">Net Revenue per Unit</div>
       <div class="stat-cell-value">$${revPerUnit.toFixed(2)}</div>
-      <div class="stat-cell-sub">avg net revenue per unit</div>
+      <div class="stat-cell-sub">avg net sales per unit</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Top Mover</div>
       <div class="stat-cell-value" style="font-size:14px;line-height:1.2">${topMover ? (topMover.title.length > 18 ? topMover.title.substring(0,16) + '…' : topMover.title) : '\u2014'}</div>
-      <div class="stat-cell-sub" style="color:${topMover && topMover.growth > 0 ? 'var(--emerald)' : 'var(--rose)'}">${topMover ? (function(){
-        const g = Math.round(topMover.growth);
-        return (g > 0 ? '\u2191 ' : '\u2193 ') + Math.abs(g) + '% vs prior period';
-      })() : 'not enough history'}</div>
+      <div class="stat-cell-sub" ${!topMover ? '' : `style="color:${topMover.fallback ? 'var(--t2)' : (topMover.growth > 0 ? 'var(--emerald)' : 'var(--rose)')}"`}>${
+        !topMover ? 'no products in period' :
+        topMover.fallback ? '#1 by net sales · no prior period to compare' :
+        ((Math.round(topMover.growth) > 0 ? '\u2191 ' : '\u2193 ') + Math.abs(Math.round(topMover.growth)) + '% vs prior period')
+      }</div>
     </div>
   `;
 
@@ -2141,9 +2150,9 @@ function renderCatalogConcentration(products, totalRev) {
   const flag5 = top5Pct > 80 ? 'var(--rose)' : (top5Pct > 65 ? 'var(--amber)' : 'var(--emerald)');
 
   let msg;
-  if (top3Pct > 70) msg = `<strong style="color:var(--rose)">High concentration risk.</strong> Your top 3 SKUs account for ${top3Pct}% of revenue. A stock-out, quality issue, or shift in consumer preference on any one of these would materially impact the business. Strategic priority: invest in developing the next tier of hero products.`;
-  else if (top3Pct > 50) msg = `<strong style="color:var(--amber)">Moderate concentration.</strong> Top 3 SKUs represent ${top3Pct}% of revenue. Healthy but worth monitoring — single-product disruptions would still be felt at the P&L level.`;
-  else msg = `<strong style="color:var(--emerald)">Diversified catalog.</strong> No single SKU dominates the revenue base (top 3 = ${top3Pct}%). Resilient revenue profile with limited single-point-of-failure risk.`;
+  if (top3Pct > 70) msg = `<strong style="color:var(--rose)">High concentration risk.</strong> Your top 3 SKUs account for ${top3Pct}% of net sales. A stock-out, quality issue, or shift in consumer preference on any one of these would materially impact the business. Strategic priority: invest in developing the next tier of hero products.`;
+  else if (top3Pct > 50) msg = `<strong style="color:var(--amber)">Moderate concentration.</strong> Top 3 SKUs represent ${top3Pct}% of net sales. Healthy but worth monitoring — single-product disruptions would still be felt at the P&L level.`;
+  else msg = `<strong style="color:var(--emerald)">Diversified catalog.</strong> No single SKU dominates the net sales base (top 3 = ${top3Pct}%). Resilient revenue profile with limited single-point-of-failure risk.`;
 
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px">
@@ -2176,7 +2185,7 @@ function renderProductsTable(products, prevMap, totalRev) {
   if (products.length === 0) { el.innerHTML = '<div class="empty-state">No products sold in this period</div>'; return; }
 
   let html = '<div style="display:grid;grid-template-columns:32px 1fr 70px 100px 70px 70px 90px;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t1)">';
-  html += '<div>#</div><div>Product</div><div style="text-align:right">Units</div><div style="text-align:right">Revenue</div><div style="text-align:right" title="% of total revenue in the selected period">Share</div><div style="text-align:right" title="% of orders containing this product that were later refunded">Refund</div><div style="text-align:right" title="Revenue change vs the equivalent period immediately before this one (same number of days)">vs Prior</div></div>';
+  html += '<div>#</div><div>Product</div><div style="text-align:right">Units</div><div style="text-align:right">Net Sales</div><div style="text-align:right" title="% of total net sales in the selected period">Share</div><div style="text-align:right" title="% of orders containing this product that were later refunded">Refund</div><div style="text-align:right" title="Net sales change vs the equivalent period immediately before this one (same number of days)">vs Prior</div></div>';
 
   products.forEach((p, idx) => {
     const share = totalRev > 0 ? (p.revenue / totalRev * 100) : 0;
@@ -2193,7 +2202,7 @@ function renderProductsTable(products, prevMap, totalRev) {
     }
 
     html += `
-      <div style="display:grid;grid-template-columns:32px 1fr 70px 100px 70px 70px 90px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline" title="${p.title} — ${fmtNum(p.units)} units, $${fmt(p.revenue)} revenue (${share.toFixed(1)}%). ${p.refunds} refund-flagged orders out of ${p.orders}.">
+      <div style="display:grid;grid-template-columns:32px 1fr 70px 100px 70px 70px 90px;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-family:var(--mono);font-size:11px;align-items:baseline" title="${p.title} — ${fmtNum(p.units)} units, $${fmt(p.revenue)} net sales (${share.toFixed(1)}%). ${p.refunds} refund-flagged orders out of ${p.orders}.">
         <div style="color:var(--t2);font-weight:600">${idx + 1}</div>
         <div style="color:var(--t0);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</div>
         <div style="text-align:right;color:var(--t0);font-variant-numeric:tabular-nums">${fmtNum(p.units)}</div>
@@ -2505,7 +2514,7 @@ function renderLTVDistribution() {
         <div style="display:flex;align-items:baseline">
           <div class="insight-label">${b.label}</div>
           <div class="insight-value">${fmtNum(b.count)}</div>
-          <div class="insight-sub">${customerPct.toFixed(1)}% customers · ${revPct.toFixed(1)}% revenue</div>
+          <div class="insight-sub">${customerPct.toFixed(1)}% customers · ${revPct.toFixed(1)}% net sales</div>
         </div>
         <div class="insight-bar"><div class="insight-bar-fill" style="width:${widthPct}%"></div></div>
       </div>
@@ -2813,7 +2822,12 @@ function renderCohortRetention() {
 function renderLTV() {
   const el = document.getElementById('ltv-cards');
   if (!el) return;
-  const byEmail = getOrdersByEmail(ttmOrders);
+  // Lifetime-total approach: for each tenure window (e.g. 30 days), include
+  // customers whose first order was at least N days ago. For each such
+  // customer, sum their ENTIRE LIFETIME net sales (not capped at day N).
+  // The curve answers: "If a customer has been with us at least N days,
+  // what is their total spend?" Veteran cohorts naturally show higher values.
+  const byEmail = getOrdersByEmail(lifetimeOrders);
   const now = Date.now();
   const windows = [30, 60, 90, 180];
   const results = windows.map(days => {
@@ -2821,24 +2835,19 @@ function renderLTV() {
     let totalRev = 0, customers = 0;
     for (const [, arr] of byEmail) {
       const firstMs = new Date(arr[0].created_at).getTime();
-      if (firstMs > cutoffMs) continue; // cliente m\u00e1s nuevo que la ventana
-      const endMs = firstMs + days * 86400000;
-      let rev = 0;
-      for (const o of arr) {
-        const t = new Date(o.created_at).getTime();
-        if (t <= endMs) rev += orderNetSales(o);
-        else break;
-      }
-      totalRev += rev;
+      if (firstMs > cutoffMs) continue; // customer hasn't reached this tenure yet
+      // Lifetime spend across ALL their orders (no cap at day N).
+      const lifetimeSpend = arr.reduce((s, o) => s + orderNetSales(o), 0);
+      totalRev += lifetimeSpend;
       customers++;
     }
     return { days, avg: customers > 0 ? totalRev / customers : 0, customers };
   });
   el.innerHTML = results.map(r => `
-    <div class="stat-cell" title="Average net sales generated by a customer in their first ${r.days} days as a customer. Includes ALL orders during those days — first order, repeats, everything. Only customers whose first order was at least ${r.days} days ago are eligible to enter this calculation.">
-      <div class="stat-cell-label">First ${r.days} days</div>
+    <div class="stat-cell" title="Average lifetime net sales of customers who have been with you at least ${r.days} days (their first order was that long ago or longer). This is their TOTAL spend across all their orders to date, not just the spend in the first ${r.days} days.">
+      <div class="stat-cell-label">Tenure ≥ ${r.days} days</div>
       <div class="stat-cell-value">$${fmt(r.avg)}</div>
-      <div class="stat-cell-sub">avg across ${fmtNum(r.customers)} eligible customers</div>
+      <div class="stat-cell-sub">avg lifetime spend · ${fmtNum(r.customers)} customers</div>
     </div>
   `).join('');
 
