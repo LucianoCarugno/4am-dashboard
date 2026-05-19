@@ -538,7 +538,7 @@ tbody tr:hover td { background: var(--s2); }
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Customer Acquisition</div>
       <div class="stats-row" id="kpi-acquisition" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label">New Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label">Returning Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Repeat Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
       </div>
 
       <div class="row row-3" style="margin-bottom:12px">
@@ -772,8 +772,9 @@ tbody tr:hover td { background: var(--s2); }
 
       <!-- Lifetime metrics (full available history) -->
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t1);background:var(--b1);padding:2px 6px;border-radius:3px;margin-left:6px">All history</span></div>
-      <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+      <div class="stats-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers across your full available order history. Customers with email are deduped across their orders; guest orders (no email) count as one customer each.">Total Customers</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Customers who placed 2 or more orders across their entire history. The all-time loyalty base. Guests cannot be classified (no way to identify across orders), so they're never counted as repeat.">Repeat Customers</div><div class="stat-cell-value" id="kpi-repeat-lifetime">—</div><div class="stat-cell-sub" id="kpi-repeat-lifetime-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Average lifetime spend per customer: total net sales across all history divided by total customers (including guest orders).">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Median days between a customer's 1st and 2nd purchase. Tells you the natural reorder cycle.">Reorder Cycle</div><div class="stat-cell-value" id="kpi-reorder-cycle">—</div><div class="stat-cell-sub" id="kpi-reorder-cycle-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="% of customers whose last order was more than 90 days ago. High % = customer base is going dormant.">Dormant Customers</div><div class="stat-cell-value" id="kpi-dormant">—</div><div class="stat-cell-sub" id="kpi-dormant-sub">—</div></div>
@@ -1493,24 +1494,25 @@ function renderExecutiveSummary() {
   const upt = k.upt;
 
   // ===== Card 4: Repeat Purchase Rate (% of orders in period from prior buyers) =====
-  // ORDER-WEIGHTED — matches Shopify's "Repeat Purchase Rate". Denominator is
-  // ALL orders in the period (including guests). Guests count as "not repeat"
-  // because we have no way to identify prior orders without an email.
+  // ORDER-WEIGHTED — matches Shopify's "Repeat Purchase Rate".
+  // Denominator: orders with a customer email (the only orders we can actually
+  // evaluate for prior purchase history). Including guests in the denominator
+  // would dilute the rate artificially, since guests can never be classified.
   const byEmailLife = getOrdersByEmail(lifetimeOrders);
-  let repeatOrders = 0;
-  const totalOrdersInPeriod = inPeriod.length;
+  let repeatOrders = 0, identifiedOrdersInPeriod = 0;
+  let guestOrdersInPeriod = 0;
   for (const o of inPeriod) {
     const email = o.customer?.email?.toLowerCase();
-    if (!email) continue; // guest order = not counted as repeat (but stays in denominator)
+    if (!email) { guestOrdersInPeriod++; continue; }
+    identifiedOrdersInPeriod++;
     const history = byEmailLife.get(email);
     if (!history) continue;
     const thisMs = new Date(o.created_at).getTime();
     const hasPrior = history.some(co => new Date(co.created_at).getTime() < thisMs);
     if (hasPrior) repeatOrders++;
   }
-  const repeatRate = totalOrdersInPeriod > 0 ? Math.round(repeatOrders / totalOrdersInPeriod * 100) : 0;
-  // Alias kept for the sub-text render below.
-  const totalWithEmail = totalOrdersInPeriod;
+  const repeatRate = identifiedOrdersInPeriod > 0 ? Math.round(repeatOrders / identifiedOrdersInPeriod * 100) : 0;
+  const totalWithEmail = identifiedOrdersInPeriod;
 
   // Median reorder cycle (from lifetimeOrders, period-independent context)
   const cyclesDays = [];
@@ -1568,10 +1570,10 @@ function renderExecutiveSummary() {
       <div class="stat-cell-value">${fmtNum(orderCount)}</div>
       <div class="stat-cell-sub">$${fmt(aov)} average order \u2022 ${upt.toFixed(2)} items per order</div>
     </div>
-    <div class="stat-cell" style="${''}" title="Of ALL orders in this period, what % came from a customer who had purchased before that order. Guest orders (no email) cannot be checked against prior history, so they count as not-repeat. This is the same definition as Shopify's Repeat Purchase Rate.">
+    <div class="stat-cell" style="${''}" title="Of all orders in this period that have a customer email (identifiable orders), what % came from a customer who had purchased before that order. Guest orders are excluded from the calculation because we have no way to look up their prior history without an email — but they're noted in the sub-text so the totals reconcile.">
       <div class="stat-cell-label">Repeat Purchase Rate</div>
       <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%</div>
-      <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} <strong>orders</strong> from prior buyers${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
+      <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} <strong>identifiable orders</strong> from prior buyers${guestOrdersInPeriod ? ' \u2022 ' + fmtNum(guestOrdersInPeriod) + ' guest orders not classifiable' : ''}${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
     </div>
   `;
 }
@@ -1655,29 +1657,41 @@ function renderKPIs() {
   const webRev = orders.filter(o => o.source_name === 'web').reduce((s,o) => s + orderNetSales(o), 0);
   const othersRev = orders.filter(o => o.source_name !== 'tiktok' && o.source_name !== 'web').reduce((s,o) => s + orderNetSales(o), 0);
 
-  // New vs Returning — UNIQUE CUSTOMERS in the period (not orders).
-  // Same exact logic as renderCustomersPeriodKPIs (Customers tab) so the two tabs
-  // show identical numbers for the same date filter.
+  // New vs Repeat customers in the period.
+  // - New     = customer's first-ever order falls inside this period (no prior history).
+  // - Repeat  = (a) had at least one order BEFORE the period, OR
+  //             (b) placed 2+ orders WITHIN the period.
+  // This captures TikTok-style repeat activity even when emails are hashed
+  // per-order: if the same customer happens to have 2 hashed emails, they
+  // still count as 2 customers, but the ones who DO repeat with the same
+  // hash inside the period are caught by rule (b).
+  // Guests count as new (one per guest order, cannot be evaluated otherwise).
   const fromDateStr = document.getElementById('date-from').value;
   const periodStartMs = fromDateStr ? new Date(fromDateStr + 'T00:00:00').getTime() : 0;
   const byEmailLifeKpi = getOrdersByEmail(lifetimeOrders);
+  // Count orders per email within the period for rule (b).
+  const ordersByEmailInPeriod = new Map();
+  for (const o of orders) {
+    const email = o.customer?.email?.toLowerCase();
+    if (!email) continue;
+    ordersByEmailInPeriod.set(email, (ordersByEmailInPeriod.get(email) || 0) + 1);
+  }
   const seenEmailsInPeriod = new Set();
   let newC = 0, returning = 0;
   for (const o of orders) {
     const email = o.customer?.email?.toLowerCase();
     if (email) {
-      // Identified customer: classify once per unique email per period.
       if (seenEmailsInPeriod.has(email)) continue;
       seenEmailsInPeriod.add(email);
       const history = byEmailLifeKpi.get(email);
       const hasPrior = history && history.some(co => new Date(co.created_at).getTime() < periodStartMs);
-      if (hasPrior) returning++; else newC++;
+      const ordersInPeriod = ordersByEmailInPeriod.get(email) || 0;
+      if (hasPrior || ordersInPeriod >= 2) returning++; else newC++;
     } else {
-      // Each guest order = 1 new customer (no email = no way to dedup or check history).
+      // Each guest order = 1 new customer.
       newC++;
     }
   }
-  // Sanity-check: this MUST equal countCustomers(orders) for the same period.
   const totalActiveCustomers = newC + returning;
 
   // Channel Mix row (TikTok + Web + Other = total orders)
@@ -1698,15 +1712,15 @@ function renderKPIs() {
       <div class="stat-cell-sub">${orders.length ? Math.round(others/orders.length*100) : 0}% of orders · $${fmt(othersRev)}</div>
     </div>`;
 
-  // Customer Acquisition row (New + Returning = Active Customers)
+  // Customer Acquisition row (New + Repeat = Active Customers)
   document.getElementById('kpi-acquisition').innerHTML = `
-    <div class="stat-cell" title="Unique customers in this period whose first-ever purchase falls in the period. Guests (no email) are always counted as new since we cannot identify prior orders.">
+    <div class="stat-cell" title="Customers whose first-ever purchase falls in this period (no prior order history). Guests are always counted as new — without an email we cannot check whether they had purchased before.">
       <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${fmtNum(newC)}</div>
       <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(newC/totalActiveCustomers*100) : 0}% of active customers</div>
     </div>
-    <div class="stat-cell" title="Unique customers in this period who had already purchased at least once before the period started. Only counts identifiable customers (with email).">
-      <div class="stat-cell-label">Returning Customers</div>
+    <div class="stat-cell" title="Customers who either (a) had purchased before this period, or (b) placed 2+ orders within this period. Only identifiable customers (with email) can be classified — guests are excluded from repeat by definition.">
+      <div class="stat-cell-label">Repeat Customers</div>
       <div class="stat-cell-value">${fmtNum(returning)}</div>
       <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(returning/totalActiveCustomers*100) : 0}% of active customers</div>
     </div>`;
@@ -2270,41 +2284,24 @@ function renderCustomersPeriodKPIs() {
     ordersByCustomer.get(key).orders.push(o);
   }
 
-  // Detect whether we have enough history BEFORE the selected period to
-  // accurately classify customers as new-vs-returning by their first-ever order.
   const fromDate = document.getElementById('date-from').value;
-  const historyStart = lifetimeOrders.length > 0
-    ? new Date(Math.min(...lifetimeOrders.map(o => new Date(o.created_at).getTime())))
-        .toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
-    : fromDate;
-  // We have enough history if there are at least 30 days of orders before the period start.
-  const hasPriorHistory = (new Date(fromDate) - new Date(historyStart)) / 86400000 >= 30;
 
+  // Unified definition (same as Sales tab so the two tabs cross-reference):
+  //   New    = first-ever order falls in the period (no prior history).
+  //   Repeat = either had prior history, OR placed 2+ orders within the period.
+  //   Guests = always New (cannot be evaluated without an email).
+  const byEmailHistory = getOrdersByEmail(lifetimeOrders);
   let newC = 0, repeatC = 0;
-  let methodLabel = '';
-
-  if (hasPriorHistory) {
-    // Strict definition: a customer is "new" if their first-ever order falls in this period.
-    // Guests are always counted as new (no history to look up).
-    methodLabel = 'first-time buyers';
-    const byEmailHistory = getOrdersByEmail(lifetimeOrders);
-    for (const [key, info] of ordersByCustomer) {
-      if (info.isGuest) { newC++; continue; }
-      const history = byEmailHistory.get(key);
-      if (!history || history.length === 0) { newC++; continue; }
-      const firstOrderDate = new Date(history[0].created_at)
-        .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-      if (firstOrderDate < fromDate) repeatC++;
-      else newC++;
-    }
-  } else {
-    // Fallback: not enough history before this period to know prior purchase behavior.
-    // Use Shopify's alternate definition: "Returning" = made 2+ orders in the period.
-    methodLabel = 'only 1 order in period';
-    for (const [, info] of ordersByCustomer) {
-      if (info.orders.length >= 2) repeatC++;
-      else newC++;
-    }
+  for (const [key, info] of ordersByCustomer) {
+    if (info.isGuest) { newC++; continue; }
+    const history = byEmailHistory.get(key);
+    const firstOrderDate = history && history.length > 0
+      ? new Date(history[0].created_at).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+      : null;
+    const hadPrior = firstOrderDate && firstOrderDate < fromDate;
+    const repeatInPeriod = info.orders.length >= 2;
+    if (hadPrior || repeatInPeriod) repeatC++;
+    else newC++;
   }
 
   const activeTotal = ordersByCustomer.size;
@@ -2312,9 +2309,7 @@ function renderCustomersPeriodKPIs() {
   const repeatPct = activeTotal > 0 ? Math.round(repeatC / activeTotal * 100) : 0;
   const spendPerCustomer = activeTotal > 0 ? revInPeriod / activeTotal : 0;
 
-  const methodNote = hasPriorHistory
-    ? 'Compared to their full purchase history.'
-    : 'Counted within the selected period only (we do not have purchase history before this date range).';
+  const methodNote = 'A customer is repeat if they either had purchased before the period started OR placed 2+ orders within the period.';
 
   document.getElementById('customers-period-kpis').innerHTML = `
     <div class="stat-cell">
@@ -2323,14 +2318,14 @@ function renderCustomersPeriodKPIs() {
       <div class="stat-cell-sub">placed at least 1 order</div>
     </div>
     <div class="stat-cell" title="${methodNote}">
-      <div class="stat-cell-label">${hasPriorHistory ? 'New Customers' : 'One-time Buyers'}</div>
+      <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${fmtNum(newC)}</div>
-      <div class="stat-cell-sub">${newPct}% of active · ${methodLabel}</div>
+      <div class="stat-cell-sub">${newPct}% of active · first purchase ever</div>
     </div>
     <div class="stat-cell" title="${methodNote}">
-      <div class="stat-cell-label">${hasPriorHistory ? 'Returning Customers' : 'Repeat Buyers'}</div>
+      <div class="stat-cell-label">Repeat Customers</div>
       <div class="stat-cell-value">${fmtNum(repeatC)}</div>
-      <div class="stat-cell-sub">${repeatPct}% of active · ${hasPriorHistory ? 'had bought before' : '2+ orders in period'}</div>
+      <div class="stat-cell-sub">${repeatPct}% of active · prior buyer or 2+ orders</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-label">Spend per Customer</div>
@@ -2380,6 +2375,16 @@ function renderCustomersLifetimeKPIs() {
     medianCycle = Math.round(cyclesDays[Math.floor(cyclesDays.length / 2)]);
   }
 
+  // Repeat Customers (lifetime) = customers with 2+ orders across all available history.
+  // Guests cannot be classified (each guest order is a synthetic single-order customer),
+  // so by definition they never count as repeat. Identifiable customers with 2+ orders do.
+  let repeatLifetime = 0;
+  for (const [, arr] of byEmail) {
+    if (arr.length >= 2) repeatLifetime++;
+  }
+  const repeatLifetimePct = totalCustomers > 0 ? Math.round(repeatLifetime / totalCustomers * 100) : 0;
+  const repeatLifetimeColor = repeatLifetimePct >= 30 ? 'var(--emerald)' : (repeatLifetimePct >= 15 ? 'var(--amber)' : 'var(--rose)');
+
   // Dormant: last order > 90 days ago
   const now = Date.now();
   const ninetyDaysAgo = now - 90 * 86400000;
@@ -2393,6 +2398,9 @@ function renderCustomersLifetimeKPIs() {
 
   document.getElementById('kpi-total-customers').textContent = fmtNum(totalCustomers);
   document.getElementById('kpi-total-customers-sub').textContent = `unique customers (each guest order = 1) · ${monthsSpan} months of history`;
+  document.getElementById('kpi-repeat-lifetime').textContent = fmtNum(repeatLifetime);
+  document.getElementById('kpi-repeat-lifetime').style.color = repeatLifetimeColor;
+  document.getElementById('kpi-repeat-lifetime-sub').textContent = `${repeatLifetimePct}% of customers · 2+ orders ever`;
   document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
   document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} net sales ÷ ${fmtNum(totalCustomers)} customers`;
 
