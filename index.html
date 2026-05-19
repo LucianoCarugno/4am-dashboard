@@ -538,12 +538,12 @@ tbody tr:hover td { background: var(--s2); }
       <div class="row row-3" style="margin-bottom:12px">
         <div class="panel">
           <div class="panel-header">
-            <div><div class="panel-title">Revenue Trend</div><div class="panel-sub">Daily revenue in period</div></div>
+            <div><div class="panel-title">Revenue Trend</div><div class="panel-sub">Daily <strong>net sales</strong> (gross − discounts − refunds)</div></div>
           </div>
           <div class="panel-body"><div class="chart-wrap"><canvas id="revenue-chart"></canvas></div></div>
         </div>
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Channels</div><div class="panel-sub">Order source</div></div></div>
+          <div class="panel-header"><div><div class="panel-title">Channels</div><div class="panel-sub">Order source · <strong>net sales</strong> per channel</div></div></div>
           <div class="panel-body"><div class="breakdown-list" id="channel-breakdown">
             <div class="skeleton" style="height:40px;border-radius:6px"></div>
             <div class="skeleton" style="height:40px;border-radius:6px;margin-top:10px"></div>
@@ -553,7 +553,7 @@ tbody tr:hover td { background: var(--s2); }
 
       <div class="row row-2" style="margin-bottom:12px">
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Top Products</div><div class="panel-sub">By revenue in period</div></div></div>
+          <div class="panel-header"><div><div class="panel-title">Top Products</div><div class="panel-sub">By <strong>net product revenue</strong> in period (price × qty − line discounts)</div></div></div>
           <div class="panel-body"><div class="product-rows" id="top-products">
             <div class="skeleton" style="height:36px;border-radius:6px;margin-bottom:8px"></div>
             <div class="skeleton" style="height:36px;border-radius:6px;margin-bottom:8px"></div>
@@ -613,19 +613,19 @@ tbody tr:hover td { background: var(--s2); }
         </div>
       </div>
 
-      <!-- Row 2: LTV + Discount intensity -->
+      <!-- Row 2: Early customer value cohorts + Discount intensity -->
       <div class="row row-2" style="margin-bottom:14px">
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Customer Value Over Time (LTV)</div>
-              <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days.</div>
+              <div class="panel-title">Early Customer Value</div>
+              <div class="panel-sub">How much an average customer spends in their first 30 / 60 / 90 / 180 days from their first order.</div>
             </div>
           </div>
           <div class="panel-body">
             <div class="note note-explainer" style="margin-bottom:14px">
               <div class="note-eyebrow">How to read</div>
-              <strong class="note-lead">LTV = Lifetime Value.</strong> The total $ an average customer spends across all their purchases in that time window. Growing numbers from 30d to 180d mean people keep buying — that's healthy.
+              <strong class="note-lead">Not the same as Lifetime Value (LTV).</strong> True LTV is in the <em>Customers</em> tab — total net sales divided by total customers across all history. These numbers measure how quickly a new customer monetizes: a higher "First 90 days" relative to "First 30 days" means customers keep buying after their first order. For each window, only customers whose first order is at least that old are included.
             </div>
             <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
               <div class="stat-cell"><div class="stat-cell-label">First 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
@@ -767,8 +767,8 @@ tbody tr:hover td { background: var(--s2); }
       <!-- Lifetime metrics (full available history) -->
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t1);background:var(--b1);padding:2px 6px;border-radius:3px;margin-left:6px">All history</span></div>
       <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-        <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers (by email) across your full available order history.">Total Customers</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Average revenue per customer across all their orders in your full history.">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers across your full available order history. Customers with email are deduped across their orders; guest orders (no email) count as one customer each.">Total Customers</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Average lifetime spend per customer: total net sales across all history divided by total customers (including guest orders).">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Median days between a customer's 1st and 2nd purchase. Tells you the natural reorder cycle.">Reorder Cycle</div><div class="stat-cell-value" id="kpi-reorder-cycle">—</div><div class="stat-cell-sub" id="kpi-reorder-cycle-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="% of customers whose last order was more than 90 days ago. High % = customer base is going dormant.">Dormant Customers</div><div class="stat-cell-value" id="kpi-dormant">—</div><div class="stat-cell-sub" id="kpi-dormant-sub">—</div></div>
       </div>
@@ -788,7 +788,7 @@ tbody tr:hover td { background: var(--s2); }
           <div class="panel-header">
             <div>
               <div class="panel-title">Lifetime Value Distribution</div>
-              <div class="panel-sub">How many customers fall into each spending bracket</div>
+              <div class="panel-sub">Total net sales per identifiable customer (all history). Shows how customers cluster across spend brackets.</div>
             </div>
           </div>
           <div class="panel-body"><div id="ltv-distribution"><div class="empty-state">Loading…</div></div></div>
@@ -1820,31 +1820,50 @@ function renderChannelBreakdown() {
   const total = filteredOrders.length;
   const totalRev = filteredOrders.reduce((s,o) => s + orderNetSales(o), 0);
   const colors = { tiktok: PALETTE.amber, web: PALETTE.teal, other: PALETTE.violet };
-  const meaningful = sorted.filter(([src]) => {
-    if (/^\d+$/.test(src)) return false;
-    if (src.includes('_checkout_') || src === 'shopify_draft_order' || src.includes('subscription_')) return false;
-    return true;
-  });
-  document.getElementById('channel-breakdown').innerHTML = meaningful.slice(0,5).map(([src,count]) => {
+
+  // Pretty label for the source — handles known channels, hashes ids, etc.
+  const labelFor = (src) => {
+    if (src === 'tiktok') return 'TikTok Shop';
+    if (src === 'web') return 'Web / Direct';
+    if (src === 'shopify_draft_order') return 'Draft Orders';
+    if (src.includes('_checkout_')) return 'Checkout link';
+    if (src.includes('subscription_')) return 'Subscription';
+    if (/^\d+$/.test(src)) return `Channel #${src}`;
+    return src.length > 22 ? src.substring(0,20)+'…' : src;
+  };
+
+  // Show ALL channels (not a slice) so the sum cross-references with Orders Placed.
+  const el = document.getElementById('channel-breakdown');
+  el.innerHTML = sorted.map(([src,count]) => {
     const pct = total ? Math.round(count/total*100) : 0;
     const rev = channelRev[src] || 0;
     const revPct = totalRev ? Math.round(rev/totalRev*100) : 0;
     const color = colors[src] || PALETTE.blue;
-    const label = src === 'tiktok' ? 'TikTok Shop' : src === 'web' ? 'Web / Direct' : src.length > 18 ? src.substring(0,16)+'…' : src;
     return `<div class="breakdown-item">
-      <div class="breakdown-row"><span class="breakdown-name">${label}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${revPct}% rev</div></div>
+      <div class="breakdown-row"><span class="breakdown-name">${labelFor(src)}</span><div class="breakdown-meta"><span>$${fmt(rev)}</span> · ${revPct}% rev</div></div>
       <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:4px;letter-spacing:.2px">${count} orders · ${pct}% of orders</div>
     </div>`;
   }).join('');
+  // Make the breakdown scrollable when there are many channels so the user can
+  // see every source — important for cross-checking the total against Orders Placed.
+  el.style.maxHeight = '320px';
+  el.style.overflowY = 'auto';
+  el.style.paddingRight = '6px';
 }
 
 function renderTopProducts() {
+  // Use the same gross-net formula as the Products tab table for consistency
+  // (price * qty minus line-item discount allocations). The Top Products list
+  // and the Products tab now show identical revenue per product.
   const productRev = {}, productUnits = {};
   filteredOrders.forEach(o => (o.line_items||[]).forEach(item => {
     const t = item.title||'Unknown';
-    productRev[t] = (productRev[t]||0) + parseFloat(item.price||0)*(item.quantity||1);
-    productUnits[t] = (productUnits[t]||0) + (item.quantity||1);
+    const qty = parseInt(item.quantity || 1);
+    const price = parseFloat(item.price || 0);
+    const lineDisc = (item.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+    productRev[t] = (productRev[t]||0) + (price * qty - lineDisc);
+    productUnits[t] = (productUnits[t]||0) + qty;
   }));
   const sorted = Object.entries(productRev).sort((a,b)=>b[1]-a[1]).slice(0,6);
   document.getElementById('top-products').innerHTML = sorted.length
@@ -2316,7 +2335,7 @@ function renderCustomersLifetimeKPIs() {
   const dormantColor = dormantPct < 30 ? 'var(--emerald)' : (dormantPct < 60 ? 'var(--amber)' : 'var(--rose)');
 
   document.getElementById('kpi-total-customers').textContent = fmtNum(totalCustomers);
-  document.getElementById('kpi-total-customers-sub').textContent = `identifiable customers · ${monthsSpan} months of history`;
+  document.getElementById('kpi-total-customers-sub').textContent = `unique customers (each guest order = 1) · ${monthsSpan} months of history`;
   document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
   document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} net sales ÷ ${fmtNum(totalCustomers)} customers`;
 
@@ -2518,12 +2537,17 @@ function renderCustomersTableList() {
   const orders = filteredOrders || [];
   const map = new Map();
   for (const o of orders) {
-    const email = o.customer?.email?.toLowerCase() || ('guest_' + o.order_number);
+    // Customers with email are deduped across their orders.
+    // Guests (no email) cannot be identified, so each guest order is treated
+    // as a distinct customer. This inflates the count vs. an email-only view,
+    // but matches the user's preference for an inclusive total.
+    const key = o.customer?.email?.toLowerCase() || ('guest:' + (o.order_number || o.id || Math.random()));
+    const isGuest = !o.customer?.email;
     const name = o.customer ? `${o.customer.first_name || ''} ${o.customer.last_name || ''}`.trim() : 'Guest';
     const city = o.shipping_address?.city || '—';
-    const isTikTok = email.includes('tiktokw.us');
-    if (!map.has(email)) map.set(email, { name, email, city, isTikTok, orders: 0, revenue: 0, lastOrder: '' });
-    const c = map.get(email);
+    const isTikTok = !isGuest && key.includes('tiktokw.us');
+    if (!map.has(key)) map.set(key, { name, email: key, city, isTikTok, isGuest, orders: 0, revenue: 0, lastOrder: '' });
+    const c = map.get(key);
     c.orders++;
     c.revenue += orderNetSales(o);
     if (o.created_at > c.lastOrder) c.lastOrder = o.created_at;
@@ -2534,7 +2558,9 @@ function renderCustomersTableList() {
     customers = customers.filter(c => c.name.toLowerCase().includes(_customerSearchTerm) || c.email.toLowerCase().includes(_customerSearchTerm));
   }
 
-  document.getElementById('customers-badge').textContent = `${fmtNum(customers.length)} customers`;
+  const guestCount = customers.filter(c => c.isGuest).length;
+  const guestNote = guestCount > 0 ? ` (${fmtNum(guestCount)} as guest)` : '';
+  document.getElementById('customers-badge').textContent = `${fmtNum(customers.length)} customers${guestNote}`;
 
   const wrap = document.getElementById('customers-wrap');
   if (customers.length === 0) {
@@ -2544,10 +2570,10 @@ function renderCustomersTableList() {
 
   const rows = customers.slice(0, 500).map(c => {
     const isRepeat = c.orders > 1;
-    const emailDisplay = c.isTikTok
-      ? '<span style="color:var(--t3)">TikTok Customer</span>'
-      : c.email.startsWith('guest_')
-        ? '<span style="color:var(--t3)">Guest</span>'
+    const emailDisplay = c.isGuest
+      ? '<span style="color:var(--t3)">Guest checkout</span>'
+      : c.isTikTok
+        ? '<span style="color:var(--t3)">TikTok Customer</span>'
         : c.email;
     const lastOrderStr = c.lastOrder ? fmtDate(c.lastOrder) : '—';
     return `<tr><td class="customer-name">${c.name || '—'}</td><td style="font-family:var(--mono);font-size:10px;color:var(--t2)">${emailDisplay}</td><td style="font-size:11.5px;color:var(--t2);font-family:var(--sans)">${c.city}</td><td style="font-family:var(--mono);font-size:11px">${c.orders}</td><td class="price">$${fmt(c.revenue)}</td><td style="font-family:var(--mono);font-size:10px;color:var(--t2)">${lastOrderStr}</td><td><span class="status-pill ${isRepeat?'s-paid':'s-pending'}">${isRepeat?'Repeat':'New'}</span></td></tr>`;
@@ -2584,10 +2610,15 @@ function getOrdersByEmail(sourceList) {
   if (_ordersByEmailMemo.has(list)) return _ordersByEmailMemo.get(list);
   const map = new Map();
   for (const o of list) {
+    if (!o.created_at) continue;
+    // Customers with email are grouped together across all their orders.
+    // Guests (no email) cannot be deduped, so each guest order becomes its
+    // own synthetic customer — same treatment as the Customers table, so
+    // counts cross-reference cleanly across all panels.
     const email = o.customer?.email?.toLowerCase();
-    if (!email || !o.created_at) continue;
-    if (!map.has(email)) map.set(email, []);
-    map.get(email).push(o);
+    const key = email || ('guest:' + (o.order_number || o.id || `${o.created_at}-${Math.random()}`));
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(o);
   }
   for (const arr of map.values()) arr.sort((a, b) => a.created_at.localeCompare(b.created_at));
   _ordersByEmailMemo.set(list, map);
@@ -2739,10 +2770,10 @@ function renderLTV() {
     return { days, avg: customers > 0 ? totalRev / customers : 0, customers };
   });
   el.innerHTML = results.map(r => `
-    <div class="stat-cell" title="Average $ spent by a customer in their first ${r.days} days. Only includes customers whose first order was at least ${r.days} days ago, to avoid skewing the number.">
+    <div class="stat-cell" title="Average net sales generated by a customer in their first ${r.days} days as a customer. Includes ALL orders during those days — first order, repeats, everything. Only customers whose first order was at least ${r.days} days ago are eligible to enter this calculation.">
       <div class="stat-cell-label">First ${r.days} days</div>
       <div class="stat-cell-value">$${fmt(r.avg)}</div>
-      <div class="stat-cell-sub">${fmtNum(r.customers)} customers</div>
+      <div class="stat-cell-sub">avg across ${fmtNum(r.customers)} eligible customers</div>
     </div>
   `).join('');
 
