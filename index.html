@@ -625,7 +625,7 @@ tbody tr:hover td { background: var(--s2); }
           <div class="panel-body">
             <div class="note note-explainer" style="margin-bottom:14px">
               <div class="note-eyebrow">How to read</div>
-              <strong class="note-lead">Not the same as Lifetime Value (LTV).</strong> True LTV is in the <em>Customers</em> tab — total net sales divided by total customers across all history. These numbers measure how quickly a new customer monetizes: a higher "First 90 days" relative to "First 30 days" means customers keep buying after their first order. For each window, only customers whose first order is at least that old are included.
+              <strong class="note-lead">Early monetization curve.</strong> These figures show the average net revenue captured from a customer over their first 30, 60, 90 and 180 days as a buyer. A meaningful uplift between the 30-day and 90-day windows indicates customers are returning beyond the first purchase. To avoid distorting averages with new customers, each window only includes buyers whose first order is at least that old.
             </div>
             <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
               <div class="stat-cell"><div class="stat-cell-label">First 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
@@ -1541,9 +1541,9 @@ function renderExecutiveSummary() {
     : '';
 
   el.innerHTML = `
-    <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)" title="Net sales for the selected period (gross minus discounts and refunds). This is the headline number — it matches Shopify Analytics.">
-      <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
-      <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
+    <div class="stat-cell" style="border:2px solid var(--t0);box-shadow:0 1px 0 var(--t0)" title="Net sales for the selected period (gross minus discounts and refunds). This is the headline number — it matches Shopify Analytics.">
+      <div class="stat-cell-label">Net Sales</div>
+      <div class="stat-cell-value">$${fmt(k.netSales)}</div>
       <div style="margin-top:4px">
         ${heroPrevPill}
         ${heroYaPill}
@@ -1744,9 +1744,9 @@ function renderKPIs() {
       <div class="stat-cell-sub">${fmtNum(refunded.length)} order${refunded.length === 1 ? '' : 's'} refunded</div>
       ${cmp(k.returns, kPrev.returns, ya?.returns, 'negative')}
     </div>
-    <div class="stat-cell" style="background:var(--teal-dim);border-color:var(--teal-ring)" title="Revenue retained after discounts and refunds. This is the operative top-line metric and should reconcile with Shopify Analytics.">
-      <div class="stat-cell-label" style="color:var(--teal)">Net Sales</div>
-      <div class="stat-cell-value" style="color:var(--teal)">$${fmt(k.netSales)}</div>
+    <div class="stat-cell" style="border:2px solid var(--t0);box-shadow:0 1px 0 var(--t0)" title="Revenue retained after discounts and refunds. This is the operative top-line metric and should reconcile with Shopify Analytics.">
+      <div class="stat-cell-label">Net Sales</div>
+      <div class="stat-cell-value">$${fmt(k.netSales)}</div>
       <div class="stat-cell-sub">gross − discounts − refunds</div>
       ${cmp(k.netSales, kPrev.netSales, ya?.netSales, 'positive')}
     </div>
@@ -2204,15 +2204,17 @@ function renderCustomersPeriodKPIs() {
   const orders = filteredOrders || [];
   if (orders.length === 0) return;
 
-  // Group orders in period by customer email
+  // Group orders in period by customer. Email-based dedup for identified buyers;
+  // each guest order counts as a distinct customer (same rule as Lifetime View
+  // and the Customers table, so the totals cross-reference).
   const ordersByCustomer = new Map();
   let revInPeriod = 0;
   for (const o of orders) {
-    const e = o.customer?.email?.toLowerCase();
+    const email = o.customer?.email?.toLowerCase();
+    const key = email || ('guest:' + (o.order_number || o.id || `${o.created_at}-${Math.random()}`));
     revInPeriod += orderNetSales(o);
-    if (!e) continue;
-    if (!ordersByCustomer.has(e)) ordersByCustomer.set(e, []);
-    ordersByCustomer.get(e).push(o);
+    if (!ordersByCustomer.has(key)) ordersByCustomer.set(key, { isGuest: !email, orders: [] });
+    ordersByCustomer.get(key).orders.push(o);
   }
 
   // Detect whether we have enough history BEFORE the selected period to
@@ -2230,10 +2232,12 @@ function renderCustomersPeriodKPIs() {
 
   if (hasPriorHistory) {
     // Strict definition: a customer is "new" if their first-ever order falls in this period.
+    // Guests are always counted as new (no history to look up).
     methodLabel = 'first-time buyers';
     const byEmailHistory = getOrdersByEmail(lifetimeOrders);
-    for (const [email, periodOrders] of ordersByCustomer) {
-      const history = byEmailHistory.get(email);
+    for (const [key, info] of ordersByCustomer) {
+      if (info.isGuest) { newC++; continue; }
+      const history = byEmailHistory.get(key);
       if (!history || history.length === 0) { newC++; continue; }
       const firstOrderDate = new Date(history[0].created_at)
         .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -2244,8 +2248,8 @@ function renderCustomersPeriodKPIs() {
     // Fallback: not enough history before this period to know prior purchase behavior.
     // Use Shopify's alternate definition: "Returning" = made 2+ orders in the period.
     methodLabel = 'only 1 order in period';
-    for (const [, periodOrders] of ordersByCustomer) {
-      if (periodOrders.length >= 2) repeatC++;
+    for (const [, info] of ordersByCustomer) {
+      if (info.orders.length >= 2) repeatC++;
       else newC++;
     }
   }
