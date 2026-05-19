@@ -526,11 +526,17 @@ tbody tr:hover td { background: var(--s2); }
         <div class="stat-cell"><div class="stat-cell-label">Taxes</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div></div>
       </div>
 
-      <!-- CHANNEL MIX & ACQUISITION -->
-      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix & Acquisition</div>
-      <div class="stats-row" id="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+      <!-- CHANNEL MIX -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Channel Mix</div>
+      <div class="stats-row" id="kpi-channels" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
         <div class="stat-cell"><div class="stat-cell-label">TikTok Shop</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Web / Direct</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Other Channels</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
+      </div>
+
+      <!-- CUSTOMER ACQUISITION -->
+      <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Customer Acquisition</div>
+      <div class="stats-row" id="kpi-acquisition" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label">New Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Returning Customers</div><div class="skeleton" style="height:22px;width:50%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>
       </div>
@@ -1475,9 +1481,9 @@ function renderExecutiveSummary() {
       const trendPct = Math.round((avg7 - avgEarlier) / avgEarlier * 100);
       const trendColor = trendPct >= 0 ? 'var(--emerald)' : 'var(--rose)';
       const trendArrow = trendPct >= 0 ? '\u2191' : '\u2193';
-      trendHtml = `last 7 days: <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong> <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(trendPct)}%</span>`;
+      trendHtml = `recent trend (last 7 days): <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong> <span style="color:${trendColor};font-weight:600">${trendArrow} ${Math.abs(trendPct)}%</span>`;
     } else {
-      trendHtml = `last 7 days: <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong>`;
+      trendHtml = `recent trend (last 7 days): <strong style="color:var(--t0)">$${fmt(avg7)}/day</strong>`;
     }
   }
 
@@ -1487,24 +1493,24 @@ function renderExecutiveSummary() {
   const upt = k.upt;
 
   // ===== Card 4: Repeat Purchase Rate (% of orders in period from prior buyers) =====
-  // This metric is ORDER-WEIGHTED on purpose — it matches Shopify's "Repeat Purchase Rate".
-  // For each order in period: did this customer buy BEFORE this order (any time)?
+  // ORDER-WEIGHTED — matches Shopify's "Repeat Purchase Rate". Denominator is
+  // ALL orders in the period (including guests). Guests count as "not repeat"
+  // because we have no way to identify prior orders without an email.
   const byEmailLife = getOrdersByEmail(lifetimeOrders);
-  let repeatOrders = 0, identifiedOrdersInPeriod = 0;
+  let repeatOrders = 0;
+  const totalOrdersInPeriod = inPeriod.length;
   for (const o of inPeriod) {
     const email = o.customer?.email?.toLowerCase();
-    if (!email) continue;
-    identifiedOrdersInPeriod++;
+    if (!email) continue; // guest order = not counted as repeat (but stays in denominator)
     const history = byEmailLife.get(email);
     if (!history) continue;
     const thisMs = new Date(o.created_at).getTime();
     const hasPrior = history.some(co => new Date(co.created_at).getTime() < thisMs);
     if (hasPrior) repeatOrders++;
   }
-  const repeatRate = identifiedOrdersInPeriod > 0 ? Math.round(repeatOrders / identifiedOrdersInPeriod * 100) : 0;
-  // For the sub-text: keep using ORDER counts here on purpose — this is an order-weighted metric.
-  // We use 'totalWithEmail' as an alias to keep the rest of the function readable.
-  const totalWithEmail = identifiedOrdersInPeriod;
+  const repeatRate = totalOrdersInPeriod > 0 ? Math.round(repeatOrders / totalOrdersInPeriod * 100) : 0;
+  // Alias kept for the sub-text render below.
+  const totalWithEmail = totalOrdersInPeriod;
 
   // Median reorder cycle (from lifetimeOrders, period-independent context)
   const cyclesDays = [];
@@ -1552,17 +1558,17 @@ function renderExecutiveSummary() {
         ${heroYaPill}
       </div>
     </div>
-    <div class="stat-cell" title="Average net sales per day in the selected period. The trend below compares the average of the last 7 days vs the average of the earlier days in the same period — to see if sales are accelerating or decelerating.">
+    <div class="stat-cell" title="Net sales of the period divided by the number of days in the period. The trend below compares the average of the last 7 days vs the average of the earlier days in the same period — to see if sales are accelerating or decelerating.">
       <div class="stat-cell-label">Average per Day</div>
-      <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400">/day overall</span></div>
-      <div class="stat-cell-sub">${trendHtml}</div>
+      <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400"> / day</span></div>
+      <div class="stat-cell-sub">net sales ÷ ${fmtNum(periodDays)} days in period${trendHtml ? ' \u2022 ' + trendHtml : ''}</div>
     </div>
     <div class="stat-cell" title="Total orders placed in this period, with average order value and average items per order.">
       <div class="stat-cell-label">Orders Placed</div>
       <div class="stat-cell-value">${fmtNum(orderCount)}</div>
       <div class="stat-cell-sub">$${fmt(aov)} average order \u2022 ${upt.toFixed(2)} items per order</div>
     </div>
-    <div class="stat-cell" style="${''}" title="Of all identified orders in this period (orders with a customer email), what % came from a customer who had purchased before that order, any time in history. This is the same definition as Shopify's Repeat Purchase Rate.">
+    <div class="stat-cell" style="${''}" title="Of ALL orders in this period, what % came from a customer who had purchased before that order. Guest orders (no email) cannot be checked against prior history, so they count as not-repeat. This is the same definition as Shopify's Repeat Purchase Rate.">
       <div class="stat-cell-label">Repeat Purchase Rate</div>
       <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%</div>
       <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} <strong>orders</strong> from prior buyers${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
@@ -1644,8 +1650,10 @@ function renderKPIs() {
 
   const tiktok = orders.filter(o => o.source_name === 'tiktok').length;
   const web = orders.filter(o => o.source_name === 'web').length;
+  const others = orders.length - tiktok - web;
   const tiktokRev = orders.filter(o => o.source_name === 'tiktok').reduce((s,o) => s + orderNetSales(o), 0);
   const webRev = orders.filter(o => o.source_name === 'web').reduce((s,o) => s + orderNetSales(o), 0);
+  const othersRev = orders.filter(o => o.source_name !== 'tiktok' && o.source_name !== 'web').reduce((s,o) => s + orderNetSales(o), 0);
 
   // New vs Returning — UNIQUE CUSTOMERS in the period (not orders).
   // Same exact logic as renderCustomersPeriodKPIs (Customers tab) so the two tabs
@@ -1670,10 +1678,10 @@ function renderKPIs() {
     }
   }
   // Sanity-check: this MUST equal countCustomers(orders) for the same period.
-  // If not, there's a bug.
   const totalActiveCustomers = newC + returning;
 
-  document.getElementById('kpi-grid').innerHTML = `
+  // Channel Mix row (TikTok + Web + Other = total orders)
+  document.getElementById('kpi-channels').innerHTML = `
     <div class="stat-cell" title="Orders placed through the TikTok Shop sales channel.">
       <div class="stat-cell-label">TikTok Shop</div>
       <div class="stat-cell-value">${fmtNum(tiktok)}</div>
@@ -1684,6 +1692,14 @@ function renderKPIs() {
       <div class="stat-cell-value">${fmtNum(web)}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders · $${fmt(webRev)}</div>
     </div>
+    <div class="stat-cell" title="All other sources: subscription apps, draft orders, point-of-sale, third-party checkout links, etc. The three channel cards together always sum to total Orders Placed.">
+      <div class="stat-cell-label">Other Channels</div>
+      <div class="stat-cell-value">${fmtNum(others)}</div>
+      <div class="stat-cell-sub">${orders.length ? Math.round(others/orders.length*100) : 0}% of orders · $${fmt(othersRev)}</div>
+    </div>`;
+
+  // Customer Acquisition row (New + Returning = Active Customers)
+  document.getElementById('kpi-acquisition').innerHTML = `
     <div class="stat-cell" title="Unique customers in this period whose first-ever purchase falls in the period. Guests (no email) are always counted as new since we cannot identify prior orders.">
       <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${fmtNum(newC)}</div>
