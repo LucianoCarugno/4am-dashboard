@@ -512,7 +512,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="stat-cell"><div class="stat-cell-label" title="Net sales (gross minus discounts and refunds) for the selected period — the headline number.">Net Sales</div><div class="skeleton" style="height:22px;width:70%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:90%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Average net sales per day in this period.">Average per Day</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Number of orders placed in this period.">Orders Placed</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Of the orders placed in this period that have a customer email, what % came from someone who had purchased before the period started.">Returning Customer Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Order-weighted repeat rate: % of identified orders in this period that came from a customer who had purchased before. Matches Shopify's Repeat Purchase Rate.">Repeat Purchase Rate</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:80%"></div></div>
       </div>
 
       <!-- REVENUE BREAKDOWN -->
@@ -1419,7 +1419,7 @@ function renderExecutiveSummary() {
       <div class="stat-cell"><div class="stat-cell-label">Net Sales</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Average per Day</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
       <div class="stat-cell"><div class="stat-cell-label">Orders Placed</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
-      <div class="stat-cell"><div class="stat-cell-label">Returning Customer Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
+      <div class="stat-cell"><div class="stat-cell-label">Repeat Purchase Rate</div><div class="stat-cell-value" style="color:var(--t2)">\u2014</div><div class="stat-cell-sub">no orders in this period</div></div>
     `;
     return;
   }
@@ -1486,22 +1486,25 @@ function renderExecutiveSummary() {
   const aov = k.aov;
   const upt = k.upt;
 
-  // ===== Card 4: Customer Loyalty (% repeat in period, requires lifetime data) =====
-  // For each order in period: did this customer buy BEFORE this period?
-  // Counts orders, not customers (so volume-weighted).
+  // ===== Card 4: Repeat Purchase Rate (% of orders in period from prior buyers) =====
+  // This metric is ORDER-WEIGHTED on purpose — it matches Shopify's "Repeat Purchase Rate".
+  // For each order in period: did this customer buy BEFORE this order (any time)?
   const byEmailLife = getOrdersByEmail(lifetimeOrders);
-  let repeatOrders = 0, totalWithEmail = 0;
+  let repeatOrders = 0, identifiedOrdersInPeriod = 0;
   for (const o of inPeriod) {
     const email = o.customer?.email?.toLowerCase();
     if (!email) continue;
-    totalWithEmail++;
+    identifiedOrdersInPeriod++;
     const history = byEmailLife.get(email);
     if (!history) continue;
     const thisMs = new Date(o.created_at).getTime();
     const hasPrior = history.some(co => new Date(co.created_at).getTime() < thisMs);
     if (hasPrior) repeatOrders++;
   }
-  const repeatRate = totalWithEmail > 0 ? Math.round(repeatOrders / totalWithEmail * 100) : 0;
+  const repeatRate = identifiedOrdersInPeriod > 0 ? Math.round(repeatOrders / identifiedOrdersInPeriod * 100) : 0;
+  // For the sub-text: keep using ORDER counts here on purpose — this is an order-weighted metric.
+  // We use 'totalWithEmail' as an alias to keep the rest of the function readable.
+  const totalWithEmail = identifiedOrdersInPeriod;
 
   // Median reorder cycle (from lifetimeOrders, period-independent context)
   const cyclesDays = [];
@@ -1559,10 +1562,10 @@ function renderExecutiveSummary() {
       <div class="stat-cell-value">${fmtNum(orderCount)}</div>
       <div class="stat-cell-sub">$${fmt(aov)} average order \u2022 ${upt.toFixed(2)} items per order</div>
     </div>
-    <div class="stat-cell" title="Of the orders placed in this period that have a customer email attached, what % came from someone who had purchased at least once before this period started.">
-      <div class="stat-cell-label">Returning Customer Rate</div>
+    <div class="stat-cell" style="${''}" title="Of all identified orders in this period (orders with a customer email), what % came from a customer who had purchased before that order, any time in history. This is the same definition as Shopify's Repeat Purchase Rate.">
+      <div class="stat-cell-label">Repeat Purchase Rate</div>
       <div class="stat-cell-value" style="color:${loyaltyColor}">${repeatRate}%</div>
-      <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} identified orders${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
+      <div class="stat-cell-sub">${fmtNum(repeatOrders)} of ${fmtNum(totalWithEmail)} <strong>orders</strong> from prior buyers${medianCycle ? ' \u2022 typical reorder: ~' + medianCycle + ' days' : ''}</div>
     </div>
   `;
 }
@@ -1644,21 +1647,31 @@ function renderKPIs() {
   const tiktokRev = orders.filter(o => o.source_name === 'tiktok').reduce((s,o) => s + orderNetSales(o), 0);
   const webRev = orders.filter(o => o.source_name === 'web').reduce((s,o) => s + orderNetSales(o), 0);
 
-  // New vs Returning — using the SAME definition as "Returning Customer Rate" above:
-  // an order is "returning" if that customer's email has at least one order BEFORE this period
-  // (anywhere in lifetime history). Otherwise "new". This keeps the two cards consistent.
+  // New vs Returning — UNIQUE CUSTOMERS in the period (not orders).
+  // Same exact logic as renderCustomersPeriodKPIs (Customers tab) so the two tabs
+  // show identical numbers for the same date filter.
   const fromDateStr = document.getElementById('date-from').value;
   const periodStartMs = fromDateStr ? new Date(fromDateStr + 'T00:00:00').getTime() : 0;
   const byEmailLifeKpi = getOrdersByEmail(lifetimeOrders);
+  const seenEmailsInPeriod = new Set();
   let newC = 0, returning = 0;
   for (const o of orders) {
     const email = o.customer?.email?.toLowerCase();
-    if (!email) continue;
-    const history = byEmailLifeKpi.get(email);
-    const hasPrior = history && history.some(co => new Date(co.created_at).getTime() < periodStartMs);
-    if (hasPrior) returning++; else newC++;
+    if (email) {
+      // Identified customer: classify once per unique email per period.
+      if (seenEmailsInPeriod.has(email)) continue;
+      seenEmailsInPeriod.add(email);
+      const history = byEmailLifeKpi.get(email);
+      const hasPrior = history && history.some(co => new Date(co.created_at).getTime() < periodStartMs);
+      if (hasPrior) returning++; else newC++;
+    } else {
+      // Each guest order = 1 new customer (no email = no way to dedup or check history).
+      newC++;
+    }
   }
-  const totalIdentified = newC + returning;
+  // Sanity-check: this MUST equal countCustomers(orders) for the same period.
+  // If not, there's a bug.
+  const totalActiveCustomers = newC + returning;
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="stat-cell" title="Orders placed through the TikTok Shop sales channel.">
@@ -1671,15 +1684,15 @@ function renderKPIs() {
       <div class="stat-cell-value">${fmtNum(web)}</div>
       <div class="stat-cell-sub">${orders.length ? Math.round(web/orders.length*100) : 0}% of orders · $${fmt(webRev)}</div>
     </div>
-    <div class="stat-cell" title="Orders in this period from customers whose first purchase ever (in available history) was during this period.">
+    <div class="stat-cell" title="Unique customers in this period whose first-ever purchase falls in the period. Guests (no email) are always counted as new since we cannot identify prior orders.">
       <div class="stat-cell-label">New Customers</div>
       <div class="stat-cell-value">${fmtNum(newC)}</div>
-      <div class="stat-cell-sub">${totalIdentified ? Math.round(newC/totalIdentified*100) : 0}% of identified orders</div>
+      <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(newC/totalActiveCustomers*100) : 0}% of active customers</div>
     </div>
-    <div class="stat-cell" title="Orders in this period from customers who had already purchased at least once before the period started.">
+    <div class="stat-cell" title="Unique customers in this period who had already purchased at least once before the period started. Only counts identifiable customers (with email).">
       <div class="stat-cell-label">Returning Customers</div>
       <div class="stat-cell-value">${fmtNum(returning)}</div>
-      <div class="stat-cell-sub">${totalIdentified ? Math.round(returning/totalIdentified*100) : 0}% of identified orders</div>
+      <div class="stat-cell-sub">${totalActiveCustomers ? Math.round(returning/totalActiveCustomers*100) : 0}% of active customers</div>
     </div>`;
 
   const revEl = document.getElementById('revenue-breakdown');
@@ -1778,6 +1791,30 @@ function orderNetSales(o) {
   }
   const returns = parseFloat(o.total_refunded || 0);
   return gross - discounts - returns;
+}
+
+// ==================== CANONICAL COUNTING HELPERS ====================
+// Every card in the dashboard that says "customers" / "orders" must use these
+// so the same period always yields the same number across tabs.
+//
+// Rules (decided & locked):
+//   - ORDERS    = orders.length (one row in the data = one order)
+//   - CUSTOMERS = unique people. Email-deduped for identified buyers; each guest
+//                 order (no email) counts as a distinct customer because we have
+//                 no way to identify or dedup them.
+// ----------------------------------------------------------------------
+function countOrders(orderList) {
+  return (orderList || []).length;
+}
+function countCustomers(orderList) {
+  const seenEmails = new Set();
+  let guests = 0;
+  for (const o of (orderList || [])) {
+    const email = o.customer?.email?.toLowerCase();
+    if (email) seenEmails.add(email);
+    else guests++;
+  }
+  return seenEmails.size + guests;
 }
 
 function renderRevenueChart() {
