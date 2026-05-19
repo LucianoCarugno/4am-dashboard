@@ -621,28 +621,7 @@ tbody tr:hover td { background: var(--s2); }
       </div>
 
       <!-- Row 2: Early customer value cohorts + Discount intensity -->
-      <div class="row row-2" style="margin-bottom:14px">
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <div class="panel-title">Lifetime Value by Tenure</div>
-              <div class="panel-sub">Average lifetime net sales of customers grouped by how long they've been customers.</div>
-            </div>
-          </div>
-          <div class="panel-body">
-            <div class="note note-explainer" style="margin-bottom:14px">
-              <div class="note-eyebrow">How to read</div>
-              <strong class="note-lead">How much is a customer worth, by tenure?</strong> Each card groups customers by how long they've been buyers (30, 60, 90 or 180+ days since their first order) and shows their average lifetime net sales — total spend across all their orders to date. Rising values to the right are expected: longer tenure = more time to buy again.
-            </div>
-            <div class="stats-row" id="ltv-cards" style="grid-template-columns:repeat(4,1fr);gap:8px">
-              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 30 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 60 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 90 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-              <div class="stat-cell"><div class="stat-cell-label">Tenure ≥ 180 days</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0"></div></div>
-            </div>
-            <div id="ltv-insight" style="margin-top:14px"></div>
-          </div>
-        </div>
+      <div style="margin-bottom:14px">
         <div class="panel">
           <div class="panel-header">
             <div>
@@ -775,7 +754,7 @@ tbody tr:hover td { background: var(--s2); }
       <div style="font-family:var(--sans);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--t1);margin:0 0 8px 2px">Lifetime View <span style="font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t1);background:var(--b1);padding:2px 6px;border-radius:3px;margin-left:6px">All history</span></div>
       <div class="stats-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:18px">
         <div class="stat-cell"><div class="stat-cell-label" title="Total unique customers across your full available order history. Customers with email are deduped across their orders; guest orders (no email) count as one customer each.">Total Customers</div><div class="stat-cell-value" id="kpi-total-customers">—</div><div class="stat-cell-sub" id="kpi-total-customers-sub">—</div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Customers who placed 2 or more orders across their entire history. The all-time loyalty base. Guests cannot be classified (no way to identify across orders), so they're never counted as repeat.">Repeat Customers</div><div class="stat-cell-value" id="kpi-repeat-lifetime">—</div><div class="stat-cell-sub" id="kpi-repeat-lifetime-sub">—</div></div>
+        <div class="stat-cell"><div class="stat-cell-label" title="Customers who placed 2 or more orders across their entire history. The breakdown distinguishes trackable customers (Web/Direct/etc., with stable emails) from TikTok customers — TikTok hashes the email per order, so most TikTok repeats appear as new customers. The TikTok number is therefore a lower bound. Guests cannot be classified at all.">Repeat Customers</div><div class="stat-cell-value" id="kpi-repeat-lifetime">—</div><div class="stat-cell-sub" id="kpi-repeat-lifetime-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Average lifetime spend per customer: total net sales across all history divided by total customers (including guest orders).">Avg. Lifetime Value</div><div class="stat-cell-value" id="kpi-avg-ltv">—</div><div class="stat-cell-sub" id="kpi-avg-ltv-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Median days between a customer's 1st and 2nd purchase. Tells you the natural reorder cycle.">Reorder Cycle</div><div class="stat-cell-value" id="kpi-reorder-cycle">—</div><div class="stat-cell-sub" id="kpi-reorder-cycle-sub">—</div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="% of customers whose last order was more than 90 days ago. High % = customer base is going dormant.">Dormant Customers</div><div class="stat-cell-value" id="kpi-dormant">—</div><div class="stat-cell-sub" id="kpi-dormant-sub">—</div></div>
@@ -1278,7 +1257,6 @@ function renderAll() {
   // Insights tab — always uses TTM (last 12 months) regardless of date filter
   renderTTMHeader();
   renderCohortRetention();
-  renderLTV();
   renderDiscountIntensity();
   renderCustomerConcentration();
   renderChannelPerformance();
@@ -1554,10 +1532,10 @@ function renderExecutiveSummary() {
         ${heroYaPill}
       </div>
     </div>
-    <div class="stat-cell" title="Net sales of the period divided by the number of days in the period. The trend below compares the average of the last 7 days vs the average of the earlier days in the same period — to see if sales are accelerating or decelerating.">
+    <div class="stat-cell" title="Net sales of the period divided by the number of days in the period. The pill below compares this daily average against the daily average of the equivalent prior period.">
       <div class="stat-cell-label">Average per Day</div>
       <div class="stat-cell-value">$${fmt(dailyAvg)}<span style="font-size:11px;color:var(--t2);font-weight:400"> / day</span></div>
-      <div class="stat-cell-sub">net sales ÷ ${fmtNum(periodDays)} days in period${trendHtml ? ' \u2022 ' + trendHtml : ''}</div>
+      <div class="stat-cell-sub">net sales ÷ ${fmtNum(periodDays)} day${periodDays === 1 ? '' : 's'}${prevDailyAvg > 0 ? ' \u2022 ' + trendHtml : ''}</div>
     </div>
     <div class="stat-cell" title="Total orders placed in this period, with average order value and average items per order.">
       <div class="stat-cell-label">Orders Placed</div>
@@ -2384,15 +2362,38 @@ function renderCustomersLifetimeKPIs() {
     medianCycle = Math.round(cyclesDays[Math.floor(cyclesDays.length / 2)]);
   }
 
-  // Repeat Customers (lifetime) = customers with 2+ orders across all available history.
-  // Guests cannot be classified (each guest order is a synthetic single-order customer),
-  // so by definition they never count as repeat. Identifiable customers with 2+ orders do.
-  let repeatLifetime = 0;
-  for (const [, arr] of byEmail) {
-    if (arr.length >= 2) repeatLifetime++;
+  // Repeat Customers (lifetime), split by channel-identifiability:
+  //
+  //  - Non-TikTok customers (with email, e.g. Web/Direct, Bloomingdale's, etc.)
+  //    → Real retention signal: their email is stable across orders.
+  //  - TikTok customers (email like *@scs.tiktokw.us)
+  //    → Cannot be reliably tracked. TikTok hashes the email per order, so the
+  //      same person typically appears with different hashes every time. Their
+  //      "repeat" count is a strict lower bound (only catches repeats inside
+  //      the same hash). The real number is unknowable from our data.
+  //  - Guests (no email at all)
+  //    → Cannot be tracked at all. By definition never count as repeat.
+  let repeatNonTikTok = 0, totalNonTikTok = 0;
+  let repeatTikTok = 0, totalTikTok = 0;
+  let totalGuests = 0;  // already counted in totalCustomers; broken out for clarity
+  for (const [key, arr] of byEmail) {
+    if (key.startsWith('guest:')) { totalGuests++; continue; }
+    const isTikTok = key.includes('tiktokw.us');
+    if (isTikTok) {
+      totalTikTok++;
+      if (arr.length >= 2) repeatTikTok++;
+    } else {
+      totalNonTikTok++;
+      if (arr.length >= 2) repeatNonTikTok++;
+    }
   }
+  // The "headline" repeat number is the trackable one (non-TikTok). Showing
+  // overall would dilute it with TikTok customers we know we can't measure.
+  const repeatLifetime = repeatNonTikTok + repeatTikTok;
   const repeatLifetimePct = totalCustomers > 0 ? Math.round(repeatLifetime / totalCustomers * 100) : 0;
   const repeatLifetimeColor = repeatLifetimePct >= 30 ? 'var(--emerald)' : (repeatLifetimePct >= 15 ? 'var(--amber)' : 'var(--rose)');
+  // The "real" rate among trackable customers
+  const repeatTrackablePct = totalNonTikTok > 0 ? Math.round(repeatNonTikTok / totalNonTikTok * 100) : 0;
 
   // Dormant: last order > 90 days ago
   const now = Date.now();
@@ -2409,7 +2410,11 @@ function renderCustomersLifetimeKPIs() {
   document.getElementById('kpi-total-customers-sub').textContent = `unique customers (each guest order = 1) · ${monthsSpan} months of history`;
   document.getElementById('kpi-repeat-lifetime').textContent = fmtNum(repeatLifetime);
   document.getElementById('kpi-repeat-lifetime').style.color = repeatLifetimeColor;
-  document.getElementById('kpi-repeat-lifetime-sub').textContent = `${repeatLifetimePct}% of customers · 2+ orders ever`;
+  // Three-line sub-text so the user can see the data quality story without going elsewhere.
+  document.getElementById('kpi-repeat-lifetime-sub').innerHTML =
+    `${repeatLifetimePct}% of all customers · 2+ orders ever<br>` +
+    `<span style="color:var(--t2)">Web &amp; other: <strong>${fmtNum(repeatNonTikTok)}</strong> of ${fmtNum(totalNonTikTok)} (${repeatTrackablePct}%)</span><br>` +
+    `<span style="color:var(--t2)">TikTok: <strong>${fmtNum(repeatTikTok)}</strong> of ${fmtNum(totalTikTok)} <em title="TikTok hashes the customer email per order, so most TikTok repeat purchases appear as new customers in the data. This number is a lower bound — the real figure is unknowable.">(lower bound)</em></span>`;
   document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
   document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} net sales ÷ ${fmtNum(totalCustomers)} customers`;
 
@@ -2809,69 +2814,6 @@ function renderCohortRetention() {
               The <strong style="color:var(--emerald)">${best.label}</strong> cohort delivered the strongest retention performance — these customers returned at the highest rate in their first two months.
           The <strong style="color:var(--rose)">${worst.label}</strong> cohort underperformed, with most buyers not returning.
           Significant retention drops typically indicate lower-quality acquisition that month — review the channel mix, discount activity, and campaigns that drove that intake.
-            </div>
-      `;
-    }
-  }
-}
-
-// ===================== LTV =====================
-// LTV(N) = promedio de revenue acumulado de un cliente en sus primeros N d\u00edas
-// desde su 1ra compra. Solo incluye clientes cuya 1ra compra fue hace >= N d\u00edas
-// (sino el dato est\u00e1 sesgado a la baja).
-function renderLTV() {
-  const el = document.getElementById('ltv-cards');
-  if (!el) return;
-  // Lifetime-total approach: for each tenure window (e.g. 30 days), include
-  // customers whose first order was at least N days ago. For each such
-  // customer, sum their ENTIRE LIFETIME net sales (not capped at day N).
-  // The curve answers: "If a customer has been with us at least N days,
-  // what is their total spend?" Veteran cohorts naturally show higher values.
-  const byEmail = getOrdersByEmail(lifetimeOrders);
-  const now = Date.now();
-  const windows = [30, 60, 90, 180];
-  const results = windows.map(days => {
-    const cutoffMs = now - days * 86400000;
-    let totalRev = 0, customers = 0;
-    for (const [, arr] of byEmail) {
-      const firstMs = new Date(arr[0].created_at).getTime();
-      if (firstMs > cutoffMs) continue; // customer hasn't reached this tenure yet
-      // Lifetime spend across ALL their orders (no cap at day N).
-      const lifetimeSpend = arr.reduce((s, o) => s + orderNetSales(o), 0);
-      totalRev += lifetimeSpend;
-      customers++;
-    }
-    return { days, avg: customers > 0 ? totalRev / customers : 0, customers };
-  });
-  el.innerHTML = results.map(r => `
-    <div class="stat-cell" title="Average lifetime net sales of customers who have been with you at least ${r.days} days (their first order was that long ago or longer). This is their TOTAL spend across all their orders to date, not just the spend in the first ${r.days} days.">
-      <div class="stat-cell-label">Tenure ≥ ${r.days} days</div>
-      <div class="stat-cell-value">$${fmt(r.avg)}</div>
-      <div class="stat-cell-sub">avg lifetime spend · ${fmtNum(r.customers)} customers</div>
-    </div>
-  `).join('');
-
-  // Auto insight: how much does the customer's spend grow from 30d to 90d?
-  const insightEl = document.getElementById('ltv-insight');
-  if (insightEl) {
-    const ltv30 = results[0].avg;
-    const ltv90 = results[2].avg;
-    const ltv180 = results[3].avg;
-    if (ltv30 > 0 && ltv90 > 0) {
-      const growth = Math.round((ltv90 - ltv30) / ltv30 * 100);
-      const growth180 = ltv180 > 0 ? Math.round((ltv180 - ltv30) / ltv30 * 100) : null;
-      let msg;
-      if (growth < 10) {
-        msg = `<strong style="color:var(--rose)">Limited customer retention.</strong> Average customer spend grows only +${growth}% from day 30 to day 90 — indicating most buyers are single-purchase. Retention should be the primary strategic focus before increasing acquisition investment.`;
-      } else if (growth < 40) {
-        msg = `<strong style="color:var(--amber)">Moderate repurchase behavior.</strong> Average customer spend grows +${growth}% by day 90${growth180 !== null ? `, +${growth180}% by day 180` : ''}. There is loyalty signal, but meaningful upside from improved retention mechanics (lifecycle email, subscription offerings).`;
-      } else {
-        msg = `<strong style="color:var(--emerald)">Strong unit economics.</strong> Average customer spend grows +${growth}% from day 30 to day 90${growth180 !== null ? ` and +${growth180}% by day 180` : ''}. Product-market fit is reflected in repeat behavior — incremental acquisition investment is justified by predictable lifetime returns.`;
-      }
-      insightEl.innerHTML = `
-        <div class="note note-insight">
-              <div class="note-eyebrow">Insight</div>
-              ${msg}
             </div>
       `;
     }
