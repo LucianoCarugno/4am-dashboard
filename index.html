@@ -691,7 +691,7 @@ tbody tr:hover td { background: var(--s2); }
         <div class="stat-cell"><div class="stat-cell-label">Units Sold</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label">Distinct Products</div><div class="skeleton" style="height:22px;width:45%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:50%"></div></div>
         <div class="stat-cell"><div class="stat-cell-label" title="Avg net revenue (net sales) contributed per unit sold">Net Revenue per Unit</div><div class="skeleton" style="height:22px;width:55%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:45%"></div></div>
-        <div class="stat-cell"><div class="stat-cell-label" title="Highest-growth product compared to the previous equivalent period">Top Mover</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:55%"></div></div>
+        <div class="stat-cell"><div class="stat-cell-label">Top Product</div><div class="skeleton" style="height:22px;width:60%;margin:4px 0 3px"></div><div class="skeleton" style="height:10px;width:55%"></div></div>
       </div>
 
       <!-- Pareto / concentration -->
@@ -2066,24 +2066,16 @@ function renderProductsCatalog() {
   const distinct = products.length;
   const revPerUnit = totalUnits > 0 ? totalRev / totalUnits : 0;
 
-  // Top mover: largest % growth among products with meaningful volume in both periods.
-  // If no prior period exists (e.g. user filtered "All time"), fall back to the
-  // top product by revenue so the card always has useful information.
-  let topMover = null;
-  const hasPrior = prevOrders && prevOrders.length > 0;
-  if (hasPrior) {
-    for (const p of products) {
-      if (p.revenue < totalRev * 0.005) continue; // ignore tiny products
-      const prev = prevMap.get(p.title);
-      if (!prev || prev.revenue === 0) continue;
-      const growth = (p.revenue - prev.revenue) / prev.revenue * 100;
-      if (topMover === null || growth > topMover.growth) topMover = { title: p.title, growth, fallback: false };
-    }
-  }
-  // Fallback: top product by revenue
-  if (!topMover && products.length > 0) {
-    topMover = { title: products[0].title, growth: null, fallback: true };
-  }
+  // Top Mover = product generating the most revenue in the period.
+  // Growth % is shown as context but does not determine ranking.
+  const topMover = products.length > 0 ? (() => {
+    const p = products[0];
+    const prev = prevMap.get(p.title);
+    const growth = prev && prev.revenue > 0
+      ? (p.revenue - prev.revenue) / prev.revenue * 100
+      : null;
+    return { title: p.title, growth, fallback: false };
+  })() : null;
 
   // KPIs
   const fromD = document.getElementById('date-from').value;
@@ -2107,11 +2099,11 @@ function renderProductsCatalog() {
       <div class="stat-cell-sub">avg net sales per unit</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-label">Top Mover</div>
+      <div class="stat-cell-label">Top Product</div>
       <div class="stat-cell-value" style="font-size:14px;line-height:1.2">${topMover ? (topMover.title.length > 18 ? topMover.title.substring(0,16) + '…' : topMover.title) : '\u2014'}</div>
-      <div class="stat-cell-sub" ${!topMover ? '' : `style="color:${topMover.fallback ? 'var(--t2)' : (topMover.growth > 0 ? 'var(--emerald)' : 'var(--rose)')}"`}>${
+      <div class="stat-cell-sub" ${!topMover ? '' : `style="color:${topMover.growth === null ? 'var(--t2)' : (topMover.growth > 0 ? 'var(--emerald)' : 'var(--rose)')}"`}>${
         !topMover ? 'no products in period' :
-        topMover.fallback ? '#1 by net sales · no prior period to compare' :
+        topMover.growth === null ? '#1 by net sales · no prior period to compare' :
         ((Math.round(topMover.growth) > 0 ? '\u2191 ' : '\u2193 ') + Math.abs(Math.round(topMover.growth)) + '% vs prior period')
       }</div>
     </div>
@@ -2427,10 +2419,11 @@ function renderCustomersLifetimeKPIs() {
   document.getElementById('kpi-total-customers-sub').textContent = `unique customers (each guest order = 1) · ${monthsSpan} months of history`;
   document.getElementById('kpi-repeat-lifetime').textContent = fmtNum(repeatLifetime);
   document.getElementById('kpi-repeat-lifetime').style.color = repeatLifetimeColor;
-  // Two-line sub-text with channel breakdown
+  const webPct = repeatLifetime > 0 ? Math.round(repeatNonTikTok / repeatLifetime * 100) : 0;
+  const ttPct = repeatLifetime > 0 ? Math.round(repeatTikTok / repeatLifetime * 100) : 0;
   document.getElementById('kpi-repeat-lifetime-sub').innerHTML =
     `${repeatLifetimePct}% of all customers · 2+ orders ever<br>` +
-    `<span style="color:var(--t2)">Web &amp; other: <strong>${fmtNum(repeatNonTikTok)}</strong> of ${fmtNum(totalNonTikTok)} (${repeatTrackablePct}%) · TikTok: <strong>${fmtNum(repeatTikTok)}</strong> of ${fmtNum(totalTikTok)} (${totalTikTok > 0 ? Math.round(repeatTikTok/totalTikTok*100) : 0}%)</span>`;
+    `<span style="color:var(--t2)">Web &amp; other: <strong>${fmtNum(repeatNonTikTok)}</strong> (${webPct}%) · TikTok: <strong>${fmtNum(repeatTikTok)}</strong> (${ttPct}%)</span>`;
   document.getElementById('kpi-avg-ltv').textContent = '$' + fmt(avgLTV);
   document.getElementById('kpi-avg-ltv-sub').textContent = `$${fmt(totalRev)} net sales ÷ ${fmtNum(totalCustomers)} customers`;
 
