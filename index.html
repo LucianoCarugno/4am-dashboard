@@ -560,7 +560,7 @@ tbody tr:hover td { background: var(--s2); }
 
       <div class="row row-2" style="margin-bottom:12px">
         <div class="panel">
-          <div class="panel-header"><div><div class="panel-title">Top Products</div><div class="panel-sub">By <strong>net product revenue</strong> in period (price × qty − line discounts)</div></div></div>
+          <div class="panel-header"><div><div class="panel-title">Top 5 Products</div><div class="panel-sub">By <strong>net product revenue</strong> in period (price × qty − line discounts)</div></div></div>
           <div class="panel-body"><div class="product-rows" id="top-products">
             <div class="skeleton" style="height:36px;border-radius:6px;margin-bottom:8px"></div>
             <div class="skeleton" style="height:36px;border-radius:6px;margin-bottom:8px"></div>
@@ -1912,7 +1912,7 @@ function renderTopProducts() {
     productRev[t] = (productRev[t]||0) + (price * qty - lineDisc);
     productUnits[t] = (productUnits[t]||0) + qty;
   }));
-  const sorted = Object.entries(productRev).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const sorted = Object.entries(productRev).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('top-products').innerHTML = sorted.length
     ? sorted.map(([title,rev],i) => `<div class="product-row"><div class="product-rank">${i+1}</div><div class="product-info"><div class="product-name">${title}</div><div class="product-units">${productUnits[title]} units</div></div><div class="product-rev">$${fmt(rev)}</div></div>`).join('')
     : '<div style="color:var(--t3);font-size:11px;padding:10px 0;font-family:var(--mono)">No data</div>';
