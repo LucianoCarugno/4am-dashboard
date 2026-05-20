@@ -1308,11 +1308,14 @@ function renderTTMHeader() {
   // so the TTM "in sales" number cross-references exactly with what the user sees
   // in Sales when they set the date range to this TTM window.
   const totalRev = computeKPIs(ttm).netSales;
-  const uniqueCustomers = new Set();
+  const uniqueEmails = new Set();
+  let ttmGuests = 0;
   for (const o of ttm) {
     const e = o.customer?.email?.toLowerCase();
-    if (e) uniqueCustomers.add(e);
+    if (e) uniqueEmails.add(e);
+    else ttmGuests++;
   }
+  const uniqueCustomerCount = uniqueEmails.size + ttmGuests;
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
@@ -1324,7 +1327,7 @@ function renderTTMHeader() {
       <span style="color:var(--t2);margin:0 8px">\u00b7</span>
       <strong style="color:var(--t0)">$${fmt(totalRev)}</strong>&nbsp;in sales
       <span style="color:var(--t2);margin:0 8px">\u00b7</span>
-      <strong style="color:var(--t0)">${fmtNum(uniqueCustomers.size)}</strong>&nbsp;unique customers
+      <strong style="color:var(--t0)">${fmtNum(uniqueCustomerCount)}</strong>&nbsp;unique customers
     </div>
     <div style="margin-top:6px;color:var(--t2);font-size:10px">
       To match these numbers in the Sales tab, set the date range to <strong style="color:var(--t1)">${startStr} \u2192 ${todayStr}</strong>.
@@ -2017,22 +2020,36 @@ function renderProductsCatalog() {
   const orders = filteredOrders || [];
   const prevOrders = getPreviousPeriodOrders();
 
-  // Aggregate per-product metrics
+  // Aggregate per-product metrics.
+  // Revenue formula must match orderNetSales() exactly:
+  //   gross (price × qty) − line discounts − order refunds (prorated by line share)
+  // Without subtracting refunds, the product total diverges from Net Sales by
+  // the full refund amount (~$13k in the all-time view).
   function aggregate(orderList) {
     const map = new Map();
     for (const o of orderList) {
       const refundedAmount = parseFloat(o.total_refunded || 0);
       const isRefunded = refundedAmount > 0;
+      // Prorate the order-level refund across line items by their revenue share.
+      const orderGross = (o.line_items || []).reduce((s, li) => {
+        const qty = parseInt(li.quantity || 0);
+        const price = parseFloat(li.price || 0);
+        const lineDisc = (li.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+        return s + price * qty - lineDisc;
+      }, 0);
       for (const item of (o.line_items || [])) {
         const title = item.title || 'Unknown';
         const qty = parseInt(item.quantity || 0);
         const price = parseFloat(item.price || 0);
         const lineDisc = (item.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
         const lineRev = price * qty - lineDisc;
+        // Prorate the refund: this line's share = lineRev / orderGross
+        const lineRefund = orderGross > 0 ? refundedAmount * (lineRev / orderGross) : 0;
+        const lineNetRev = lineRev - lineRefund;
         if (!map.has(title)) map.set(title, { title, units: 0, revenue: 0, orders: 0, refunds: 0 });
         const p = map.get(title);
         p.units += qty;
-        p.revenue += lineRev;
+        p.revenue += lineNetRev;
         p.orders += 1;
         if (isRefunded) p.refunds += 1;
       }
@@ -2494,8 +2511,25 @@ function renderLTVDistribution() {
   ];
   let totalRev = 0, totalCustomers = 0;
   const bucketRev = [0, 0, 0, 0, 0];
+  // Identifiable customers (with email)
   for (const [, arr] of byEmail) {
     const spend = arr.reduce((s, o) => s + orderNetSales(o), 0);
+    totalRev += spend;
+    totalCustomers++;
+    for (let i = 0; i < buckets.length; i++) {
+      if (spend >= buckets[i].min && spend < buckets[i].max) {
+        buckets[i].count++;
+        bucketRev[i] += spend;
+        break;
+      }
+    }
+  }
+  // Guests: each guest order = 1 customer. They have a single order so their
+  // spend is that one order's net sales. Include them so the distribution total
+  // matches the Total Customers card.
+  for (const o of (lifetimeOrders || [])) {
+    if (o.customer?.email) continue; // already counted above
+    const spend = orderNetSales(o);
     totalRev += spend;
     totalCustomers++;
     for (let i = 0; i < buckets.length; i++) {
@@ -3079,14 +3113,20 @@ function renderSKUVelocity() {
   function aggregateSKUs(orderList) {
     const map = new Map();
     for (const o of orderList) {
+      const refundedAmount = parseFloat(o.total_refunded || 0);
+      // Prorate the order-level refund across line items by revenue share
+      const orderGross = (o.line_items || []).reduce((s, li) => {
+        const qty = parseInt(li.quantity || 0);
+        const lineDisc = (li.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+        return s + parseFloat(li.price || 0) * qty - lineDisc;
+      }, 0);
       for (const li of (o.line_items || [])) {
         const title = li.title || '(unknown)';
         const qty = parseInt(li.quantity || 0);
-        // Match the Products tab revenue formula: price × qty minus line-item
-        // discount allocations. Without this subtraction, percentages here
-        // diverge from the Products tab's catalog-concentration card.
         const lineDisc = (li.discount_allocations || []).reduce((s, d) => s + parseFloat(d.amount || 0), 0);
-        const rev = qty * parseFloat(li.price || 0) - lineDisc;
+        const lineRev = qty * parseFloat(li.price || 0) - lineDisc;
+        const lineRefund = orderGross > 0 ? refundedAmount * (lineRev / orderGross) : 0;
+        const rev = lineRev - lineRefund;
         if (!map.has(title)) map.set(title, { qty: 0, rev: 0 });
         const s = map.get(title);
         s.qty += qty;
