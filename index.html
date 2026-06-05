@@ -598,7 +598,7 @@ tbody tr:hover td { background: var(--s2); }
       <div class="row row-3" style="margin-bottom:12px">
         <div class="panel">
           <div class="panel-header">
-            <div><div class="panel-title">Revenue Trend</div><div class="panel-sub">Daily <strong>net sales</strong> (gross − discounts − refunds)</div></div>
+            <div><div class="panel-title">Revenue Trend</div><div class="panel-sub">Monthly <strong>net sales</strong> (gross − discounts − refunds)</div></div>
           </div>
           <div class="panel-body"><div class="chart-wrap"><canvas id="revenue-chart"></canvas></div></div>
         </div>
@@ -871,6 +871,7 @@ tbody tr:hover td { background: var(--s2); }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 const WORKER = 'https://shopify-proxy.luciano-bd7.workers.dev';
 const STORE = '4am';
@@ -1881,29 +1882,60 @@ function countCustomers(orderList) {
 }
 
 function renderRevenueChart() {
-  const byDay = {};
-  filteredOrders.forEach(o => { const d = o.created_at.split('T')[0]; byDay[d] = (byDay[d]||0) + orderNetSales(o); });
-  const sorted = Object.keys(byDay).sort();
-  const values = sorted.map(d => byDay[d]);
-  const labels = sorted.map(d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+  // Register datalabels once, globally OFF by default so other charts are
+  // unaffected; we opt-in per dataset below.
+  if (window.ChartDataLabels && !window._dlRegistered) {
+    Chart.register(ChartDataLabels);
+    Chart.defaults.plugins.datalabels = { display: false };
+    window._dlRegistered = true;
+  }
+
+  // Group net sales by calendar month (yyyy-mm) regardless of the date filter.
+  const byMonth = {};
+  filteredOrders.forEach(o => {
+    const ym = (o.created_at || '').substring(0, 7); // yyyy-mm
+    if (!ym) return;
+    byMonth[ym] = (byMonth[ym] || 0) + orderNetSales(o);
+  });
+  const sorted = Object.keys(byMonth).sort();
+  const values = sorted.map(m => Math.round(byMonth[m]));
+  const labels = sorted.map(m => {
+    const [y, mo] = m.split('-');
+    return new Date(+y, +mo - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  });
+
   const ctx = document.getElementById('revenue-chart').getContext('2d');
   if (revenueChart) revenueChart.destroy();
-  const grad = ctx.createLinearGradient(0,0,0,180);
-  grad.addColorStop(0,'rgba(15,118,110,0.18)'); grad.addColorStop(1,'rgba(15,118,110,0.0)');
+
+  // Datalabels: show $Xk above each bar; thin them out when there are many months.
+  const dl = {
+    display: ctx2 => {
+      const n = ctx2.dataset.data.length;
+      if (n <= 14) return 'auto';
+      // crowded: only show every other bar
+      return ctx2.dataIndex % 2 === 0 ? 'auto' : false;
+    },
+    anchor: 'end', align: 'top', offset: 4, clamp: true,
+    color: PALETTE.teal,
+    font: { size: 9, family: 'Inter', weight: '600' },
+    formatter: v => v >= 1000 ? '$' + Math.round(v / 1000) + 'k' : (v > 0 ? '$' + v : null),
+  };
+
   revenueChart = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: { labels, datasets: [
-      { label: 'Revenue', data: values, borderColor: PALETTE.teal, borderWidth: 2, backgroundColor: grad, fill: true, tension: 0.3, pointRadius: sorted.length > 60 ? 0 : 3, pointBackgroundColor: PALETTE.teal, pointBorderColor: '#fff', pointBorderWidth: 1.5, order: 2 },
+      { label: 'Net Sales', data: values, backgroundColor: 'rgba(1,56,47,0.85)', hoverBackgroundColor: PALETTE.teal, borderRadius: 5, borderSkipped: false, maxBarThickness: 64, datalabels: dl },
     ]},
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 22 } },
       plugins: {
         legend: { display: false },
-        tooltip: { ...CHART_OPTS.tooltip, callbacks: { label: c => ' $'+fmt(c.raw) } }
+        tooltip: { ...CHART_OPTS.tooltip, callbacks: { title: items => items[0].label, label: c => ' $'+fmt(c.raw) } },
       },
       scales: {
-        x: { grid: { color: PALETTE.grid, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, maxTicksLimit: 8 } },
-        y: { grid: { color: PALETTE.grid, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, callback: v => '$'+fmt(v) } }
+        x: { grid: { display: false, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
+        y: { beginAtZero: true, grid: { color: PALETTE.grid, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, callback: v => '$'+fmt(v) } }
       }
     }
   });
