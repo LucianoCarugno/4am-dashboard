@@ -1935,7 +1935,7 @@ function renderRevenueChart() {
       },
       scales: {
         x: { grid: { display: false, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
-        y: { beginAtZero: true, grid: { color: PALETTE.grid, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, callback: v => '$'+fmt(v) } }
+        y: { beginAtZero: true, grid: { display: false, drawBorder: false }, ticks: { color: PALETTE.axis, font: { size: 9, family: 'DM Mono' }, callback: v => '$'+fmt(v) } }
       }
     }
   });
